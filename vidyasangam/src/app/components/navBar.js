@@ -88,8 +88,8 @@ const NavBar = () => {
             <Link href="/" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Home
             </Link>
-            <Link href="/mentors" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
-              Mentors
+            <Link href="/mentoring-form" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+              Be a Part
             </Link>
             <Link href="/mentees" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Mentees

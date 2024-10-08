@@ -25,7 +25,7 @@ const roboto = Roboto({
 
 // Metadata for the Vidyasangam platform
 export const metadata = {
-  title: "Vidyasangam",
+  title: "VidyaSangam",
   description: "Empowering students to bridge the gap between academia and industry.",
   icons: {
     icon: [
