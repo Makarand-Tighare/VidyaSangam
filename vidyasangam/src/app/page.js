@@ -7,6 +7,13 @@ import Linkedin from "./images/linkedin.png";
 import Twitter from "./images/x.png";
 import Instagram from "./images/insta.png";
 
+import MentorMentee from "./images/mentorMentee.jpg";
+import Leaderboard from "./images/leaderboard.png";
+import Workshops from "./images/workshops.jpg";
+import Roadmap from "./images/roadmap.jpg";
+import MeetingSummarization from "./images/meetingSummarization.jpg";
+import AutoLinkedin from "./images/autoLinkedin.jpg";
+
 export default function Home() {
   return (
     <div className="overflow-x-hidden p-2">
@@ -19,7 +26,8 @@ export default function Home() {
           VidyaSangam Mentor-Mentee Platform
         </p>
         <p className="text-center font-roboto mt-1">
-          Empowering mentors to guide, and mentees to grow. Learn and develop together.
+          Empowering mentors to guide, and mentees to grow. Learn and develop
+          together.
         </p>
       </div>
 
@@ -29,100 +37,149 @@ export default function Home() {
           Vision of the Platform
         </p>
         <p className="text-center font-roboto">
-          To create a supportive environment where experienced mentors help students grow by sharing industry insights and guiding them through their learning journeys.
+          To create a supportive environment where experienced mentors help
+          students grow by sharing industry insights and guiding them through
+          their learning journeys.
         </p>
       </div>
 
       {/* Features Section */}
-<div className="mt-12">
-  <p className="text-[#946f43] text-3xl text-center font-bold font-comfortaa">
-    Key Features of VidyaSangam
-  </p>
-  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10 px-5">
-    {/* Feature 1 */}
-    <div className="flex flex-col items-center">
-      <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 14v-4m0 4l-2-2m0 0l2-2m2 2l-2 2m2-2v4m0-4h-4" />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold mt-4 text-center">Mentor-Mentee Pairing</p>
-      <p className="text-center text-gray-500 mt-2">
-        Comprehensive pairing based on academic and career goals.
-      </p>
-    </div>
-    {/* Feature 2 */}
-    <div className="flex flex-col items-center">
-      <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8 12l4 4m0 0l4-4m-4 4V4" />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold mt-4 text-center">Progress Tracking</p>
-      <p className="text-center text-gray-500 mt-2">
-        Structured mentoring sessions with progress tracking for growth.
-      </p>
-    </div>
-    {/* Feature 3 */}
-    <div className="flex flex-col items-center">
-      <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l4-4m0 0l4 4m-4-4v16" />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold mt-4 text-center">Workshops & Webinars</p>
-      <p className="text-center text-gray-500 mt-2">
-        Access to industry insights, workshops, and live webinars.
-      </p>
-    </div>
-    {/* Feature 4 */}
-    <div className="flex flex-col items-center">
-      <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 11l-7 7-7-7" />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold mt-4 text-center">Guided Learning</p>
-      <p className="text-center text-gray-500 mt-2">
-        Personalized learning paths with advice from professionals.
-      </p>
-    </div>
-    {/* Feature 5 */}
-    <div className="flex flex-col items-center">
-      <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-        </svg>
-      </div>
-      <p className="text-lg font-semibold mt-4 text-center">Networking Opportunities</p>
-      <p className="text-center text-gray-500 mt-2">
-        Network with peers and industry leaders for career growth.
-      </p>
-    </div>
+      <div className="mt-12">
+        <p className="text-[#946f43] text-3xl text-center font-bold font-comfortaa">
+          Key Features of VidyaSangam
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10 px-5">
+          {/* Feature 1 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={MentorMentee.src}
+                alt="Mentor-Mentee Pairing"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Mentor-Mentee Pairing
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              Comprehensive pairing based on academic and career goals.
+            </p>
+          </div>
 
-    {/* Feature 6 */}
-<div className="flex flex-col items-center">
-  <div className="bg-[#4f83f8] p-4 rounded-full shadow-lg">
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16" />
-    </svg>
-  </div>
-  <p className="text-lg font-semibold mt-4 text-center">Automatic LinkedIn Integration</p>
-  <p className="text-center text-gray-500 mt-2">
-    Seamlessly integrate your profile and share your achievements directly on LinkedIn.
-  </p>
-</div>
+          {/* Feature 2 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={Leaderboard.src}
+                alt="Progress Tracking"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Progress Tracking
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              Structured mentoring sessions with progress tracking for growth.
+            </p>
+          </div>
 
-  </div>
-</div>
+          {/* Feature 3 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={Workshops.src}
+                alt="Workshops & Webinars"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Workshops & Webinars
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              Access to industry insights, workshops, and live webinars.
+            </p>
+          </div>
 
+          {/* Feature 4 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={Roadmap.src}
+                alt="Decision-Making Roadmap"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Decision-Making Roadmap
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              A structured roadmap to make your decisions and achieve goals
+              faster.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={MeetingSummarization.src}
+                alt="Meeting Summarization"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Meeting Summarization
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              Get concise summaries of meetings to enhance productivity and stay
+              informed.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div className="flex flex-col items-center">
+            <div
+              className="bg-[#4f83f8] rounded-full shadow-lg"
+              style={{ width: "100px", height: "100px" }}
+            >
+              <img
+                src={AutoLinkedin.src}
+                alt="Automatic LinkedIn Integration"
+                className="rounded-full w-full h-full object-cover"
+              />
+            </div>
+            <p className="text-lg font-semibold mt-4 text-center">
+              Automatic LinkedIn Integration
+            </p>
+            <p className="text-center text-gray-500 mt-2">
+              Seamlessly integrate your profile and share your achievements
+              directly on LinkedIn.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Mentor-Mentee Form Link */}
       <div className="text-center mt-12">
-        <a 
-          href="/mentoring-form" 
-          className="bg-[#4f83f8] hover:bg-[#357ae8] text-white font-semibold py-2 px-5 rounded-lg">
+        <a
+          href="/mentoring-form"
+          className="bg-[#4f83f8] hover:bg-[#357ae8] text-white font-semibold py-2 px-5 rounded-lg"
+        >
           Sign Up for Mentor/Mentee Classification
         </a>
       </div>
@@ -142,8 +199,12 @@ export default function Home() {
         <p className="text-[#946f43] text-4xl text-center font-semibold font-comfortaa pt-[50px]">
           Get in Touch
         </p>
-        <p className="mt-10 font-josefinSans text-2xl">Have Questions about the Program?</p>
-        <p className="font-josefinSans">Feel free to reach out to us for more information.</p>
+        <p className="mt-10 font-josefinSans text-2xl">
+          Have Questions about the Program?
+        </p>
+        <p className="font-josefinSans">
+          Feel free to reach out to us for more information.
+        </p>
 
         <div className="flex flex-row justify-center align-middle mt-5">
           <a
