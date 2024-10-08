@@ -28,8 +28,8 @@ const NavBar = () => {
         <Link href="/" className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Home</span>
         </Link>
-        <Link href="/mentors" className="relative group">
-          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Mentors</span>
+        <Link href="/mentoring-form" className="relative group">
+          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Be a Part</span>
         </Link>
         <Link href="/mentees" className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Mentees</span>

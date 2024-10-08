@@ -71,8 +71,14 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      alert("Error verifying OTP. Please try again.");
+      if (error.response) {
+        console.error("Server response:", error.response.data); // This may contain useful info
+        alert(`Error: ${JSON.stringify(error.response.data, null, 2)}`);
+      } else {
+        alert("Error verifying OTP");
+      }
     }
+    
   };
 
   const handleRegister = async (e) => {
