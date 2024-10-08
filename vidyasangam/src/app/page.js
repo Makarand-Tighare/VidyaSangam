@@ -1,101 +1,108 @@
 import Image from "next/image";
+import NavBar from "./components/navBar";
+
+import FancyTestimonialsSlider from "./components/fancy-testimonials-slider";
+import testimonialData from "./data/testimonial.data";
+
+import Linkedin from "./images/linkedin.png";
+import Twitter from "./images/x.png";
+import Instagram from "./images/insta.png";
 
 export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="overflow-x-hidden p-2">
+      {/* Navigation Bar */}
+      <NavBar />
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
+      {/* Header Section */}
+      <div className="py-5 mt-20">
+        <p className="text-[#946f43] text-4xl text-center font-semibold font-comfortaa pt-5">
+          VidyaSangam Mentor-Mentee Platform
+        </p>
+        <p className="text-center font-roboto">
+          Empowering mentors to guide, and mentees to grow. Learn and develop
+          together.
+        </p>
+      </div>
+
+      {/* Vision Section */}
+      <div>
+        <p className="text-[#946f43] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
+          Vision of the Platform
+        </p>
+        <p className="text-center font-roboto">
+          To create a supportive environment where experienced mentors help
+          students grow by sharing industry insights and guiding them through
+          their learning journeys.
+        </p>
+      </div>
+
+      {/* Testimonials Section */}
+      <div>
+        <p className="text-[#946f43] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
+          Testimonials
+        </p>
+        <div className="mt-5">
+          <FancyTestimonialsSlider testimonials={testimonialData} />
+        </div>
+      </div>
+
+      {/* Contact Us */}
+      <div className="text-center pb-32 mt-18">
+        <p className="text-[#946f43] text-4xl text-center font-semibold font-comfortaa pt-[50px]">
+          Get in Touch
+        </p>
+        <p className="mt-10 font-josefinSans text-2xl">
+          Have Questions about the Program?
+        </p>
+        <p className="font-josefinSans">
+          Feel free to reach out to us for more information.
+        </p>
+
+        <div className="flex flex-row justify-center align-middle mt-5">
           <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="https://www.linkedin.com/school/officialycce"
+            className="mx-5"
           >
             <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+              src={Linkedin}
+              width={30}
+              height={30}
+              alt="VidyaSangam LinkedIn"
             />
-            Deploy now
           </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
+          <a href="https://x.com/ycceofficial" className="mx-5">
+            <Image
+              src={Twitter}
+              width={30}
+              height={30}
+              alt="AIGuruKul Twitter"
+            />
+          </a>
+          <a href="https://www.instagram.com/ctsc_ycce" className="mx-5">
+            <Image
+              src={Instagram}
+              width={30}
+              height={30}
+              alt="VidyaSangam Instagram"
+            />
           </a>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+
+        <p className="text-[#946f43] text-3xl text-center font-semibold font-comfortaa pt-10">
+          VidyaSangam
+        </p>
+        <p className="font-josefinSans">Department of Computer Technology</p>
+        <p className="font-josefinSans">
+          Yeshwantrao Chavan College of Engineering
+        </p>
         <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="mailto:VidyaSangam.edu@gmail.com"
+          className="text-[#946f43] font-comfortaa "
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
+          VidyaSangam.edu@gmail.com
         </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
     </div>
   );
 }
