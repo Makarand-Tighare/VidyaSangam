@@ -46,7 +46,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <link rel="icon" href="/favicon.ico" />
-      <body className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-r from-[#6cb2eb] to-[#a0d6f1] via-[#e1f5fe] h-full mb-0 pb-0`}>
+      <body className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% mb-0 pb-0`}>
         {children}
       </body>
     </html>

@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#6cb2eb] to-[#a0d6f1] via-[#e1f5fe] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
