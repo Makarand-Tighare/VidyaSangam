@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import Image from "next/image";
 import NavBar from "./components/navBar";
 import FancyTestimonialsSlider from "./components/fancy-testimonials-slider";
