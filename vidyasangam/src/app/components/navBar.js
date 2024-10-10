@@ -37,8 +37,8 @@ const NavBar = () => {
         <Link href="/sessions" className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Sessions</span>
         </Link>
-        <Link href="/resources" className="relative group">
-          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Resources</span>
+        <Link href="/chatbot" className="relative group">
+          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Chatbot</span>
         </Link>
         {/* Conditional Rendering for Login/Profile */}
         {isLoggedIn ? (
