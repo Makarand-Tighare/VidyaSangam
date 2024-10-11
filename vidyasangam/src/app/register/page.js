@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import axios from "axios";
+import NavBar from "../components/navBar";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("");
@@ -118,7 +119,9 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] flex items-center justify-center min-h-screen p-4">
+    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
+      <NavBar />
+      <div className="flex items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-lg border border-gray-300 shadow-lg rounded-md">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">
@@ -285,6 +288,7 @@ export default function RegisterPage() {
           </div>
         </CardFooter>
       </Card>
+    </div>
     </div>
   );
 }

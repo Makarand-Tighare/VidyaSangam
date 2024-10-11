@@ -24,8 +24,11 @@ const NavBar = () => {
     <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative">
       {/* Logo */}
       <div className="flex items-center">
-        <p className="text-2xl font-semibold font-comfortaa">Vidya Sangam</p>
-      </div>
+  <Link href="/" onClick={closeMenu}>
+    <p className="text-2xl font-semibold font-comfortaa cursor-pointer">Vidya Sangam</p>
+  </Link>
+</div>
+
 
       {/* Desktop Menu */}
       <div className="hidden md:flex space-x-6">
@@ -110,7 +113,7 @@ const NavBar = () => {
       {/* Mobile Menu */}
       {isOpen && (
         <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-10 md:hidden">
-          <div className="flex flex-col space-y-2 py-2">
+          <div className="flex flex-col items-center space-y-2 py-2">
             <Link href="/" onClick={closeMenu} className="relative group">
               <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
                 Home

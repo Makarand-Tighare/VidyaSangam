@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import NavBar from '../components/navBar'
 
 export default function SessionManagement() {
   const [sessions, setSessions] = useState([])
@@ -32,7 +33,8 @@ export default function SessionManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
+      <NavBar />
       <div className="max-w-4xl mx-auto space-y-8">
         <Card>
           <CardHeader>

@@ -13,6 +13,7 @@ import { ExtracurricularActivities } from '../sections/extracurricular-activitie
 import { PersonalDevelopment } from '../sections/personal-development';
 import { Declaration } from '../sections/declaration';
 import { ProgressBar } from '../progress-bar';
+import NavBar from '../components/navBar';
 
 const sections = [
   'Personal Information',
@@ -66,10 +67,9 @@ export default function MentoringForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] flex flex-col items-center justify-center p-4">
-      <header className="w-full text-center mb-8">
-        <h1 className="text-4xl font-bold text-primary">Vidya Sangam</h1>
-      </header>
+    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
+      <NavBar/>
+      <div className="w-full text-center mb-8 flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
         <CardHeader>
           <CardTitle className="text-2xl font-bold text-center">Mentor Mentee Program Application</CardTitle>
@@ -97,6 +97,7 @@ export default function MentoringForm() {
           )}
         </CardFooter>
       </Card>
+    </div>
     </div>
   );
 }

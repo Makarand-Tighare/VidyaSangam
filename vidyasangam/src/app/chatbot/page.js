@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Moon, Sun } from 'lucide-react';
+import { Send, Moon, Sun, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { useRouter } from 'next/navigation';
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
@@ -12,6 +13,7 @@ export default function Chatbot() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const router = useRouter();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -83,11 +85,24 @@ export default function Chatbot() {
           : 'bg-gradient-to-r from-[#d1e8ff] via-[#e0f1ff] to-[#eaf6ff]'
       }`}>
         <div className="container mx-auto flex justify-between items-center">
+          <button
+            onClick={() => router.push('/')} // Back button to the '/' route
+            className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 ${
+              isDarkMode 
+                ? 'hover:bg-gray-700 focus:ring-gray-600' 
+                : 'hover:bg-[#c4e0ff] focus:ring-[#a0d6f1]'
+            }`}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+
           <div className="flex-grow text-center">
             <h1 className={`text-3xl font-bold tracking-wide ${
               isDarkMode ? 'text-white' : 'text-[#2c5282]'
             }`}>VidyaSangam Chatbot</h1>
           </div>
+
           <button
             onClick={toggleDarkMode}
             className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 ${

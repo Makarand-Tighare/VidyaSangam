@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
+import NavBar from '../components/navBar'
+
 export default function Profile() {
   const [formData, setFormData] = useState({
     registrationNumber: '',
@@ -99,8 +101,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-center mb-8">Vidya Sangam</h1>
+    <div className="container mx-auto px-4 py-2">
+      <NavBar />
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
