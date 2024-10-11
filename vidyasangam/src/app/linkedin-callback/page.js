@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 function LinkedInCallback() {
@@ -50,4 +50,10 @@ function LinkedInCallback() {
   );
 }
 
-export default LinkedInCallback;
+export default function SuspenseLinkedInCallback() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LinkedInCallback />
+    </Suspense>
+  );
+}

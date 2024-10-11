@@ -66,7 +66,7 @@ export default function MentoringForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] flex flex-col items-center justify-center p-4">
       <header className="w-full text-center mb-8">
         <h1 className="text-4xl font-bold text-primary">Vidya Sangam</h1>
       </header>

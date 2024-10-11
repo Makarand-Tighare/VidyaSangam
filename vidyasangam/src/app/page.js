@@ -26,7 +26,7 @@ export default function Home() {
       <PostForm /> */}
       {/* Header Section */}
       <div className="py-5 mt-20">
-        <p className="text-[#946f43] text-4xl text-center font-semibold font-comfortaa pt-5">
+        <p className="text-[#1e3a8a] text-4xl text-center font-semibold font-comfortaa pt-5">
           VidyaSangam Mentor-Mentee Platform
         </p>
         <p className="text-center font-roboto mt-1">
@@ -37,7 +37,7 @@ export default function Home() {
 
       {/* Vision Section */}
       <div>
-        <p className="text-[#946f43] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
+        <p className="text-[#1e3a8a] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
           Vision of the Platform
         </p>
         <p className="text-center font-roboto">
@@ -49,7 +49,7 @@ export default function Home() {
 
       {/* Features Section */}
       <div className="mt-12">
-        <p className="text-[#946f43] text-3xl text-center font-bold font-comfortaa">
+        <p className="text-[#1e3a8a] text-3xl text-center font-bold font-comfortaa">
           Key Features of VidyaSangam
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-10 px-5">
@@ -190,7 +190,7 @@ export default function Home() {
 
       {/* Testimonials Section */}
       <div>
-        <p className="text-[#946f43] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
+        <p className="text-[#1e3a8a] text-2xl text-center font-semibold font-comfortaa pt-[50px]">
           Testimonials
         </p>
         <div className="mt-5">
@@ -200,7 +200,7 @@ export default function Home() {
 
       {/* Contact Us */}
       <div className="text-center pb-32 mt-18">
-        <p className="text-[#946f43] text-4xl text-center font-semibold font-comfortaa pt-[50px]">
+        <p className="text-[#1e3a8a] text-4xl text-center font-semibold font-comfortaa pt-[50px]">
           Get in Touch
         </p>
         <p className="mt-10 font-josefinSans text-2xl">
@@ -240,7 +240,7 @@ export default function Home() {
           </a>
         </div>
 
-        <p className="text-[#946f43] text-3xl text-center font-semibold font-comfortaa pt-10">
+        <p className="text-[#1e3a8a] text-3xl text-center font-semibold font-comfortaa pt-10">
           VidyaSangam
         </p>
         <p className="font-josefinSans">Department of Computer Technology</p>
@@ -249,7 +249,7 @@ export default function Home() {
         </p>
         <a
           href="mailto:VidyaSangam.edu@gmail.com"
-          className="text-[#946f43] font-comfortaa "
+          className="text-[#1e3a8a] font-comfortaa "
         >
           VidyaSangam.edu@gmail.com
         </a>

@@ -32,7 +32,7 @@ export default function SessionManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <Card>
           <CardHeader>

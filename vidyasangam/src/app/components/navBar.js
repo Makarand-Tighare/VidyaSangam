@@ -16,8 +16,12 @@ const NavBar = () => {
     window.location.href = '/login'; // Update this path if your login page is different
   };
 
+  const closeMenu = () => {
+    setIsOpen(false); // Close the mobile menu after clicking a link
+  };
+
   return (
-    <nav className="flex justify-between items-center py-4 bg-transparent text-[#946f43] mx-6 md:mx-12 relative">
+    <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative">
       {/* Logo */}
       <div className="flex items-center">
         <p className="text-2xl font-semibold font-comfortaa">Vidya Sangam</p>
@@ -25,24 +29,24 @@ const NavBar = () => {
 
       {/* Desktop Menu */}
       <div className="hidden md:flex space-x-6">
-        <Link href="/" className="relative group">
+        <Link href="/" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Home</span>
         </Link>
-        <Link href="/mentoring-form" className="relative group">
+        <Link href="/mentoring-form" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Be a Part</span>
         </Link>
-        <Link href="/mentees" className="relative group">
-          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Mentees</span>
-        </Link>
-        <Link href="/sessions" className="relative group">
+        <Link href="/sessions" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Sessions</span>
         </Link>
-        <Link href="/chatbot" className="relative group">
+        <Link href="/chatbot" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Chatbot</span>
+        </Link>
+        <Link href="/leaderboard" onClick={closeMenu} className="relative group">
+          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Leaderboard</span>
         </Link>
         {/* Conditional Rendering for Login/Profile */}
         {isLoggedIn ? (
-          <Link href="/profile" className="relative group">
+          <Link href="/profile" onClick={closeMenu} className="relative group">
             <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">Profile</span>
           </Link>
         ) : (
@@ -85,24 +89,24 @@ const NavBar = () => {
       {isOpen && (
         <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-10 md:hidden">
           <div className="flex flex-col space-y-2 py-2">
-            <Link href="/" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+            <Link href="/" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Home
             </Link>
-            <Link href="/mentoring-form" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+            <Link href="/mentoring-form" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Be a Part
             </Link>
-            <Link href="/mentees" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+            <Link href="/mentees" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Mentees
             </Link>
-            <Link href="/sessions" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+            <Link href="/sessions" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Sessions
             </Link>
-            <Link href="/resources" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+            <Link href="/resources" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
               Resources
             </Link>
             {/* Conditional Rendering for Mobile Menu Login/Profile */}
             {isLoggedIn ? (
-              <Link href="/profile" className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+              <Link href="/profile" onClick={closeMenu} className="block text-center hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
                 Profile
               </Link>
             ) : (

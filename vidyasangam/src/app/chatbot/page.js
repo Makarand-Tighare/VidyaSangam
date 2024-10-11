@@ -6,7 +6,7 @@ import ReactMarkdown from 'react-markdown';
 
 export default function Chatbot() {
   const [messages, setMessages] = useState([
-    { role: "system", content: "Welcome to VidyaSangam! How can I assist you today?" }
+    { role: "bot", content: "Welcome to VidyaSangam! How can I assist you today?" }
   ]);
   const [input, setInput] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -22,7 +22,6 @@ export default function Chatbot() {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
-    // Add the user's message to the state
     const userMessage = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
@@ -30,24 +29,22 @@ export default function Chatbot() {
     setLoading(true);
 
     try {
-      // Send the messages array to the API
       const response = await fetch('/api/openaiChatbot', { 
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: newMessages }), // Send all messages to maintain context
+        body: JSON.stringify({ messages: newMessages }),
       });
 
       const data = await response.json();
       console.log("Bot response data:", data);
 
       if (response.ok) {
-        // Replace single newlines with double newlines or add two spaces before newlines
         const formattedText = data.response.replace(/\n/g, "  \n");
         setMessages((prevMessages) => [
           ...prevMessages,
-          { role: "bot", content: formattedText }, // Update to match new structure
+          { role: "bot", content: formattedText },
         ]);
       } else {
         setMessages((prevMessages) => [
@@ -75,21 +72,35 @@ export default function Chatbot() {
   };
 
   return (
-    <div className={`flex flex-col h-screen ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% to-white'}`}>
-      <header className={`p-4 shadow-md ${isDarkMode ? 'bg-gray-800' : 'bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30%'}`}>
+    <div className={`flex flex-col h-screen ${
+      isDarkMode 
+        ? 'bg-gray-900 text-white' 
+        : 'bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] text-gray-800'
+    }`}>
+      <header className={`p-4 shadow-md ${
+        isDarkMode 
+          ? 'bg-gray-800' 
+          : 'bg-gradient-to-r from-[#d1e8ff] via-[#e0f1ff] to-[#eaf6ff]'
+      }`}>
         <div className="container mx-auto flex justify-between items-center">
           <div className="flex-grow text-center">
-            <h1 className="text-3xl font-bold text-[#946f43] tracking-wide">VidyaSangam Chatbot</h1>
+            <h1 className={`text-3xl font-bold tracking-wide ${
+              isDarkMode ? 'text-white' : 'text-[#2c5282]'
+            }`}>VidyaSangam Chatbot</h1>
           </div>
           <button
             onClick={toggleDarkMode}
-            className="p-2 rounded-full hover:bg-violet-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-violet-300"
+            className={`p-2 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 ${
+              isDarkMode 
+                ? 'hover:bg-gray-700 focus:ring-gray-600' 
+                : 'hover:bg-[#c4e0ff] focus:ring-[#a0d6f1]'
+            }`}
             aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {isDarkMode ? (
               <Sun className="w-6 h-6 text-yellow-400" />
             ) : (
-              <Moon className="w-6 h-6 text-violet-700" />
+              <Moon className="w-6 h-6 text-[#2c5282]" />
             )}
           </button>
         </div>
@@ -108,8 +119,8 @@ export default function Chatbot() {
                     ? "bg-gray-700 text-white"
                     : "bg-white text-gray-800"
                   : isDarkMode
-                  ? "bg-violet-700 text-white"
-                  : "bg-violet-500 text-white"
+                  ? "bg-[#4a72a5] text-white"
+                  : "bg-[#6cb2eb] text-white"
               } ${msg.role === "bot" ? "rounded-tl-none" : "rounded-tr-none"}`}
             >
               {renderMessageText(msg)}
@@ -118,7 +129,9 @@ export default function Chatbot() {
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className={`max-w-[80%] px-4 py-2 rounded-lg bg-gray-200 text-gray-800`}>
+            <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
+              isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'
+            }`}>
               Typing...
             </div>
           </div>
@@ -137,16 +150,16 @@ export default function Chatbot() {
             className={`flex-1 p-3 rounded-l-lg border ${
               isDarkMode
                 ? "bg-gray-700 text-white border-gray-600"
-                : "bg-white text-gray-800 border-gray-300"
-            } focus:outline-none focus:ring-2 focus:ring-violet-300 transition-all duration-300`}
+                : "bg-white text-gray-800 border-[#a0d6f1]"
+            } focus:outline-none focus:ring-2 focus:ring-[#6cb2eb] transition-all duration-300`}
           />
           <button
             onClick={handleSendMessage}
             className={`${
               isDarkMode
-                ? "bg-violet-700 hover:bg-violet-800"
-                : "bg-violet-500 hover:bg-violet-600"
-            } text-white p-3 rounded-r-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-violet-300`}
+                ? "bg-[#4a72a5] hover:bg-[#3a5a84]"
+                : "bg-[#6cb2eb] hover:bg-[#5a9fd9]"
+            } text-white p-3 rounded-r-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#6cb2eb]`}
             aria-label="Send message"
           >
             <Send className="w-6 h-6" />
