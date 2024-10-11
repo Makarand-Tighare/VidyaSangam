@@ -72,7 +72,7 @@ export default function MentoringForm() {
       <div className="flex flex-col items-center justify-center p-4">
       <Card className="w-full max-w-4xl">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">Mentor Mentee Program Application</CardTitle>
+          <CardTitle className="text-2xl font-bold text-center mb-4">Mentor Mentee Program Application</CardTitle>
           <ProgressBar progress={progress} />
         </CardHeader>
         <CardContent>
