@@ -42,7 +42,8 @@ export default function RegisterPage() {
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/send-otp/",
-        { email }
+        { email },
+        { withCredentials: true }
       );
       if (response.status === 200) {
         setOtpSent(true);

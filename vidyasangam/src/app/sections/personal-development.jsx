@@ -46,9 +46,9 @@ export function PersonalDevelopment({ data, updateData }) {
             <SelectValue placeholder="Select learning style" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="handsOn">Hands-on guidance</SelectItem>
-            <SelectItem value="projectBased">Project-based learning</SelectItem>
-            <SelectItem value="discussionOriented">Discussion-oriented</SelectItem>
+            <SelectItem value="Hands_on">Hands-on guidance</SelectItem>
+            <SelectItem value="Project_based">Project-based learning</SelectItem>
+            <SelectItem value="Discuss_oriented">Discussion-oriented</SelectItem>
           </SelectContent>
         </Select>
       </div>

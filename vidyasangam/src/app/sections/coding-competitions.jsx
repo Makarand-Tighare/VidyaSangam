@@ -49,9 +49,9 @@ export function CodingCompetitions({ data, updateData }) {
                   <SelectValue placeholder="Select level" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="international">International</SelectItem>
-                  <SelectItem value="national">National</SelectItem>
-                  <SelectItem value="college">College</SelectItem>
+                  <SelectItem value="International">International</SelectItem>
+                  <SelectItem value="National">National</SelectItem>
+                  <SelectItem value="College">College</SelectItem>
                 </SelectContent>
               </Select>
             </div>

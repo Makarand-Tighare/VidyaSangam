@@ -1,9 +1,9 @@
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function MentoringPreferences({ data, updateData }) {
+export function MentoringPreferences({ data, updateData, errors }) {
   const handleChange = (name, value) => {
     updateData({ [name]: value });
   };
@@ -11,20 +11,22 @@ export function MentoringPreferences({ data, updateData }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label>Mentoring Preferences</Label>
-        <RadioGroup 
+        <Label htmlFor="mentoringPreference">Mentoring Preferences</Label>
+        <Select
           onValueChange={(value) => handleChange('mentoringPreference', value)}
           value={data?.mentoringPreference || ''}
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mentor" id="mentor" />
-            <Label htmlFor="mentor">Mentor</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="mentee" id="mentee" />
-            <Label htmlFor="mentee">Mentee</Label>
-          </div>
-        </RadioGroup>
+          <SelectTrigger id="mentoringPreference">
+            <SelectValue placeholder="Select your preference" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="mentor">Mentor</SelectItem>
+            <SelectItem value="mentee">Mentee</SelectItem>
+          </SelectContent>
+        </Select>
+        {errors?.mentoringPreference && (
+          <p className="text-sm text-red-500">{errors.mentoringPreference}</p>
+        )}
       </div>
 
       <div className="space-y-2">

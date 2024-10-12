@@ -16,7 +16,7 @@ export function AcademicPerformance({ data, updateData }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="cgpa">CGPA (Last Semester)</Label>
+        <Label htmlFor="cgpa">CGPA</Label>
         <Input 
           id="cgpa" 
           type="number" 
@@ -29,7 +29,7 @@ export function AcademicPerformance({ data, updateData }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="sgpa">SGPA (Last Semester)</Label>
+        <Label htmlFor="sgpa">SGPA</Label>
         <Input 
           id="sgpa" 
           type="number" 

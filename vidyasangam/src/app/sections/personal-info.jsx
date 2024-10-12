@@ -61,11 +61,11 @@ export function PersonalInfo({ data, updateData }) {
             <SelectValue placeholder="Select branch" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="cs">Computer Science</SelectItem>
-            <SelectItem value="it">Information Technology</SelectItem>
-            <SelectItem value="ece">Electronics and Communication</SelectItem>
+            <SelectItem value="ct">Computer Technology</SelectItem>
+            <SelectItem value="aids">Artificial Intelligence and Data Science</SelectItem>
+            {/* <SelectItem value="ece">Electronics and Communication</SelectItem>
             <SelectItem value="ee">Electrical Engineering</SelectItem>
-            <SelectItem value="me">Mechanical Engineering</SelectItem>
+            <SelectItem value="me">Mechanical Engineering</SelectItem> */}
           </SelectContent>
         </Select>
       </div>
