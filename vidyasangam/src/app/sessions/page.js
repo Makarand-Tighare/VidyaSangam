@@ -1,36 +1,48 @@
-'use client'
+// pages/sessions/page.js
 
-import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import NavBar from '../components/navBar'
+'use client';
+
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import NavBar from '../components/navBar';
+import { createMeet } from './createmeet'; // Import the createMeet function
 
 export default function SessionManagement() {
-  const [sessions, setSessions] = useState([])
-  const [sessionType, setSessionType] = useState('virtual')
+  const [sessions, setSessions] = useState([]);
+  const [sessionType, setSessionType] = useState('virtual');
+
+  const handleCreateMeet = async () => {
+    try {
+      const meetData = await createMeet(); // Call the createMeet function
+      alert(`Google Meet created: ${meetData.link}`); 
+    } catch (error) {
+      console.error('Failed to create meet:', error);
+    }
+  };
 
   const createSession = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     const newSession = {
       type: sessionType,
       date: new Date().toLocaleString(),
       summary: 'Generating summary...'
-    }
-    setSessions([newSession, ...sessions])
+    };
+    setSessions([newSession, ...sessions]);
 
     // Simulate AI summary generation
     setTimeout(() => {
       setSessions(prevSessions => {
-        const updatedSessions = [...prevSessions]
+        const updatedSessions = [...prevSessions];
         updatedSessions[0] = {
           ...updatedSessions[0],
           summary: `This was a ${sessionType} session. The main topics discussed were project updates, resource allocation, and upcoming deadlines. Action items were assigned to team members with specific timelines.`
-        }
-        return updatedSessions
-      })
-    }, 3000)
-  }
+        };
+        return updatedSessions;
+      });
+    }, 3000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
@@ -58,6 +70,9 @@ export default function SessionManagement() {
               </div>
               <Button type="submit" className="w-full">
                 Create Session
+              </Button>
+              <Button onClick={handleCreateMeet} className="w-full mt-4">
+                Create Google Meet
               </Button>
             </form>
           </CardContent>
@@ -92,5 +107,5 @@ export default function SessionManagement() {
         </Card>
       </div>
     </div>
-  )
+  );
 }
