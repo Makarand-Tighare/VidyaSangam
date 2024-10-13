@@ -251,7 +251,7 @@ export default function Home() {
           href="mailto:VidyaSangam.edu@gmail.com"
           className="text-[#1e3a8a] font-comfortaa "
         >
-          VidyaSangam.edu@gmail.com
+          vidyasangam.edu@gmail.com
         </a>
       </div>
     </div>
