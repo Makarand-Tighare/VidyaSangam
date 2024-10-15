@@ -136,11 +136,11 @@ def create_meet():
         'summary': 'Test Meeting',
         'description': 'A test meeting for Google Meet',
         'start': {
-            'dateTime': '2024-10-13T10:00:00Z',
+            'dateTime': '2024-10-15T10:00:00Z',
             'timeZone': 'UTC',
         },
         'end': {
-            'dateTime': '2024-10-13T11:00:00Z',
+            'dateTime': '2024-10-15T11:00:00Z',
             'timeZone': 'UTC',
         },
         'conferenceData': {
