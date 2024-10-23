@@ -5,9 +5,9 @@ import { Send, Moon, Sun, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { useRouter } from 'next/navigation';
 
-export default function Chatbot() {
+export default function Chatassistant() {
   const [messages, setMessages] = useState([
-    { role: "bot", content: "Welcome to VidyaSangam! How can I assist you today?" }
+    { role: "assistant", content: "Welcome to VidyaSangam! How can I assist you today?" }
   ]);
   const [input, setInput] = useState("");
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -15,11 +15,11 @@ export default function Chatbot() {
   const messagesEndRef = useRef(null);
   const router = useRouter();
 
-  const scrollToBottom = () => {
+  const scrollToassistanttom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToassistanttom, [messages]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -40,25 +40,25 @@ export default function Chatbot() {
       });
 
       const data = await response.json();
-      console.log("Bot response data:", data);
+      console.log("assistant response data:", data);
 
       if (response.ok) {
         const formattedText = data.response.replace(/\n/g, "  \n");
         setMessages((prevMessages) => [
           ...prevMessages,
-          { role: "bot", content: formattedText },
+          { role: "assistant", content: formattedText },
         ]);
       } else {
         setMessages((prevMessages) => [
           ...prevMessages,
-          { role: "bot", content: "Sorry, I couldn't process that." },
+          { role: "assistant", content: "Sorry, I couldn't process that." },
         ]);
       }
     } catch (error) {
       console.error(error);
       setMessages((prevMessages) => [
         ...prevMessages,
-        { role: "bot", content: "Sorry, there was an error." },
+        { role: "assistant", content: "Sorry, there was an error." },
       ]);
     } finally {
       setLoading(false);
@@ -100,7 +100,7 @@ export default function Chatbot() {
           <div className="flex-grow text-center">
             <h1 className={`text-3xl font-bold tracking-wide ${
               isDarkMode ? 'text-white' : 'text-[#2c5282]'
-            }`}>VidyaSangam Chatbot</h1>
+            }`}>Vidya Sangam Chatbot</h1>
           </div>
 
           <button
@@ -125,18 +125,18 @@ export default function Chatbot() {
         {messages.map((msg, idx) => (
           <div
             key={idx}
-            className={`flex ${msg.role === "bot" ? "justify-start" : "justify-end"} animate-fadeIn`}
+            className={`flex ${msg.role === "assistant" ? "justify-start" : "justify-end"} animate-fadeIn`}
           >
             <div
               className={`max-w-[80%] px-4 py-2 rounded-lg shadow-md transition-all duration-300 ${
-                msg.role === "bot"
+                msg.role === "assistant"
                   ? isDarkMode
                     ? "bg-gray-700 text-white"
                     : "bg-white text-gray-800"
                   : isDarkMode
                   ? "bg-[#4a72a5] text-white"
                   : "bg-[#6cb2eb] text-white"
-              } ${msg.role === "bot" ? "rounded-tl-none" : "rounded-tr-none"}`}
+              } ${msg.role === "assistant" ? "rounded-tl-none" : "rounded-tr-none"}`}
             >
               {renderMessageText(msg)}
             </div>
