@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation"; // Import useRouter from next/navigation
 import Link from "next/link";
@@ -10,14 +10,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-
 import NavBar from "../components/navBar";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter(); // Initialize router
+
+  useEffect(() => {
+    // If the user is already logged in, redirect them to the home page
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      router.push("/"); // Redirect to homepage if already logged in
+    }
+  }, [router]);
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -33,14 +41,15 @@ export default function LoginPage() {
       if (response.status === 200) {
         const { token } = response.data; 
         localStorage.setItem("authToken", token["access"]);
-        alert("Login Successful!");
+        localStorage.setItem("isLoggedIn", "true"); // Track logged in status
+        setErrorMessage(""); // Clear any previous error messages
         router.push("/"); // Navigate to the homepage
       } else {
-        alert("Invalid credentials");
+        setErrorMessage("Invalid credentials, please try again.");
       }
     } catch (error) {
       console.error("Login error", error);
-      alert("Login failed. Please try again.");
+      setErrorMessage("Login failed. Please check your credentials and try again.");
     }
   };
 
@@ -86,6 +95,9 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
+                {errorMessage && (
+                  <div className="text-red-500 text-sm">{errorMessage}</div>
+                )}
               </div>
               <Button type="submit" className="w-full mt-4">Login</Button>
             </form>

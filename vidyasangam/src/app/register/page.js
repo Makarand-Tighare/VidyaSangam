@@ -109,7 +109,7 @@ export default function RegisterPage() {
 
       if (response.status === 201) {
         alert("Registration Successful!");
-        router.push("/");
+        router.push("/login");
       } else {
         alert(response.data.message || "Registration failed");
       }
@@ -162,17 +162,17 @@ export default function RegisterPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                   />
-                  <Button
+                  {/* <Button
                     type="button"
                     onClick={handleSendOTP}
                     disabled={otpSent || loading}
                     className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
                   >
                     {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
-              {otpSent && (
+              {/* {otpSent && (
                 <div className="space-y-2">
                   <Label htmlFor="otp">OTP</Label>
                   <Input
@@ -190,7 +190,7 @@ export default function RegisterPage() {
                     Verify OTP
                   </Button>
                 </div>
-              )}
+              )} */}
               <div className="space-y-2">
                 <Label htmlFor="regNo">Registration Number</Label>
                 <Input
@@ -273,7 +273,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                disabled={!otpVerified}
+                // disabled={!otpVerified}
               >
                 Register
               </Button>
