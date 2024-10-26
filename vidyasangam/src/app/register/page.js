@@ -58,20 +58,7 @@ export default function RegisterPage() {
   const validateField = async (name, value) => {
     let error = "";
     switch (name) {
-      case "email":
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-          error = "Invalid email address";
-        } else {
-          try {
-            const response = await axios.post("http://127.0.0.1:8000/api/user/check-email/", { email: value });
-            if (response.data.exists) {
-              error = "This email is already registered";
-            }
-          } catch (err) {
-            console.error("Error checking email:", err);
-          }
-        }
-        break;
+      
       case "password":
         if (value.length < 8) {
           error = "Password must be at least 8 characters long";
@@ -85,25 +72,9 @@ export default function RegisterPage() {
           error = "Password must contain at least one special character (!@#$%^&*)";
         }
         break;
-      case "confirmPassword":
-        error = value !== formData.password ? "Passwords do not match" : "";
-        break;
+      
       case "mobileNumber":
         error = !/^\d{10}$/.test(value) ? "Invalid mobile number" : "";
-        break;
-      case "registrationNumber":
-        if (value.trim() === "") {
-          error = "Registration number is required";
-        } else {
-          try {
-            const response = await axios.post("http://127.0.0.1:8000/api/user/check-registration/", { reg_no: value });
-            if (response.data.exists) {
-              error = "This registration number is already registered";
-            }
-          } catch (err) {
-            console.error("Error checking registration number:", err);
-          }
-        }
         break;
       default:
         error = value.trim() === "" ? "This field is required" : "";
@@ -207,7 +178,7 @@ export default function RegisterPage() {
 
       if (response.status === 201) {
         alert("Registration Successful!");
-        router.push("/");
+        router.push("/login");
       } else {
         alert(response.data.message || "Registration failed");
       }
@@ -397,18 +368,6 @@ export default function RegisterPage() {
                     Password Strength: {passwordStrength}
                   </p>
                 )}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                />
-                {errors.confirmPassword && <p className="text-red-500 text-xs">{errors.confirmPassword}</p>}
               </div>
               <Button
                 type="submit"
