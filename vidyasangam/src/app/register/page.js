@@ -37,6 +37,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
   const handleSendOTP = async () => {
     setLoading(true);
     try {
@@ -63,7 +64,8 @@ export default function RegisterPage() {
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/verify-otp/",
-        { email, otp }
+        { email, otp },
+        { withCredentials: true }
       );
       if (response.status === 200) {
         setOtpVerified(true);
@@ -74,14 +76,14 @@ export default function RegisterPage() {
     } catch (error) {
       console.error("Error verifying OTP:", error);
       if (error.response) {
-        console.error("Server response:", error.response.data); // This may contain useful info
+        console.error("Server response:", error.response.data);
         alert(`Error: ${JSON.stringify(error.response.data, null, 2)}`);
       } else {
         alert("Error verifying OTP");
       }
     }
-    
   };
+
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -123,173 +125,173 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
       <NavBar />
       <div className="flex items-center justify-center min-h-screen p-4">
-      <Card className="w-full max-w-lg border border-gray-300 shadow-lg rounded-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">
-            Register
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleRegister}>
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+        <Card className="w-full max-w-lg border border-gray-300 shadow-lg rounded-md">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">
+              Register
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="email">Email</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSendOTP}
+                      disabled={otpSent || loading}
+                      className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
+                    >
+                      {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
+                    </Button>
+                  </div>
+                </div>
+                {otpSent && (
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">OTP</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleVerifyOTP}
+                      className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                    >
+                      Verify OTP
+                    </Button>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="regNo">Registration Number</Label>
                   <Input
-                    id="firstName"
+                    id="regNo"
                     required
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    value={registrationNumber}
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Year</Label>
+                    <Select onValueChange={setYear}>
+                      <SelectTrigger id="year">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1st Year</SelectItem>
+                        <SelectItem value="2">2nd Year</SelectItem>
+                        <SelectItem value="3">3rd Year</SelectItem>
+                        <SelectItem value="4">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semester</Label>
+                    <Select onValueChange={setSemester}>
+                      <SelectTrigger id="semester">
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                          <SelectItem key={sem} value={sem.toString()}>
+                            {sem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="section">Section</Label>
+                  <Input
+                    id="section"
+                    required
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="mobile">Mobile Number</Label>
                   <Input
-                    id="lastName"
+                    id="mobile"
+                    type="tel"
                     required
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
                   />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="flex space-x-2">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    id="password"
+                    type="password"
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
-                  <Button
-                    type="button"
-                    onClick={handleSendOTP}
-                    disabled={otpSent || loading}
-                    className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
-                  >
-                    {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
-                  </Button>
                 </div>
-              </div>
-              {otpSent && (
                 <div className="space-y-2">
-                  <Label htmlFor="otp">OTP</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <Input
-                    id="otp"
-                    type="text"
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
+                    id="confirmPassword"
+                    type="password"
                     required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
-                  <Button
-                    type="button"
-                    onClick={handleVerifyOTP}
-                    className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                  >
-                    Verify OTP
-                  </Button>
                 </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="regNo">Registration Number</Label>
-                <Input
-                  id="regNo"
-                  required
-                  value={registrationNumber}
-                  onChange={(e) => setRegistrationNumber(e.target.value)}
-                />
+                <Button
+                  type="submit"
+                  className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                  disabled={!otpVerified}
+                >
+                  Register
+                </Button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="year">Year</Label>
-                  <Select onValueChange={setYear}>
-                    <SelectTrigger id="year">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1st Year</SelectItem>
-                      <SelectItem value="2">2nd Year</SelectItem>
-                      <SelectItem value="3">3rd Year</SelectItem>
-                      <SelectItem value="4">4th Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="semester">Semester</Label>
-                  <Select onValueChange={setSemester}>
-                    <SelectTrigger id="semester">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                        <SelectItem key={sem} value={sem.toString()}>
-                          {sem}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="section">Section</Label>
-                <Input
-                  id="section"
-                  required
-                  value={section}
-                  onChange={(e) => setSection(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <Input
-                  id="mobile"
-                  type="tel"
-                  required
-                  value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                />
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                disabled={!otpVerified}
-              >
-                Register
-              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <div className="text-sm text-[#3a3a3a]">
+              Already have an account?{" "}
+              <Link href="/login" className="text-blue-600 hover:underline">
+                Login here
+              </Link>
             </div>
-          </form>
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <div className="text-sm text-[#3a3a3a]">
-            Already have an account?{" "}
-            <Link href="/login" className="text-blue-600 hover:underline">
-              Login here
-            </Link>
-          </div>
-        </CardFooter>
-      </Card>
-    </div>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
