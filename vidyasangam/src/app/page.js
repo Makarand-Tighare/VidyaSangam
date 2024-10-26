@@ -22,8 +22,8 @@ export default function Home() {
     <div className="overflow-x-hidden p-2">
       {/* Navigation Bar */}
       <NavBar />
-      {/* <LinkedInButton /> 
-      <PostForm /> */}
+      <LinkedInButton /> 
+      <PostForm />
       {/* Header Section */}
       <div className="py-5 mt-20">
         <p className="text-[#1e3a8a] text-4xl text-center font-semibold font-comfortaa pt-5">
