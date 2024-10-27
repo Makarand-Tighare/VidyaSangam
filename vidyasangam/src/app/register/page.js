@@ -111,7 +111,7 @@ export default function RegisterPage() {
         setPasswordStrength("");
     }
   };
-
+  
   const handleSendOTP = async () => {
     if (errors.email) return;
     setLoading(true);
@@ -139,7 +139,11 @@ export default function RegisterPage() {
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/verify-otp/",
+<<<<<<< HEAD
+        { email, otp },
+=======
         { email: formData.email, otp: formData.otp },
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
         { withCredentials: true }
       );
       if (response.status === 200) {
@@ -151,9 +155,19 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
+<<<<<<< HEAD
+      if (error.response) {
+        console.error("Server response:", error.response.data);
+        alert(`Error: ${JSON.stringify(error.response.data, null, 2)}`);
+      } else {
+        alert("Error verifying OTP");
+      }
+=======
       setErrors((prev) => ({ ...prev, otpVerified: "Error verifying OTP" }));
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
     }
   };
+
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -194,45 +208,177 @@ export default function RegisterPage() {
       <div className="flex items-center justify-center min-h-screen p-4">
         <Card className="w-full max-w-lg border border-gray-300 shadow-lg rounded-md">
           <CardHeader>
+<<<<<<< HEAD
+            <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">
+              Register
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleRegister}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                    />
+                  </div>
+                </div>
+=======
             <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">Register</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                 <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
+                  <Label htmlFor="email">Email</Label>
+                  <div className="flex space-x-2">
+                    <Input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleSendOTP}
+                      disabled={otpSent || loading}
+                      className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
+                    >
+                      {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
+                    </Button>
+                  </div>
+                </div>
+                {otpSent && (
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">OTP</Label>
+                    <Input
+                      id="otp"
+                      type="text"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      onClick={handleVerifyOTP}
+                      className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                    >
+                      Verify OTP
+                    </Button>
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="regNo">Registration Number</Label>
                   <Input
+<<<<<<< HEAD
+                    id="regNo"
+                    required
+                    value={registrationNumber}
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="year">Year</Label>
+                    <Select onValueChange={setYear}>
+                      <SelectTrigger id="year">
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1st Year</SelectItem>
+                        <SelectItem value="2">2nd Year</SelectItem>
+                        <SelectItem value="3">3rd Year</SelectItem>
+                        <SelectItem value="4">4th Year</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="semester">Semester</Label>
+                    <Select onValueChange={setSemester}>
+                      <SelectTrigger id="semester">
+                        <SelectValue placeholder="Select semester" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                          <SelectItem key={sem} value={sem.toString()}>
+                            {sem}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="section">Section</Label>
+                  <Input
+                    id="section"
+                    required
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
+=======
                     id="firstName"
                     name="firstName"
                     required
                     value={formData.firstName}
                     onChange={handleChange}
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                   />
                   {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
+                  <Label htmlFor="mobile">Mobile Number</Label>
                   <Input
+<<<<<<< HEAD
+                    id="mobile"
+                    type="tel"
+                    required
+                    value={mobileNumber}
+                    onChange={(e) => setMobileNumber(e.target.value)}
+=======
                     id="lastName"
                     name="lastName"
                     required
                     value={formData.lastName}
                     onChange={handleChange}
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                   />
                   {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="flex space-x-2">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
                   <Input
+<<<<<<< HEAD
+                    id="password"
+                    type="password"
+=======
                     id="email"
                     name="email"
                     type="email"
                     value={formData.email}
                     onChange={handleChange}
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
+<<<<<<< HEAD
+                </div>
+=======
                   <Button
                     type="button"
                     onClick={handleSendOTP}
@@ -245,16 +391,35 @@ export default function RegisterPage() {
                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
               </div>
               {otpSent && !otpVerified && (
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                 <div className="space-y-2">
-                  <Label htmlFor="otp">OTP</Label>
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
                   <Input
+<<<<<<< HEAD
+                    id="confirmPassword"
+                    type="password"
+=======
                     id="otp"
                     name="otp"
                     type="text"
                     value={formData.otp}
                     onChange={handleChange}
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
                     required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
+<<<<<<< HEAD
+                </div>
+                <Button
+                  type="submit"
+                  className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                  disabled={!otpVerified}
+                >
+                  Register
+                </Button>
+              </div>
+=======
                   <Button
                     type="button"
                     onClick={handleVerifyOTP}
@@ -376,6 +541,7 @@ export default function RegisterPage() {
               >
                 Register
               </Button>
+>>>>>>> 869efe5e5d1583fde8bf2e77acd0c04ef335be1a
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">

@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
-// Your main LinkedInCallback component
 function LinkedInCallback() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -18,37 +17,71 @@ function LinkedInCallback() {
   const [countdown, setCountdown] = useState(5);
   const hasFetched = useRef(false);
 
-  useEffect(() => {
-    if (code && state && !hasFetched.current) {
-      console.log('Fetching LinkedIn access token...');
-      hasFetched.current = true;
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) throw new Error('No auth token found');
 
-      fetch('/api/linkedin/callback', {
-        method: 'POST',
+      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code, state }),
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setLoading(false);
-          if (data.accessToken) {
-            console.log('Access Token:', data.accessToken);
-            setSuccess(true);
-          } else {
-            setError(data.error || 'Unknown error occurred');
-          }
-        })
-        .catch((err) => {
-          setLoading(false);
-          setError('Failed to fetch access token: ' + err.message);
-        });
-    } else if (!code || !state) {
-      setLoading(false);
-      setError('Invalid authentication parameters');
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch user data');
+
+      const data = await response.json();
+      return data.email || null; // Return the email address
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
     }
-  }, [code, state]);
+  };
+
+  useEffect(() => {
+    const exchangeAuthorizationCode = async () => {
+      if (code && state) {
+        try {
+          // Fetch the user's email before sending the LinkedIn authorization request
+          const email = await fetchUserData();
+          if (!email) {
+            setError('User email not found.');
+            setLoading(false);
+            return;
+          }
+
+          const response = await fetch('http://127.0.0.1:8000/api/user/linkedin-auth/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              authorization_code: code,
+              state: state,
+              email: email, // Include the email in the request body
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.status === 200) {
+            setLoading(false);
+            setSuccess(true);
+            router.push('/profile'); // Navigate to the homepage
+          } else {
+            setError(data.error || 'An error occurred while processing your request.');
+          }
+        } catch (err) {
+          setError('Failed to connect to the server.');
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    exchangeAuthorizationCode();
+  }, [code, state, router]);
 
   useEffect(() => {
     let timer;
