@@ -14,12 +14,14 @@ import Workshops from "./images/workshops.jpg";
 import Roadmap from "./images/roadmap.jpg";
 import MeetingSummarization from "./images/meetingSummarization.jpg";
 import AutoLinkedin from "./images/autoLinkedin.jpg";
+import LinkedInButton from "./components/linkedinButton";
 
 export default function Home() {
   return (
     <div className="overflow-x-hidden p-2">
       {/* Navigation Bar */}
       <NavBar />
+      {/* <LinkedInButton /> */}
       {/* Header Section */}
       <div className="py-5 mt-20">
         <p className="text-[#1e3a8a] text-4xl text-center font-semibold font-comfortaa pt-5">
