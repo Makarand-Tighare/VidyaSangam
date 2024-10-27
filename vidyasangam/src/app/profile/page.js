@@ -113,10 +113,10 @@ export default function Profile() {
             <CardTitle>Profile Picture</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center">
-            <Avatar className="w-32 h-32 mb-4">
-              <AvatarImage src="http://bootdey.com/img/Content/avatar/avatar1.png" alt="Profile" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
+          <Avatar className="w-32 h-32 mb-4">
+        <AvatarImage src="https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380" alt="Profile" />
+        <AvatarFallback>PP</AvatarFallback>
+      </Avatar>
             <p className="text-sm text-muted-foreground mb-4">JPG or PNG no larger than 5 MB</p>
             <Button>Upload new image</Button>
             <br />

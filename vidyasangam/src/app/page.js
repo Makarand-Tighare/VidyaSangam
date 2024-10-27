@@ -8,8 +8,8 @@ import Linkedin from "./images/linkedin.png";
 import Twitter from "./images/x.png";
 import Instagram from "./images/insta.png";
 
-import MentorMentee from "./images/mentorMentee.jpg";
-import Leaderboard from "./images/leaderboard.png";
+import MentorMentee from "./images/mentorMentee.png";
+import Leaderboard from "./images/leaderboard.jpg";
 import Workshops from "./images/workshops.jpg";
 import Roadmap from "./images/roadmap.jpg";
 import MeetingSummarization from "./images/meetingSummarization.jpg";
@@ -54,8 +54,8 @@ export default function Home() {
           {/* Feature 1 */}
           <div className="flex flex-col items-center">
             <div
-              className="bg-[#4f83f8] rounded-full shadow-lg"
-              style={{ width: "100px", height: "100px" }}
+              className="rounded-full"
+              style={{ width: "120px", height: "120px" }}
             >
               <img
                 src={MentorMentee.src}
