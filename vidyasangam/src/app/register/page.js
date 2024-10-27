@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import NavBar from "../components/navBar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import axios from "axios";
+import NavBar from "../components/navBar";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -33,34 +35,19 @@ export default function RegisterPage() {
   const [passwordStrength, setPasswordStrength] = useState("");
   const [isFormValid, setIsFormValid] = useState(false);
 
-  const {
-    email,
-    otp,
-    firstName,
-    lastName,
-    registrationNumber,
-    year,
-    semester,
-    section,
-    mobileNumber,
-    password,
-    confirmPassword,
-  } = formData;
-
   useEffect(() => {
     if (formData.password) {
       checkPasswordStrength(formData.password);
     }
-  }, [formData.password, router]); // Added router to dependency array
+  }, [formData.password]);
 
   useEffect(() => {
-    const isValid =
-      otpVerified &&
-      Object.values(errors).every((error) => error === "") &&
-      Object.values(formData).every((value) => value !== "") &&
-      (passwordStrength === "Strong" || passwordStrength === "Very Strong");
+    const isValid = otpVerified &&
+      Object.values(errors).every(error => error === "") &&
+      Object.values(formData).every(value => value !== "") &&
+      passwordStrength === "Strong" || passwordStrength === "Very Strong";
     setIsFormValid(isValid);
-  }, [formData, errors, otpVerified, passwordStrength, router]); // Added router to dependency array
+  }, [formData, errors, otpVerified, passwordStrength]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,6 +58,7 @@ export default function RegisterPage() {
   const validateField = async (name, value) => {
     let error = "";
     switch (name) {
+      
       case "password":
         if (value.length < 8) {
           error = "Password must be at least 8 characters long";
@@ -84,11 +72,10 @@ export default function RegisterPage() {
           error = "Password must contain at least one special character (!@#$%^&*)";
         }
         break;
-
+      
       case "mobileNumber":
         error = !/^\d{10}$/.test(value) ? "Invalid mobile number" : "";
         break;
-
       default:
         error = value.trim() === "" ? "This field is required" : "";
     }
@@ -152,7 +139,7 @@ export default function RegisterPage() {
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/verify-otp/",
-        { email, otp },
+        { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       );
       if (response.status === 200) {
@@ -164,12 +151,7 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error);
-      if (error.response) {
-        console.error("Server response:", error.response.data);
-        alert(`Error: ${JSON.stringify(error.response.data, null, 2)}`);
-      } else {
-        alert("Error verifying OTP");
-      }
+      setErrors((prev) => ({ ...prev, otpVerified: "Error verifying OTP" }));
     }
   };
 
@@ -191,7 +173,7 @@ export default function RegisterPage() {
         year: formData.year,
         semester: formData.semester,
         password: formData.password,
-        password2: formData.confirmPassword, // Fixed to use confirmPassword
+        password2: formData.password,
       });
 
       if (response.status === 201) {
@@ -215,186 +197,195 @@ export default function RegisterPage() {
             <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">Register</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleRegister}>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      required
-                      value={firstName}
-                      onChange={handleChange}
-                    />
-                    {errors.firstName && <span className="text-red-500">{errors.firstName}</span>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      required
-                      value={lastName}
-                      onChange={handleChange}
-                    />
-                    {errors.lastName && <span className="text-red-500">{errors.lastName}</span>}
-                  </div>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    required
+                    value={formData.firstName}
+                    onChange={handleChange}
+                  />
+                  {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    required
+                    value={formData.lastName}
+                    onChange={handleChange}
+                  />
+                  {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <div className="flex space-x-2">
                   <Input
                     id="email"
                     name="email"
-                    required
-                    value={email}
+                    type="email"
+                    value={formData.email}
                     onChange={handleChange}
-                  />
-                  {errors.email && <span className="text-red-500">{errors.email}</span>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mobileNumber">Mobile Number</Label>
-                  <Input
-                    id="mobileNumber"
-                    name="mobileNumber"
                     required
-                    value={mobileNumber}
-                    onChange={handleChange}
                   />
-                  {errors.mobileNumber && <span className="text-red-500">{errors.mobileNumber}</span>}
+                  <Button
+                    type="button"
+                    onClick={handleSendOTP}
+                    disabled={otpSent || loading || errors.email}
+                    className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
+                  >
+                    {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
+                  </Button>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">Registration Number</Label>
-                  <Input
-                    id="registrationNumber"
-                    name="registrationNumber"
-                    required
-                    value={registrationNumber}
-                    onChange={handleChange}
-                  />
-                  {errors.registrationNumber && <span className="text-red-500">{errors.registrationNumber}</span>}
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="year">Year</Label>
-                    <Select
-                      name="year"
-                      required
-                      value={year}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, year: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Year" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1st Year</SelectItem>
-                        <SelectItem value="2">2nd Year</SelectItem>
-                        <SelectItem value="3">3rd Year</SelectItem>
-                        <SelectItem value="4">4th Year</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.year && <span className="text-red-500">{errors.year}</span>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="semester">Semester</Label>
-                    <Select
-                      name="semester"
-                      required
-                      value={semester}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, semester: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Semester" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1st Semester</SelectItem>
-                        <SelectItem value="2">2nd Semester</SelectItem>
-                        <SelectItem value="3">3rd Semester</SelectItem>
-                        <SelectItem value="4">4th Semester</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.semester && <span className="text-red-500">{errors.semester}</span>}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="section">Section</Label>
-                    <Select
-                      name="section"
-                      required
-                      value={section}
-                      onValueChange={(value) => setFormData((prev) => ({ ...prev, section: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Section" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">A</SelectItem>
-                        <SelectItem value="B">B</SelectItem>
-                        <SelectItem value="C">C</SelectItem>
-                        <SelectItem value="D">D</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.section && <span className="text-red-500">{errors.section}</span>}
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    type="password"
-                    id="password"
-                    name="password"
-                    required
-                    value={password}
-                    onChange={handleChange}
-                  />
-                  {errors.password && <span className="text-red-500">{errors.password}</span>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <Input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    required
-                    value={confirmPassword}
-                    onChange={handleChange}
-                  />
-                  {errors.confirmPassword && <span className="text-red-500">{errors.confirmPassword}</span>}
-                </div>
-                {passwordStrength && (
-                  <div className={`text-${passwordStrength === "Very Strong" ? "green" : "red"}-500`}>
-                    Password Strength: {passwordStrength}
-                  </div>
-                )}
-                <Button type="button" onClick={handleSendOTP} disabled={loading}>
-                  {loading ? "Sending OTP..." : "Send OTP"}
-                </Button>
-                {otpSent && (
-                  <div className="space-y-2">
-                    <Label htmlFor="otp">Enter OTP</Label>
-                    <Input
-                      id="otp"
-                      name="otp"
-                      required
-                      value={otp}
-                      onChange={handleChange}
-                    />
-                    <Button type="button" onClick={handleVerifyOTP}>
-                      Verify OTP
-                    </Button>
-                  </div>
-                )}
-                {errors.otpVerified && <span className="text-red-500">{errors.otpVerified}</span>}
+                {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
               </div>
-              <CardFooter className="flex justify-center mt-4">
-                <Button type="submit" disabled={!isFormValid}>
-                  Register
-                </Button>
-              </CardFooter>
+              {otpSent && !otpVerified && (
+                <div className="space-y-2">
+                  <Label htmlFor="otp">OTP</Label>
+                  <Input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    value={formData.otp}
+                    onChange={handleChange}
+                    required
+                  />
+                  <Button
+                    type="button"
+                    onClick={handleVerifyOTP}
+                    className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                  >
+                    Verify OTP
+                  </Button>
+                  {errors.otpVerified && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>OTP Verification</AlertTitle>
+                      <AlertDescription>{errors.otpVerified}</AlertDescription>
+                    </Alert>
+                  )}
+                </div>
+              )}
+              {otpVerified && (
+                <Alert variant="success">
+                  <CheckCircle2 className="h-4 w-4" />
+                  <AlertTitle>OTP Verified</AlertTitle>
+                  <AlertDescription>Your email has been successfully verified.</AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="regNo">Registration Number</Label>
+                <Input
+                  id="regNo"
+                  name="registrationNumber"
+                  required
+                  value={formData.registrationNumber}
+                  onChange={handleChange}
+                />
+                {errors.registrationNumber && <p className="text-red-500 text-xs">{errors.registrationNumber}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="year">Year</Label>
+                  <Select name="year" onValueChange={(value) => handleChange({ target: { name: "year", value } })}>
+                    <SelectTrigger id="year">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1st Year</SelectItem>
+                      <SelectItem value="2">2nd Year</SelectItem>
+                      <SelectItem value="3">3rd Year</SelectItem>
+                      <SelectItem value="4">4th Year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.year && <p className="text-red-500 text-xs">{errors.year}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="semester">Semester</Label>
+                  <Select name="semester" onValueChange={(value) => handleChange({ target: { name: "semester", value } })}>
+                    <SelectTrigger id="semester">
+                      <SelectValue placeholder="Select semester" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                        <SelectItem key={sem} value={sem.toString()}>
+                          {sem}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.semester && <p className="text-red-500 text-xs">{errors.semester}</p>}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="section">Section</Label>
+                <Input
+                  id="section"
+                  name="section"
+                  required
+                  value={formData.section}
+                  onChange={handleChange}
+                />
+                {errors.section && <p className="text-red-500 text-xs">{errors.section}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mobile">Mobile Number</Label>
+                <Input
+                  id="mobile"
+                  name="mobileNumber"
+                  type="tel"
+                  required
+                  
+                  value={formData.mobileNumber}
+                  onChange={handleChange}
+                />
+                {errors.mobileNumber && <p className="text-red-500 text-xs">{errors.mobileNumber}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                />
+                {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+                {passwordStrength && (
+                  <p className={`text-xs ${
+                    passwordStrength === "Very Weak" || passwordStrength === "Weak"
+                      ? "text-red-500"
+                      : passwordStrength === "Medium"
+                      ? "text-yellow-500"
+                      : "text-green-500"
+                  }`}>
+                    Password Strength: {passwordStrength}
+                  </p>
+                )}
+              </div>
+              <Button
+                type="submit"
+                className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                disabled={!isFormValid}
+              >
+                Register
+              </Button>
             </form>
-            <div className="mt-4 text-center">
-              Already have an account? <Link href="/login">Login here</Link>
-            </div>
           </CardContent>
+          <CardFooter className="flex justify-center">
+            <div className="text-sm text-[#3a3a3a]">
+              Already have an account?{" "}
+              <Link href="/login" className="text-blue-600 hover:underline">
+                Login here
+              </Link>
+            </div>
+          </CardFooter>
         </Card>
       </div>
     </div>
