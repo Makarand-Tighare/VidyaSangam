@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
-export default function LinkedInCallback() {
+// Your main LinkedInCallback component
+function LinkedInCallback() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const code = searchParams.get('code');
@@ -100,5 +101,14 @@ export default function LinkedInCallback() {
         </CardFooter>
       </Card>
     </div>
+  );
+}
+
+// Main exported function for the page
+export default function LinkedInCallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LinkedInCallback />
+    </Suspense>
   );
 }
