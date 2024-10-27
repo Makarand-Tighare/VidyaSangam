@@ -4,7 +4,6 @@ import Image from "next/image";
 import NavBar from "./components/navBar";
 import FancyTestimonialsSlider from "./components/fancy-testimonials-slider";
 import testimonialData from "./data/testimonial.data";
-import LinkedInButton from './components/linkedinButton';
 import Linkedin from "./images/linkedin.png";
 import Twitter from "./images/x.png";
 import Instagram from "./images/insta.png";
@@ -15,15 +14,12 @@ import Workshops from "./images/workshops.jpg";
 import Roadmap from "./images/roadmap.jpg";
 import MeetingSummarization from "./images/meetingSummarization.jpg";
 import AutoLinkedin from "./images/autoLinkedin.jpg";
-import PostForm from './components/postForm';
 
 export default function Home() {
   return (
     <div className="overflow-x-hidden p-2">
       {/* Navigation Bar */}
       <NavBar />
-      {/* <LinkedInButton /> 
-      <PostForm /> */}
       {/* Header Section */}
       <div className="py-5 mt-20">
         <p className="text-[#1e3a8a] text-4xl text-center font-semibold font-comfortaa pt-5">

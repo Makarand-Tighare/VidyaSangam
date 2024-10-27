@@ -1,18 +1,19 @@
-"use client"; // Ensure you're in client-side rendering mode
+"use client";
 
 import React from 'react';
 
 const LinkedInButton = () => {
   const handleLinkedInLogin = () => {
-    const clientId = '77zdkh8uihgm40'; // Replace with your LinkedIn Client ID
-    const redirectUri = 'http://localhost:3000/linkedin-callback'; // Your local redirect URI
-    const state = 'xyz123abc456'; // A random string to maintain state
-    const scope = 'w_member_social r_basicprofile'; // Define the permissions you need
-
+    const clientId = '77zdkh8uihgm40'; 
+    const redirectUri = 'http://127.0.0.1:3000/linkedin-callback';
+    const state = Math.random().toString(36).substring(7); 
+    const scope = encodeURIComponent('w_member_social r_basicprofile');
+  
     const url = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}&scope=${scope}`;
-    
-    window.location.href = url; // Redirect to LinkedIn for authentication
+  
+    window.location.href = url;
   };
+  
 
   return (
     <button 
