@@ -28,7 +28,7 @@ export default function Chatassistant() {
       // If user is not logged in, redirect to the login page
       router.push("/login");
     } 
-  }, []);
+  }, [router]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;

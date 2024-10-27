@@ -34,7 +34,7 @@ export default function Leaderboard() {
       // If user is not logged in, redirect to the login page
       router.push("/login");
     } 
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const timer = setTimeout(() => {

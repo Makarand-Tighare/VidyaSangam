@@ -23,7 +23,7 @@ export default function SessionManagement() {
       // If user is not logged in, redirect to the login page
       router.push("/login");
     } 
-  }, []);
+  }, [router]);
 
   const createSession = async (e) => {
     e.preventDefault();
