@@ -1,46 +1,48 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation"; // Use router for redirecting
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 
-const NavBar = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
-  const router = useRouter(); // Initialize router for navigation
+export default function NavBar() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const router = useRouter()
 
-  // Check login status when component mounts
   useEffect(() => {
-    // Check for authToken in localStorage
-    const authToken = localStorage.getItem("authToken");
-    if (authToken) {
-      setIsLoggedIn(true); // Set logged-in state if token exists
+    const checkLoginStatus = () => {
+      const authToken = localStorage.getItem("authToken")
+      setIsLoggedIn(!!authToken)
     }
-  }, []); // Empty dependency array ensures this runs once when component loads
+
+    checkLoginStatus()
+    window.addEventListener('storage', checkLoginStatus)
+
+    return () => {
+      window.removeEventListener('storage', checkLoginStatus)
+    }
+  }, [])
 
   const toggleMenu = () => {
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   const handleLogin = () => {
-    // Redirect to the login page
-    router.push("/login"); // Use router.push for programmatic navigation
-  };
+    router.push("/login")
+  }
 
   const handleLogout = () => {
-    // Clear login state
-    localStorage.removeItem("authToken");
-    setIsLoggedIn(false); // Set logged out state
-    router.push("/"); // Redirect to homepage after logout
-  };
+    localStorage.removeItem("authToken")
+    setIsLoggedIn(false)
+    router.push("/")
+  }
 
   const closeMenu = () => {
-    setIsOpen(false); // Close the mobile menu after clicking a link
-  };
+    setIsOpen(false)
+  }
 
   return (
     <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative">
-      {/* Logo */}
       <div className="flex items-center">
         <Link href="/" onClick={closeMenu}>
           <p className="text-2xl font-semibold font-comfortaa cursor-pointer">
@@ -49,7 +51,6 @@ const NavBar = () => {
         </Link>
       </div>
 
-      {/* Desktop Menu */}
       <div className="hidden md:flex space-x-6">
         <Link href="/" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
@@ -84,7 +85,6 @@ const NavBar = () => {
             Leaderboard
           </span>
         </Link>
-        {/* Conditional Rendering for Login/Profile */}
         {isLoggedIn ? (
           <>
             <Link
@@ -111,7 +111,6 @@ const NavBar = () => {
         )}
       </div>
 
-      {/* Mobile Menu Toggle */}
       <div className="md:hidden flex items-center">
         <button onClick={toggleMenu} className="focus:outline-none">
           <svg
@@ -140,7 +139,6 @@ const NavBar = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
       {isOpen && (
         <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-10 md:hidden">
           <div className="flex flex-col items-center space-y-2 py-2">
@@ -185,7 +183,6 @@ const NavBar = () => {
                 Leaderboard
               </span>
             </Link>
-            {/* Conditional Rendering for Login/Profile */}
             {isLoggedIn ? (
               <>
                 <Link
@@ -215,7 +212,5 @@ const NavBar = () => {
         </div>
       )}
     </nav>
-  );
-};
-
-export default NavBar;
+  )
+}

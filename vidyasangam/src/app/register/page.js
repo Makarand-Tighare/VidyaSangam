@@ -1,20 +1,20 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
-import axios from "axios";
-import NavBar from "../components/navBar";
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, CheckCircle2 } from "lucide-react"
+import axios from "axios"
+import NavBar from "../components/navBar"
 
 export default function RegisterPage() {
-  const router = useRouter();
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: "",
     otp: "",
@@ -27,113 +27,124 @@ export default function RegisterPage() {
     mobileNumber: "",
     password: "",
     confirmPassword: "",
-  });
-  const [otpSent, setOtpSent] = useState(false);
-  const [otpVerified, setOtpVerified] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
-  const [passwordStrength, setPasswordStrength] = useState("");
-  const [isFormValid, setIsFormValid] = useState(false);
+  })
+  const [otpSent, setOtpSent] = useState(false)
+  const [otpVerified, setOtpVerified] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [passwordStrength, setPasswordStrength] = useState("")
+  const [isFormValid, setIsFormValid] = useState(false)
 
   useEffect(() => {
     if (formData.password) {
-      checkPasswordStrength(formData.password);
+      checkPasswordStrength(formData.password)
     }
-  }, [formData.password]);
+  }, [formData.password])
 
   useEffect(() => {
-    const isValid = otpVerified &&
-      Object.values(errors).every(error => error === "") &&
-      Object.values(formData).every(value => value !== "") &&
-      passwordStrength === "Strong" || passwordStrength === "Very Strong";
-    setIsFormValid(isValid);
-  }, [formData, errors, otpVerified, passwordStrength]);
+    const isValid =
+      otpVerified &&
+      formData.firstName.trim() !== "" &&
+      formData.lastName.trim() !== "" &&
+      formData.registrationNumber.trim() !== "" &&
+      formData.year !== "" &&
+      formData.semester !== "" &&
+      formData.section.trim() !== "" &&
+      formData.mobileNumber.trim() !== "" &&
+      formData.password.trim() !== "" &&
+      Object.values(errors).some((error) => error !== "") && // Updated condition
+      (passwordStrength === "Strong" || passwordStrength === "Very Strong")
+    setIsFormValid(isValid)
+    console.log("Form validity updated:", isValid)
+  }, [formData, errors, otpVerified, passwordStrength])
+
+  useEffect(() => {
+    console.log("Form State:", { formData, errors, otpVerified, passwordStrength, isFormValid })
+  }, [formData, errors, otpVerified, passwordStrength, isFormValid])
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    validateField(name, value);
-  };
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    validateField(name, value)
+  }
 
   const validateField = async (name, value) => {
-    let error = "";
+    let error = ""
     switch (name) {
-      
       case "password":
         if (value.length < 8) {
-          error = "Password must be at least 8 characters long";
+          error = "Password must be at least 8 characters long"
         } else if (!/[A-Z]/.test(value)) {
-          error = "Password must contain at least one uppercase letter";
+          error = "Password must contain at least one uppercase letter"
         } else if (!/[a-z]/.test(value)) {
-          error = "Password must contain at least one lowercase letter";
+          error = "Password must contain at least one lowercase letter"
         } else if (!/[0-9]/.test(value)) {
-          error = "Password must contain at least one number";
+          error = "Password must contain at least one number"
         } else if (!/[!@#$%^&*]/.test(value)) {
-          error = "Password must contain at least one special character (!@#$%^&*)";
+          error = "Password must contain at least one special character (!@#$%^&*)"
         }
-        break;
-      
+        break
       case "mobileNumber":
-        error = !/^\d{10}$/.test(value) ? "Invalid mobile number" : "";
-        break;
+        error = !/^\d{10}$/.test(value) ? "Invalid mobile number" : ""
+        break
       default:
-        error = value.trim() === "" ? "This field is required" : "";
+        error = value.trim() === "" ? "This field is required" : ""
     }
-    setErrors((prev) => ({ ...prev, [name]: error }));
-  };
+    setErrors((prev) => ({ ...prev, [name]: error }))
+  }
 
   const checkPasswordStrength = (password) => {
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[!@#$%^&*]/.test(password)) strength++;
+    let strength = 0
+    if (password.length >= 8) strength++
+    if (/[A-Z]/.test(password)) strength++
+    if (/[a-z]/.test(password)) strength++
+    if (/[0-9]/.test(password)) strength++
+    if (/[!@#$%^&*]/.test(password)) strength++
 
     switch (strength) {
       case 0:
       case 1:
-        setPasswordStrength("Very Weak");
-        break;
+        setPasswordStrength("Very Weak")
+        break
       case 2:
-        setPasswordStrength("Weak");
-        break;
+        setPasswordStrength("Weak")
+        break
       case 3:
-        setPasswordStrength("Medium");
-        break;
+        setPasswordStrength("Medium")
+        break
       case 4:
-        setPasswordStrength("Strong");
-        break;
+        setPasswordStrength("Strong")
+        break
       case 5:
-        setPasswordStrength("Very Strong");
-        break;
+        setPasswordStrength("Very Strong")
+        break
       default:
-        setPasswordStrength("");
+        setPasswordStrength("")
     }
-  };
+  }
 
   const handleSendOTP = async () => {
-    if (errors.email) return;
-    setLoading(true);
+    if (errors.email) return
+    setLoading(true)
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/send-otp/",
         { email: formData.email },
         { withCredentials: true }
-      );
+      )
       if (response.status === 200) {
-        setOtpSent(true);
-        setErrors((prev) => ({ ...prev, otpSent: "OTP sent to your email. Check Spam Folder." }));
+        setOtpSent(true)
+        setErrors((prev) => ({ ...prev, otpSent: "OTP sent to your email. Check Spam Folder." }))
       } else {
-        setErrors((prev) => ({ ...prev, otpSent: "Failed to send OTP" }));
+        setErrors((prev) => ({ ...prev, otpSent: "Failed to send OTP" }))
       }
     } catch (error) {
-      console.error("Error sending OTP", error);
-      setErrors((prev) => ({ ...prev, otpSent: "Error sending OTP" }));
+      console.error("Error sending OTP", error)
+      setErrors((prev) => ({ ...prev, otpSent: "Error sending OTP" }))
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleVerifyOTP = async () => {
     try {
@@ -141,25 +152,25 @@ export default function RegisterPage() {
         "http://127.0.0.1:8000/api/user/verify-otp/",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
-      );
+      )
       if (response.status === 200) {
-        setOtpVerified(true);
-        setErrors((prev) => ({ ...prev, otpVerified: "" }));
-        setFormData((prev) => ({ ...prev, otp: "" })); // Clear OTP field
+        setOtpVerified(true)
+        setErrors((prev) => ({ ...prev, otpVerified: "" }))
+        setFormData((prev) => ({ ...prev, otp: "" })) // Clear OTP field
       } else {
-        setErrors((prev) => ({ ...prev, otpVerified: "Invalid OTP. Please try again." }));
+        setErrors((prev) => ({ ...prev, otpVerified: "Invalid OTP. Please try again." }))
       }
     } catch (error) {
-      console.error("Error verifying OTP:", error);
-      setErrors((prev) => ({ ...prev, otpVerified: "Error verifying OTP" }));
+      console.error("Error verifying OTP:", error)
+      setErrors((prev) => ({ ...prev, otpVerified: "Error verifying OTP" }))
     }
-  };
+  }
 
   const handleRegister = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (!isFormValid) {
-      alert("Please fill all fields correctly and ensure a strong password before submitting.");
-      return;
+      alert("Please fill all fields correctly and ensure a strong password before submitting.")
+      return
     }
 
     try {
@@ -174,19 +185,19 @@ export default function RegisterPage() {
         semester: formData.semester,
         password: formData.password,
         password2: formData.password,
-      });
+      })
 
       if (response.status === 201) {
-        alert("Registration Successful!");
-        router.push("/login");
+        alert("Registration Successful!")
+        router.push("/login")
       } else {
-        alert(response.data.message || "Registration failed");
+        alert(response.data.message || "Registration failed")
       }
     } catch (error) {
-      console.error("Registration error", error);
-      alert("An error occurred during registration. Please try again.");
+      console.error("Registration error", error)
+      alert("An error occurred during registration. Please try again.")
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
@@ -198,30 +209,6 @@ export default function RegisterPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRegister} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    required
-                    value={formData.firstName}
-                    onChange={handleChange}
-                  />
-                  {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    required
-                    value={formData.lastName}
-                    onChange={handleChange}
-                  />
-                  {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
-                </div>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="flex space-x-2">
@@ -278,104 +265,150 @@ export default function RegisterPage() {
                   <AlertDescription>Your email has been successfully verified.</AlertDescription>
                 </Alert>
               )}
-              <div className="space-y-2">
-                <Label htmlFor="regNo">Registration Number</Label>
-                <Input
-                  id="regNo"
-                  name="registrationNumber"
-                  required
-                  value={formData.registrationNumber}
-                  onChange={handleChange}
-                />
-                {errors.registrationNumber && <p className="text-red-500 text-xs">{errors.registrationNumber}</p>}
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="year">Year</Label>
-                  <Select name="year" onValueChange={(value) => handleChange({ target: { name: "year", value } })}>
-                    <SelectTrigger id="year">
-                      <SelectValue placeholder="Select year" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1st Year</SelectItem>
-                      <SelectItem value="2">2nd Year</SelectItem>
-                      <SelectItem value="3">3rd Year</SelectItem>
-                      <SelectItem value="4">4th Year</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.year && <p className="text-red-500 text-xs">{errors.year}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="semester">Semester</Label>
-                  <Select name="semester" onValueChange={(value) => handleChange({ target: { name: "semester", value } })}>
-                    <SelectTrigger id="semester">
-                      <SelectValue placeholder="Select semester" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                        <SelectItem key={sem} value={sem.toString()}>
-                          {sem}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {errors.semester && <p className="text-red-500 text-xs">{errors.semester}</p>}
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="section">Section</Label>
-                <Input
-                  id="section"
-                  name="section"
-                  required
-                  value={formData.section}
-                  onChange={handleChange}
-                />
-                {errors.section && <p className="text-red-500 text-xs">{errors.section}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mobile">Mobile Number</Label>
-                <Input
-                  id="mobile"
-                  name="mobileNumber"
-                  type="tel"
-                  required
-                  
-                  value={formData.mobileNumber}
-                  onChange={handleChange}
-                />
-                {errors.mobileNumber && <p className="text-red-500 text-xs">{errors.mobileNumber}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                />
-                {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
-                {passwordStrength && (
-                  <p className={`text-xs ${
-                    passwordStrength === "Very Weak" || passwordStrength === "Weak"
-                      ? "text-red-500"
-                      : passwordStrength === "Medium"
-                      ? "text-yellow-500"
-                      : "text-green-500"
-                  }`}>
-                    Password Strength: {passwordStrength}
-                  </p>
-                )}
-              </div>
-              <Button
-                type="submit"
-                className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                disabled={!isFormValid}
-              >
-                Register
-              </Button>
+              {otpVerified && (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">First Name</Label>
+                      <Input
+                        id="firstName"
+                        name="firstName"
+                        required
+                        value={formData.firstName}
+                        onChange={handleChange}
+                      />
+                      {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Last Name</Label>
+                      <Input
+                        id="lastName"
+                        name="lastName"
+                        required
+                        value={formData.lastName}
+                        onChange={handleChange}
+                      />
+                      {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName}</p>}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="regNo">Registration Number</Label>
+                    <Input
+                      id="regNo"
+                      name="registrationNumber"
+                      required
+                      value={formData.registrationNumber}
+                      onChange={handleChange}
+                    />
+                    {errors.registrationNumber && <p className="text-red-500 text-xs">{errors.registrationNumber}</p>}
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="year">Year</Label>
+                      <Select name="year" onValueChange={(value) => handleChange({ target: { name: "year", value } })}>
+                        <SelectTrigger id="year">
+                          <SelectValue placeholder="Select year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1st Year</SelectItem>
+                          <SelectItem value="2">2nd Year</SelectItem>
+                          <SelectItem value="3">3rd Year</SelectItem>
+                          <SelectItem value="4">4th Year</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {errors.year && <p className="text-red-500 text-xs">{errors.year}</p>}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="semester">Semester</Label>
+                      <Select name="semester" onValueChange={(value) => handleChange({ target: { name: "semester", value } })}>
+                        <SelectTrigger id="semester">
+                          <SelectValue placeholder="Select semester" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.year === "1" && (
+                            <>
+                              <SelectItem value="1">1</SelectItem>
+                              <SelectItem value="2">2</SelectItem>
+                            </>
+                          )}
+                          {formData.year === "2" && (
+                            <>
+                              <SelectItem value="3">3</SelectItem>
+                              <SelectItem value="4">4</SelectItem>
+                            </>
+                          )}
+                          {formData.year === "3" && (
+                            <>
+                              <SelectItem value="5">5</SelectItem>
+                              <SelectItem value="6">6</SelectItem>
+                            </>
+                          )}
+                          {formData.year === "4" && (
+                            <>
+                              <SelectItem value="7">7</SelectItem>
+                              <SelectItem value="8">8</SelectItem>
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {errors.semester && <p className="text-red-500 text-xs">{errors.semester}</p>}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="section">Section</Label>
+                    <Input
+                      id="section"
+                      name="section"
+                      required
+                      value={formData.section}
+                      onChange={handleChange}
+                    />
+                    {errors.section && <p className="text-red-500 text-xs">{errors.section}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mobile">Mobile Number</Label>
+                    <Input
+                      id="mobile"
+                      name="mobileNumber"
+                      type="tel"
+                      required
+                      value={formData.mobileNumber}
+                      onChange={handleChange}
+                    />
+                    {errors.mobileNumber && <p className="text-red-500 text-xs">{errors.mobileNumber}</p>}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input
+                      id="password"
+                      name="password"
+                      type="password"
+                      required
+                      value={formData.password}
+                      onChange={handleChange}
+                    />
+                    {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+                    {passwordStrength && (
+                      <p className={`text-xs ${
+                        passwordStrength === "Very Weak" || passwordStrength === "Weak"
+                          ? "text-red-500"
+                          : passwordStrength === "Medium"
+                          ? "text-yellow-500"
+                          : "text-green-500"
+                      }`}>
+                        Password Strength: {passwordStrength}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                    disabled={!isFormValid} // Updated disabled attribute
+                  >
+                    Register
+                  </Button>
+                </>
+              )}
             </form>
           </CardContent>
           <CardFooter className="flex justify-center">
@@ -389,5 +422,5 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
-  );
+  )
 }
