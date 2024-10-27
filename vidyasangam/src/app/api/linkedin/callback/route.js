@@ -3,7 +3,7 @@ export async function POST(req) {
   
     const clientId = process.env.LINKEDIN_CLIENT_ID;
     const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-    const redirectUri = 'http://localhost:3000/linkedin-callback'; // Ensure this matches LinkedIn settings
+    const redirectUri = 'http://127.0.0.1:3000/linkedin-callback'; // Ensure this matches LinkedIn settings
   
     const tokenUrl = 'https://www.linkedin.com/oauth/v2/accessToken';
   

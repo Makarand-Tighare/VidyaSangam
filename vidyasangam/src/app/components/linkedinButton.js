@@ -5,7 +5,7 @@ import React from 'react';
 const LinkedInButton = () => {
   const handleLinkedInLogin = () => {
     const clientId = '77zdkh8uihgm40'; // Replace with your LinkedIn Client ID
-    const redirectUri = 'http://localhost:3000/linkedin-callback'; // Your local redirect URI
+    const redirectUri = 'http://127.0.0.1:3000/linkedin-callback'; // Your local redirect URI
     const state = 'xyz123abc456'; // A random string to maintain state
     const scope = 'w_member_social r_basicprofile'; // Define the permissions you need
 
