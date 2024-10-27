@@ -41,11 +41,18 @@ export default function MentoringForm() {
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (!token) {
+      // Redirect to login page if the user is not logged in
+      router.push("/login");
+      return;
+    }
+    
     const savedData = localStorage.getItem('mentoringFormData');
     if (savedData) {
       setFormData(JSON.parse(savedData));
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     localStorage.setItem('mentoringFormData', JSON.stringify(formData));

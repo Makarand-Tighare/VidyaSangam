@@ -21,6 +21,15 @@ export default function Chatassistant() {
 
   useEffect(scrollToassistanttom, [messages]);
 
+   // Check if the user is logged in
+   useEffect(() => {
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      // If user is not logged in, redirect to the login page
+      router.push("/login");
+    } 
+  }, []);
+
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
