@@ -14,6 +14,7 @@ export default function SessionManagement() {
   const [sessions, setSessions] = useState([]);
   const [sessionType, setSessionType] = useState("virtual");
   const [showAllSessions, setShowAllSessions] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // New loading state
   const router = useRouter(); // Initialize router
 
   // Check if the user is logged in
@@ -27,6 +28,7 @@ export default function SessionManagement() {
 
   const createSession = async (e) => {
     e.preventDefault();
+    setIsLoading(true); // Start loading
 
     if (sessionType === "virtual") {
       try {
@@ -35,6 +37,7 @@ export default function SessionManagement() {
         if (!isAuthorized) {
           window.open("http://127.0.0.1:5000/authorize", "_blank");
           localStorage.setItem("isAuthorized", "true");
+          setIsLoading(false); // End loading
           return;
         }
 
@@ -48,12 +51,14 @@ export default function SessionManagement() {
 
         if (response.redirected) {
           window.open(response.url, "_blank");
+          setIsLoading(false); // End loading
           return;
         }
 
         if (!response.ok) {
           const errorData = await response.json();
           console.error("Error creating meeting:", errorData.error);
+          setIsLoading(false); // End loading
           return;
         }
 
@@ -70,6 +75,8 @@ export default function SessionManagement() {
         }
       } catch (error) {
         console.error("Error creating meeting:", error);
+      } finally {
+        setIsLoading(false); // Ensure loading ends on error
       }
     } else {
       const newSession = {
@@ -123,8 +130,15 @@ export default function SessionManagement() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button type="submit" className="w-full">
-                Create Session
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <span className="loader" /> {/* This should be your spinner */}
+                    <span className="ml-2">Loading...</span>
+                  </span>
+                ) : (
+                  "Create Session"
+                )}
               </Button>
             </form>
           </CardContent>

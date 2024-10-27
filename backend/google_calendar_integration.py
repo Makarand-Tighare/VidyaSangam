@@ -149,7 +149,7 @@ def create_meet():
                 'requestId': 'test123',
             },
         },
-        'attendees': [{'email': 'paaraspethe6277@gmail.com'}],
+        'attendees': [{'email': 'paaras.pethe6277@gmail.com'}],
     }
 
     try:
