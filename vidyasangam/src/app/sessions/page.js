@@ -35,13 +35,13 @@ export default function SessionManagement() {
         const isAuthorized = localStorage.getItem("isAuthorized");
 
         if (!isAuthorized) {
-          window.open("http://127.0.0.1:5000/authorize", "_blank");
+          window.open("http://127.0.0.1:8000/api/utility/authorize", "_blank");
           localStorage.setItem("isAuthorized", "true");
           setIsLoading(false); // End loading
           return;
         }
 
-        const response = await fetch("http://127.0.0.1:5000/create-meet", {
+        const response = await fetch("http://127.0.0.1:8000/api/utility/create-meet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
