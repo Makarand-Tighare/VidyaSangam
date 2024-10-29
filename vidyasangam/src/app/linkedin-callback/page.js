@@ -51,7 +51,7 @@ function LinkedInCallback() {
             return;
           }
 
-          const response = await fetch('http://127.0.0.1:8000/api/user/linkedin-auth/', {
+          const response = await fetch('http://127.0.0.1:8000/api/utility/linkedin-auth/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
