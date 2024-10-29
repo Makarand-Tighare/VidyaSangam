@@ -1,18 +1,14 @@
-// src/app/api/openaiChatbot/route.js
+import { CohereClientV2 } from 'cohere-ai';
 
-import OpenAI from "openai";
-
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // Ensure your API key is in the environment variables
+// Initialize Cohere client
+const cohere = new CohereClientV2({
+  token: process.env.COHERE_API_KEY, // Ensure your API key is in environment variables
 });
 
-// Named export for POST method
 export async function POST(req) {
   try {
     const { messages } = await req.json(); // Extract the array of messages from the request body
 
-    // Ensure messages is an array and has at least one user message
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(JSON.stringify({ error: 'Messages array is required.' }), {
         status: 400,
@@ -22,27 +18,32 @@ export async function POST(req) {
       });
     }
 
-    // Create a chat completion request with the messages
-    const completion = await openai.chat.completions.create({
+    // Call Cohere chat endpoint
+    const cohereResponse = await cohere.chat({
+      model: 'command-r-plus',
       messages: [
-        { role: "system", content: "You are a helpful assistant." },
-        ...messages, // Spread the user messages into the chat request
+        { 
+          role: 'system', 
+          content: `You are a helpful assistant for VidyaSangam, a platform to connect mentors and mentees at Yeshwantrao Chavan College of Engineering. You help users with career support, including LinkedIn integration and Google Meet integration. Please only respond to career-related queries and ignore irrelevant ones.` 
+        },
+        ...messages,
       ],
-      model: "gpt-4o-mini",
     });
 
-    // Log the response for debugging
-    console.log(completion.choices[0]);
+    // Log the full response to see what the actual structure looks like
+    console.log("Full response:", cohereResponse);
 
-    // Send the response back to the client
-    return new Response(JSON.stringify({ response: completion.choices[0].message.content }), {
+    // Extract the message content properly from the response
+    const botMessage = cohereResponse.message?.content?.[0]?.text || "Sorry, I couldn't process your request.";
+
+    return new Response(JSON.stringify({ response: botMessage }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
       },
     });
   } catch (error) {
-    console.error("Error in OpenAI API:", error);
+    console.error('Error in Cohere API:', error);
     return new Response(JSON.stringify({ error: 'Failed to process your request.' }), {
       status: 500,
       headers: {

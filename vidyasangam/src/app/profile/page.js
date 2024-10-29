@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import NavBar from '../components/navBar'
+import LinkedInButton from '../components/linkedinButton';
 
 export default function Profile() {
   const [formData, setFormData] = useState({
@@ -25,6 +26,7 @@ export default function Profile() {
     section: '',
     year: '',
     semester: '',
+    linkedin_access_token: '',
   })
 
   const [securityData, setSecurityData] = useState({
@@ -68,6 +70,7 @@ export default function Profile() {
           section: data.section || '',
           year: data.year || '',
           semester: data.semester || '',
+          linkedin_access_token: data.linkedin_access_token || '',
         })
       } catch (error) {
         console.error('Error fetching user data:', error)
@@ -103,7 +106,7 @@ export default function Profile() {
   return (
     <div className="container mx-auto px-4 py-2">
       <NavBar />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1">
           <CardHeader>
@@ -116,6 +119,12 @@ export default function Profile() {
             </Avatar>
             <p className="text-sm text-muted-foreground mb-4">JPG or PNG no larger than 5 MB</p>
             <Button>Upload new image</Button>
+            <br />
+            {formData.linkedin_access_token && formData.linkedin_access_token.length > 1 ? (
+              <Button style={{ backgroundColor: 'skyblue' }}>LinkedIn connected</Button>
+            ) : (
+              <LinkedInButton />
+            )}
           </CardContent>
         </Card>
 

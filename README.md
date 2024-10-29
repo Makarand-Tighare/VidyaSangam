@@ -1,4 +1,4 @@
-# VidyaSangam
+# Vidya Sangam
 
 Where Streams of Knowledge Converge to Empower Minds
 
@@ -18,16 +18,16 @@ Where Streams of Knowledge Converge to Empower Minds
 
 ## Tech Stack
 
-- Frontend: Next.js, React
+- Frontend: Next.js
 - Backend: Django REST API
 - Deployment: Vercel (Frontend), TBD (Backend)
-- Other: AWS (EC2, S3), LinkedIn API, Calendly API, Docker
+- Other: AWS (EC2, S3), LinkedIn API, Google Calendar API
 
 ## Getting Started
 
 ```bash
-git clone https://github.com/your-username/vidyasangam-frontend.git
-cd vidyasangam-frontend
+git clone https://github.com/Makarand-Tighare/Vidyasangam.git
+cd vidyasangam
 npm install
 npm run dev
 ```

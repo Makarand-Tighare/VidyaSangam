@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation"; // Use router for redirecting
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Track login status
+  const router = useRouter(); // Initialize router for navigation
+
+  // Check login status when component mounts
+  useEffect(() => {
+    // Check for authToken in localStorage
+    const authToken = localStorage.getItem("authToken");
+    if (authToken) {
+      setIsLoggedIn(true); // Set logged-in state if token exists
+    }
+  }, []); // Empty dependency array ensures this runs once when component loads
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -13,7 +24,14 @@ const NavBar = () => {
 
   const handleLogin = () => {
     // Redirect to the login page
-    window.location.href = "/login"; // Update this path if your login page is different
+    router.push("/login"); // Use router.push for programmatic navigation
+  };
+
+  const handleLogout = () => {
+    // Clear login state
+    localStorage.removeItem("authToken");
+    setIsLoggedIn(false); // Set logged out state
+    router.push("/"); // Redirect to homepage after logout
   };
 
   const closeMenu = () => {
@@ -24,11 +42,12 @@ const NavBar = () => {
     <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative">
       {/* Logo */}
       <div className="flex items-center">
-  <Link href="/" onClick={closeMenu}>
-    <p className="text-2xl font-semibold font-comfortaa cursor-pointer">Vidya Sangam</p>
-  </Link>
-</div>
-
+        <Link href="/" onClick={closeMenu}>
+          <p className="text-2xl font-semibold font-comfortaa cursor-pointer">
+            Vidya Sangam
+          </p>
+        </Link>
+      </div>
 
       {/* Desktop Menu */}
       <div className="hidden md:flex space-x-6">
@@ -67,11 +86,22 @@ const NavBar = () => {
         </Link>
         {/* Conditional Rendering for Login/Profile */}
         {isLoggedIn ? (
-          <Link href="/profile" onClick={closeMenu} className="relative group">
-            <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
-              Profile
-            </span>
-          </Link>
+          <>
+            <Link
+              href="/profile"
+              onClick={closeMenu}
+              className="relative group"
+            >
+              <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+                Profile
+              </span>
+            </Link>
+            <button onClick={handleLogout} className="relative group">
+              <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+                Logout
+              </span>
+            </button>
+          </>
         ) : (
           <button onClick={handleLogin} className="relative group">
             <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
@@ -157,15 +187,23 @@ const NavBar = () => {
             </Link>
             {/* Conditional Rendering for Login/Profile */}
             {isLoggedIn ? (
-              <Link
-                href="/profile"
-                onClick={closeMenu}
-                className="relative group"
-              >
-                <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
-                  Profile
-                </span>
-              </Link>
+              <>
+                <Link
+                  href="/profile"
+                  onClick={closeMenu}
+                  className="relative group"
+                >
+                  <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+                    Profile
+                  </span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="relative group hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1"
+                >
+                  Logout
+                </button>
+              </>
             ) : (
               <button onClick={handleLogin} className="relative group">
                 <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">

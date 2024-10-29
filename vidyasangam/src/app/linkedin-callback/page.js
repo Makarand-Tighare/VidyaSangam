@@ -1,28 +1,66 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 
 function LinkedInCallback() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const code = searchParams.get('code');
   const state = searchParams.get('state');
-  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+  const hasFetched = useRef(false);
+
+  const fetchUserData = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) throw new Error('No auth token found');
+
+      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch user data');
+
+      const data = await response.json();
+      return data.email || null; // Return the email address
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      return null;
+    }
+  };
 
   useEffect(() => {
     const exchangeAuthorizationCode = async () => {
       if (code && state) {
         try {
-          const response = await fetch('http://127.0.0.1:8000/api/user/linkedin-auth/', {
+          // Fetch the user's email before sending the LinkedIn authorization request
+          const email = await fetchUserData();
+          if (!email) {
+            setError('User email not found.');
+            setLoading(false);
+            return;
+          }
+
+          const response = await fetch('http://127.0.0.1:8000/api/utility/linkedin-auth/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ authorization_code: code, state: state }),
+            body: JSON.stringify({
+              authorization_code: code,
+              state: state,
+              email: email, // Include the email in the request body
+            }),
           });
 
           const data = await response.json();
@@ -30,7 +68,7 @@ function LinkedInCallback() {
           if (response.status === 200) {
             setLoading(false);
             setSuccess(true);
-            router.push('/'); // Navigate to the homepage
+            router.push('/profile'); // Navigate to the homepage
           } else {
             setError(data.error || 'An error occurred while processing your request.');
           }
@@ -45,16 +83,62 @@ function LinkedInCallback() {
     exchangeAuthorizationCode();
   }, [code, state, router]);
 
+  useEffect(() => {
+    let timer;
+    if (success || error) {
+      timer = setInterval(() => {
+        setCountdown((prevCount) => {
+          if (prevCount <= 1) {
+            clearInterval(timer);
+            router.push('/');
+            return 0;
+          }
+          return prevCount - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [success, error, router]);
+
+  const handleClose = () => {
+    router.push('/');
+  };
+
   return (
-    <div>
-      {loading && <p>Processing LinkedIn authentication...</p>}
-      {error && <p className="text-red-500">{error}</p>}
-      {success && <p className="text-green-500">Authentication successful!</p>}
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <Card className="w-full max-w-md">
+        <CardContent className="pt-6">
+          {loading && (
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-4 text-lg">Processing LinkedIn authentication...</p>
+            </div>
+          )}
+          {error && (
+            <div className="text-center">
+              <p className="text-red-500 text-lg">{error}</p>
+              <p className="mt-2">Redirecting to home in {countdown} seconds...</p>
+            </div>
+          )}
+          {success && (
+            <div className="text-center">
+              <p className="text-green-500 text-lg">Authentication successful!</p>
+              <p className="mt-2">Redirecting to home in {countdown} seconds...</p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="justify-center">
+          <Button onClick={handleClose}>
+            Close and return to home
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
 
-export default function SuspenseLinkedInCallback() {
+// Main exported function for the page
+export default function LinkedInCallbackPage() {
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <LinkedInCallback />
