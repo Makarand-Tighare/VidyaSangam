@@ -1,5 +1,6 @@
 import { Comfortaa, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 
 // Load the Google Fonts with specific weights and subsets
 const comfortaa = Comfortaa({
@@ -71,6 +72,20 @@ export default function RootLayout({ children }) {
       <body
         className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] h-full mb-0 pb-0`}
       >
+
+        {/* Google Analytics Scripts */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-EFG5FKTN9J"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-EFG5FKTN9J');
+          `}
+        </Script>
         {children}
       </body>
     </html>

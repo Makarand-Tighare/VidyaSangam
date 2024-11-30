@@ -15,17 +15,18 @@ export default function Leaderboard() {
   const router = useRouter();
   
   const leaderboardData = [
-    { id: 1, name: "Alice Johnson", score: 1250, sessionsAttended: 15, tasksCompleted: 42, feedbackGiven: "Excellent" },
-    { id: 2, name: "Bob Smith", score: 1100, sessionsAttended: 12, tasksCompleted: 38, feedbackGiven: "Good" },
-    { id: 3, name: "Charlie Brown", score: 1000, sessionsAttended: 10, tasksCompleted: 35, feedbackGiven: "Very Good" },
-    { id: 4, name: "Diana Prince", score: 950, sessionsAttended: 8, tasksCompleted: 30, feedbackGiven: "Good" },
-    { id: 5, name: "Ethan Hunt", score: 900, sessionsAttended: 7, tasksCompleted: 28, feedbackGiven: "Satisfactory" },
-    { id: 6, name: "Fiona Gallagher", score: 850, sessionsAttended: 6, tasksCompleted: 25, feedbackGiven: "Good" },
-    { id: 7, name: "George Weasley", score: 800, sessionsAttended: 5, tasksCompleted: 22, feedbackGiven: "Satisfactory" },
-    { id: 8, name: "Hermione Granger", score: 750, sessionsAttended: 4, tasksCompleted: 20, feedbackGiven: "Excellent" },
-    { id: 9, name: "Ian Gallagher", score: 700, sessionsAttended: 3, tasksCompleted: 18, feedbackGiven: "Good" },
-    { id: 10, name: "Jessica Jones", score: 650, sessionsAttended: 2, tasksCompleted: 15, feedbackGiven: "Satisfactory" },
-  ]
+    { id: 1, name: "Makarand Tighare", score: 1250, sessionsAttended: 15, tasksCompleted: 42, feedbackGiven: "Excellent" },
+    { id: 2, name: "Ramna Varma", score: 1100, sessionsAttended: 12, tasksCompleted: 38, feedbackGiven: "Good" },
+    { id: 3, name: "Paras Pethe", score: 1000, sessionsAttended: 10, tasksCompleted: 35, feedbackGiven: "Very Good" },
+    { id: 4, name: "Vivek Devkar", score: 950, sessionsAttended: 8, tasksCompleted: 30, feedbackGiven: "Good" },
+    { id: 5, name: "Pravin Yadav", score: 900, sessionsAttended: 7, tasksCompleted: 28, feedbackGiven: "Satisfactory" },
+    { id: 6, name: "Kala Ghoda", score: 850, sessionsAttended: 6, tasksCompleted: 25, feedbackGiven: "Good" },
+    { id: 7, name: "Nikhil Jadhav", score: 800, sessionsAttended: 5, tasksCompleted: 22, feedbackGiven: "Satisfactory" },
+    { id: 8, name: "Meera Shenoy", score: 750, sessionsAttended: 4, tasksCompleted: 20, feedbackGiven: "Excellent" },
+    { id: 9, name: "Siddharth Menon", score: 700, sessionsAttended: 3, tasksCompleted: 18, feedbackGiven: "Good" },
+    { id: 10, name: "Priya Kulkarni", score: 650, sessionsAttended: 2, tasksCompleted: 15, feedbackGiven: "Satisfactory" },
+];
+
 
    // Check if the user is logged in
    useEffect(() => {
