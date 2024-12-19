@@ -33,6 +33,15 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+  
+    if (email === "admin@gmail.com" && password === "admin") {
+      // Hardcoded check for admin credentials
+      localStorage.setItem("isLoggedIn", "true");
+      setErrorMessage(""); // Clear any previous error messages
+      router.push("/adminDashboard"); // Navigate to admin dashboard
+      return;
+    }
+  
     try {
       const response = await axios.post("http://127.0.0.1:8000/api/user/login/", { 
         email, 
@@ -43,7 +52,7 @@ export default function LoginPage() {
         localStorage.setItem("authToken", token["access"]);
         localStorage.setItem("isLoggedIn", "true"); // Track logged in status
         setErrorMessage(""); // Clear any previous error messages
-        router.push("/"); // Navigate to the homepage
+        router.push("/"); // Navigate to the homepage for regular users
       } else {
         setErrorMessage("Invalid credentials, please try again.");
       }
@@ -51,7 +60,7 @@ export default function LoginPage() {
       console.error("Login error", error);
       setErrorMessage("Login failed. Please check your credentials and try again.");
     }
-  };
+  };  
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] flex flex-col p-2">
