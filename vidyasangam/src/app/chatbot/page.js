@@ -14,6 +14,7 @@ export default function Chatassistant() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
   const router = useRouter();
+  const [dots, setDots] = useState('');
 
   const scrollToassistanttom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -29,6 +30,16 @@ export default function Chatassistant() {
       router.push("/login");
     } 
   }, [router]);
+
+  useEffect(() => {
+    if (!loading) return;
+
+    const interval = setInterval(() => {
+      setDots((prev) => (prev.length < 5 ? prev + '.' : ''));
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -156,7 +167,7 @@ export default function Chatassistant() {
             <div className={`max-w-[80%] px-4 py-2 rounded-lg ${
               isDarkMode ? 'bg-gray-700 text-white' : 'bg-white text-gray-800'
             }`}>
-              Typing...
+              Thinking {dots}
             </div>
           </div>
         )}
