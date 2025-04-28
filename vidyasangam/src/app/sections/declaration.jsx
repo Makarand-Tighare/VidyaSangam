@@ -18,7 +18,7 @@ export function Declaration({ data, updateData, updateFiles, errors = {}, requir
     if (!data?.date) {
       updateData({ date: getCurrentDate() });
     }
-  }, []);
+  }, [data?.date, updateData]);
 
   const handleChange = (name, value) => {
     updateData({ [name]: value });

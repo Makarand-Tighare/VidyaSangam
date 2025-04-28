@@ -130,7 +130,7 @@ export function ProfessionalExperience({ data, updateData, updateFiles, errors =
         {data?.hasSeminarsWorkshops === 'yes' && (
           <div className="space-y-2">
             <Label htmlFor="describeSeminarsWorkshops" className="flex items-center">
-              Describe the seminars or workshops you've attended
+              Describe the seminars or workshops you&apos;ve attended
               {required && <span className="text-red-500 ml-1">*</span>}
             </Label>
             <Textarea
