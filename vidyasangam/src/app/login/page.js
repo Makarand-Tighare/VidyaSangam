@@ -34,7 +34,7 @@ export default function LoginPage() {
   const handleLogin = async (e) => {
     e.preventDefault();
   
-    if (email === "admin@gmail.com" && password === "admin") {
+    if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
       // Hardcoded check for admin credentials
       localStorage.setItem("isLoggedIn", "true");
       setErrorMessage(""); // Clear any previous error messages
