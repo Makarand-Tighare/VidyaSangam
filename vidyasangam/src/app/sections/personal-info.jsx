@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export function PersonalInfo({ data, updateData }) {
+export function PersonalInfo({ data, updateData, errors = {}, required = false }) {
   const handleChange = (e) => {
     updateData({ [e.target.name]: e.target.value });
   };
@@ -14,32 +14,49 @@ export function PersonalInfo({ data, updateData }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+        <Label htmlFor="name" className="flex items-center">
+          Name
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Input 
           id="name" 
           name="name" 
           value={data?.name || ''} 
           onChange={handleChange} 
           required 
+          className={errors.name ? "border-red-500" : ""}
         />
+        {errors.name && (
+          <p className="text-sm text-red-500">{errors.name}</p>
+        )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="registrationNumber">Registration Number</Label>
+        <Label htmlFor="registrationNumber" className="flex items-center">
+          Registration Number
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Input 
           id="registrationNumber" 
           name="registrationNumber" 
           value={data?.registrationNumber || ''} 
           onChange={handleChange} 
           required 
+          className={errors.registrationNumber ? "border-red-500" : ""}
         />
+        {errors.registrationNumber && (
+          <p className="text-sm text-red-500">{errors.registrationNumber}</p>
+        )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="semester">Semester</Label>
+        <Label htmlFor="semester" className="flex items-center">
+          Semester
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Select 
           onValueChange={(value) => handleSelectChange('semester', value)} 
           value={data?.semester || ''}
         >
-          <SelectTrigger>
+          <SelectTrigger className={errors.semester ? "border-red-500" : ""}>
             <SelectValue placeholder="Select semester" />
           </SelectTrigger>
           <SelectContent>
@@ -50,14 +67,20 @@ export function PersonalInfo({ data, updateData }) {
             ))}
           </SelectContent>
         </Select>
+        {errors.semester && (
+          <p className="text-sm text-red-500">{errors.semester}</p>
+        )}
       </div>
       <div className="space-y-2">
-        <Label htmlFor="branch">Branch</Label>
+        <Label htmlFor="branch" className="flex items-center">
+          Branch
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Select 
           onValueChange={(value) => handleSelectChange('branch', value)} 
           value={data?.branch || ''}
         >
-          <SelectTrigger>
+          <SelectTrigger className={errors.branch ? "border-red-500" : ""}>
             <SelectValue placeholder="Select branch" />
           </SelectTrigger>
           <SelectContent>
@@ -68,6 +91,9 @@ export function PersonalInfo({ data, updateData }) {
             <SelectItem value="me">Mechanical Engineering</SelectItem> */}
           </SelectContent>
         </Select>
+        {errors.branch && (
+          <p className="text-sm text-red-500">{errors.branch}</p>
+        )}
       </div>
     </div>
   );

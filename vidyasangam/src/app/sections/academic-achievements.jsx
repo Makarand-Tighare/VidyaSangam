@@ -1,28 +1,46 @@
+import { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileUpload } from '../file-upload';
 
-export function AcademicAchievements({ data, updateData }) {
+export function AcademicAchievements({ data, updateData, updateFiles, errors = {}, required = false }) {
+  const [paperCount, setPaperCount] = useState(data?.paperCount || '');
+  const [hackathonWins, setHackathonWins] = useState(data?.hackathonWins || '');
+  const [hackathonParticipations, setHackathonParticipations] = useState(data?.hackathonParticipations || '');
+
+  useEffect(() => {
+    setPaperCount(data?.paperCount || '');
+    setHackathonWins(data?.hackathonWins || '');
+    setHackathonParticipations(data?.hackathonParticipations || '');
+  }, [data?.paperCount, data?.hackathonWins, data?.hackathonParticipations]);
+
   const handleChange = (name, value) => {
     updateData({ [name]: value });
   };
 
   const handleFileChange = (name, files) => {
     if (files) {
-      updateData({ [name]: Array.from(files) });
+      updateFiles(name, Array.from(files));
     }
   };
+
+  // Determine if file uploads are required
+  const isResearchUploadRequired = data?.researchPapers && data.researchPapers !== 'None' && paperCount && parseInt(paperCount) > 0;
+  const isHackathonUploadRequired = data?.hackathonParticipation && data.hackathonParticipation !== 'None' && hackathonParticipations && parseInt(hackathonParticipations) > 0;
 
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <Label htmlFor="researchPapers">Published Research Papers</Label>
+        <Label htmlFor="researchPapers" className="flex items-center">
+          Published Research Papers
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Select 
           onValueChange={(value) => handleChange('researchPapers', value)}
           value={data?.researchPapers || ''}
         >
-          <SelectTrigger id="researchPapers">
+          <SelectTrigger id="researchPapers" className={errors.researchPapers ? "border-red-500" : ""}>
             <SelectValue placeholder="Select research paper type" />
           </SelectTrigger>
           <SelectContent>
@@ -32,20 +50,33 @@ export function AcademicAchievements({ data, updateData }) {
             <SelectItem value="None">None</SelectItem>
           </SelectContent>
         </Select>
+        {errors.researchPapers && (
+          <p className="text-sm text-red-500">{errors.researchPapers}</p>
+        )}
       </div>
 
       {data?.researchPapers && data.researchPapers !== 'None' && (
         <>
           <div className="space-y-2">
-            <Label htmlFor="paperCount">Number of Papers</Label>
+            <Label htmlFor="paperCount" className="flex items-center">
+              Number of Papers
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
             <Input 
               id="paperCount" 
               name="paperCount" 
               type="number" 
               min="1"
-              value={data?.paperCount || ''} 
-              onChange={(e) => handleChange('paperCount', e.target.value)} 
+              value={paperCount} 
+              onChange={(e) => {
+                setPaperCount(e.target.value);
+                handleChange('paperCount', e.target.value);
+              }} 
+              className={errors.paperCount ? "border-red-500" : ""}
             />
+            {errors.paperCount && (
+              <p className="text-sm text-red-500">{errors.paperCount}</p>
+            )}
           </div>
 
           <FileUpload 
@@ -55,18 +86,23 @@ export function AcademicAchievements({ data, updateData }) {
             multiple={true}
             maxSize={5}
             tooltip="Upload PDFs or images of your research publications. Max 5MB per file."
-            onChange={(files) => handleFileChange('researchProof', files)}
+            onChange={handleFileChange}
+            required={isResearchUploadRequired}
+            error={errors.researchProof}
           />
         </>
       )}
 
       <div className="space-y-2">
-        <Label htmlFor="hackathonParticipation">Hackathon Participation</Label>
+        <Label htmlFor="hackathonParticipation" className="flex items-center">
+          Hackathon Participation
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
         <Select 
           onValueChange={(value) => handleChange('hackathonParticipation', value)}
           value={data?.hackathonParticipation || ''}
         >
-          <SelectTrigger id="hackathonParticipation">
+          <SelectTrigger id="hackathonParticipation" className={errors.hackathonParticipation ? "border-red-500" : ""}>
             <SelectValue placeholder="Select hackathon level" />
           </SelectTrigger>
           <SelectContent>
@@ -76,42 +112,68 @@ export function AcademicAchievements({ data, updateData }) {
             <SelectItem value="None">None</SelectItem>
           </SelectContent>
         </Select>
+        {errors.hackathonParticipation && (
+          <p className="text-sm text-red-500">{errors.hackathonParticipation}</p>
+        )}
       </div>
 
       {data?.hackathonParticipation && data.hackathonParticipation !== 'None' && (
         <>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="hackathonWins">Number of Wins</Label>
+              <Label htmlFor="hackathonWins" className="flex items-center">
+                Number of Wins
+                {required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
               <Input 
                 id="hackathonWins" 
                 name="hackathonWins" 
                 type="number" 
                 min="0"
-                value={data?.hackathonWins || ''} 
-                onChange={(e) => handleChange('hackathonWins', e.target.value)} 
+                value={hackathonWins} 
+                onChange={(e) => {
+                  setHackathonWins(e.target.value);
+                  handleChange('hackathonWins', e.target.value);
+                }}
+                className={errors.hackathonWins ? "border-red-500" : ""}
               />
+              {errors.hackathonWins && (
+                <p className="text-sm text-red-500">{errors.hackathonWins}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="hackathonParticipations">Number of Participations</Label>
+              <Label htmlFor="hackathonParticipations" className="flex items-center">
+                Number of Participations
+                {required && <span className="text-red-500 ml-1">*</span>}
+              </Label>
               <Input 
                 id="hackathonParticipations" 
                 name="hackathonParticipations" 
                 type="number" 
-                min="0"
-                value={data?.hackathonParticipations || ''} 
-                onChange={(e) => handleChange('hackathonParticipations', e.target.value)} 
+                min="1"
+                value={hackathonParticipations} 
+                onChange={(e) => {
+                  setHackathonParticipations(e.target.value);
+                  handleChange('hackathonParticipations', e.target.value);
+                }}
+                className={errors.hackathonParticipations ? "border-red-500" : ""}
               />
+              {errors.hackathonParticipations && (
+                <p className="text-sm text-red-500">{errors.hackathonParticipations}</p>
+              )}
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="hackathonRole">Role</Label>
+            <Label htmlFor="hackathonRole" className="flex items-center">
+              Role
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </Label>
             <Select 
               onValueChange={(value) => handleChange('hackathonRole', value)} 
               value={data?.hackathonRole || ''}
             >
-              <SelectTrigger id="hackathonRole">
+              <SelectTrigger id="hackathonRole" className={errors.hackathonRole ? "border-red-500" : ""}>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
               <SelectContent>
@@ -119,6 +181,9 @@ export function AcademicAchievements({ data, updateData }) {
                 <SelectItem value="member">Member</SelectItem>
               </SelectContent>
             </Select>
+            {errors.hackathonRole && (
+              <p className="text-sm text-red-500">{errors.hackathonRole}</p>
+            )}
           </div>
 
           <FileUpload 
@@ -128,7 +193,9 @@ export function AcademicAchievements({ data, updateData }) {
             multiple={true}
             maxSize={5}
             tooltip="Upload PDFs or images of your hackathon certificates. Max 5MB per file."
-            onChange={(files) => handleFileChange('hackathonProof', files)}
+            onChange={handleFileChange}
+            required={isHackathonUploadRequired}
+            error={errors.hackathonProof}
           />
         </>
       )}
