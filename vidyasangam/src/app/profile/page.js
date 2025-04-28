@@ -22,11 +22,18 @@ export default function Profile() {
     status: '',
     email: '',
     phone: '',
-    birthday: '',
     section: '',
     year: '',
     semester: '',
     linkedin_access_token: '',
+  })
+
+  const [mentorMenteeData, setMentorMenteeData] = useState({
+    mentor: null,
+    mentees: [],
+    branch: '',
+    tech_stack: '',
+    areas_of_interest: '',
   })
 
   const [securityData, setSecurityData] = useState({
@@ -63,15 +70,19 @@ export default function Profile() {
           firstName: data.first_name || '',
           lastName: data.last_name || '',
           organizationName: 'Yeshwantrao Chavan College of Engineering (YCCE), Nagpur',
-          status: 'Mentor',
+          status: 'Loading...',
           email: data.email || '',
           phone: data.mobile_number || '',
-          birthday: '',
           section: data.section || '',
           year: data.year || '',
           semester: data.semester || '',
           linkedin_access_token: data.linkedin_access_token || '',
         })
+
+        // Fetch mentor/mentee status
+        if (data.reg_no) {
+          fetchMentorMenteeStatus(data.reg_no)
+        }
       } catch (error) {
         console.error('Error fetching user data:', error)
       }
@@ -79,6 +90,55 @@ export default function Profile() {
 
     fetchUserData()
   }, [])
+
+  const fetchMentorMenteeStatus = async (registrationNo) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`)
+      
+      if (!response.ok) throw new Error('Failed to fetch mentor/mentee data')
+      
+      const data = await response.json()
+      console.log('Mentor/Mentee API response:', data)
+      
+      setMentorMenteeData({
+        mentor: data.mentor,
+        mentees: data.mentees || [],
+        branch: data.branch || '',
+        tech_stack: data.tech_stack || '',
+        areas_of_interest: data.areas_of_interest || '',
+      })
+      
+      // Determine status based on the mentor/mentee data
+      let status = 'Student'
+      
+      // If the person has mentoring_preferences set to mentor in the API
+      if (data.mentoring_preferences && data.mentoring_preferences.toLowerCase() === 'mentor') {
+        status = 'Mentor'
+      }
+      // If they have mentees assigned (regardless of preferences)
+      else if (data.mentees && data.mentees.length > 0) {
+        status = 'Mentor'
+      }
+      // If they have a mentor assigned
+      else if (data.mentor !== null) {
+        status = 'Mentee'
+      }
+      
+      console.log('Determined status:', status)
+      
+      setFormData(prev => ({
+        ...prev,
+        status
+      }))
+      
+    } catch (error) {
+      console.error('Error fetching mentor/mentee status:', error)
+      setFormData(prev => ({
+        ...prev,
+        status: 'Student'
+      }))
+    }
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -182,7 +242,7 @@ export default function Profile() {
                     name="status"
                     value={formData.status}
                     onChange={handleInputChange}
-                    disabled={!isEditing}
+                    disabled={true}
                   />
                 </div>
                 <div>
@@ -207,24 +267,78 @@ export default function Profile() {
                     disabled={!isEditing}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="birthday">Birthday</Label>
-                  <Input
-                    id="birthday"
-                    name="birthday"
-                    type="date"
-                    value={formData.birthday}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
               </div>
-              <Button type="submit" disabled={!isEditing}>
+              <Button type="submit" disabled={!isEditing} onClick={() => !isEditing && setIsEditing(true)}>
                 {isEditing ? "Save Changes" : "Edit Details"}
               </Button>
             </form>
           </CardContent>
         </Card>
+
+        {mentorMenteeData.mentor !== null && (
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle>Your Mentor</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 p-4 rounded-md">
+                <h3 className="text-lg font-medium text-blue-700 mb-2">
+                  {mentorMenteeData.mentor?.name || "Not assigned yet"}
+                </h3>
+                {mentorMenteeData.mentor && (
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm font-semibold">Registration No:</p>
+                      <p>{mentorMenteeData.mentor.registration_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Semester:</p>
+                      <p>{mentorMenteeData.mentor.semester}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold">Tech Stack:</p>
+                      <p>{mentorMenteeData.mentor.tech_stack || "Not specified"}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {mentorMenteeData.mentees.length > 0 && (
+          <Card className="md:col-span-3">
+            <CardHeader>
+              <CardTitle>Your Mentees</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tech Stack</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {mentorMenteeData.mentees.map((mentee, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mentee.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.branch}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.tech_stack}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="md:col-span-3">
           <CardHeader>
