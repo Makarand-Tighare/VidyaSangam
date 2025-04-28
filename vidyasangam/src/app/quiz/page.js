@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,7 +8,20 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import NavBar from '../components/navBar'
 
-export default function QuizPage() {
+// Loading component for Suspense fallback
+function QuizLoading() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
+      <NavBar />
+      <div className="flex justify-center items-center h-[80vh]">
+        <p className="text-lg">Loading quiz...</p>
+      </div>
+    </div>
+  );
+}
+
+// Client component that uses search params
+function QuizContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const taskId = searchParams.get('taskId')
@@ -321,5 +334,14 @@ export default function QuizPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// Main page component with Suspense boundary
+export default function QuizPage() {
+  return (
+    <Suspense fallback={<QuizLoading />}>
+      <QuizContent />
+    </Suspense>
   )
 } 
