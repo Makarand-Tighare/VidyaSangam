@@ -158,41 +158,64 @@ export default function SessionManagement() {
     }
   };
   
-  // Mock function to load sessions from a server
-  const loadSessions = (status) => {
-    // In a real implementation, this would fetch from your API
-    // For now, we'll create mock data
-    const mockSessions = [
-      {
-        type: "virtual",
-        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toLocaleString(), // 2 days ago
-        summary: "Discussed project progress and upcoming milestones.",
-        meetLink: "https://meet.google.com/abc-defg-hij",
-        mentor: "Dr. Sharma",
-        duration: "45 minutes",
-        participants: ["Rahul Singh", "Priya Sharma"]
-      },
-      {
-        type: "physical",
-        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toLocaleString(), // 7 days ago
-        summary: "Met in the lab to review code implementation and debug issues.",
-        location: "Engineering Block, Room 204",
-        mentor: "Prof. Joshi",
-        duration: "60 minutes",
-        participants: ["Ajay Patel"]
-      },
-      {
-        type: "virtual",
-        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toLocaleString(), // 14 days ago
-        summary: "Initial project scope discussion and planning session.",
-        meetLink: "https://meet.google.com/xyz-abcd-efg",
-        mentor: "Dr. Sharma",
-        duration: "30 minutes",
-        participants: ["Neha Gupta", "Rahul Singh"]
+  // Function to load sessions from a server
+  const loadSessions = async (status) => {
+    try {
+      setIsLoading(true);
+      
+      // Get registration number from profile
+      const profileResponse = await fetch("http://127.0.0.1:8000/api/user/profile/", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!profileResponse.ok) {
+        throw new Error("Failed to fetch user profile");
       }
-    ];
-    
-    setSessions(mockSessions);
+      
+      const profileData = await profileResponse.json();
+      const registrationNo = profileData.reg_no;
+      
+      if (!registrationNo) {
+        throw new Error("Registration number not found");
+      }
+      
+      // Fetch sessions for this user (works for both mentors and mentees)
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/sessions/user/${registrationNo}/`, {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch sessions");
+      }
+      
+      const sessionsData = await response.json();
+      
+      // Transform API response to match our UI format
+      const formattedSessions = sessionsData.map(session => ({
+        id: session.session_id,
+        type: session.session_type,
+        date: new Date(session.date_time).toLocaleString(),
+        summary: session.summary,
+        meetLink: session.meeting_link,
+        location: session.location,
+        mentor: status === 'Mentor' ? 'You' : session.mentor_details?.name || 'Unknown',
+        duration: "Scheduled", // You might want to calculate this based on session data
+        participants: session.participant_details?.map(p => p.name) || []
+      }));
+      
+      setSessions(formattedSessions);
+    } catch (error) {
+      console.error("Error loading sessions:", error);
+      setSessions([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleMenteeSelection = (menteeId) => {
@@ -223,106 +246,104 @@ export default function SessionManagement() {
       return;
     }
     
-    console.log(`Creating ${sessionType} session with mentees:`, selectedMentees);
-    
-    // Log the mentees that will be included
-    const selectedMenteeNames = selectedMentees.map(id => {
-      const mentee = mentees.find(m => m.id === id);
-      return mentee ? `${mentee.name} (${mentee.registrationNo})` : null;
-    }).filter(Boolean);
-    
-    console.log("Selected mentees:", selectedMenteeNames);
-    
     setIsLoading(true);
-
-    if (sessionType === "virtual") {
-      try {
+    
+    try {
+      // Get current user's registration number
+      const profileResponse = await fetch("http://127.0.0.1:8000/api/user/profile/", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
+          "Content-Type": "application/json"
+        }
+      });
+      
+      if (!profileResponse.ok) {
+        throw new Error("Failed to fetch profile");
+      }
+      
+      const profileData = await profileResponse.json();
+      const mentorRegNo = profileData.reg_no;
+      
+      // Get selected mentee registration numbers
+      const participantRegNos = selectedMentees.map(id => {
+        const mentee = mentees.find(m => m.id === id);
+        return mentee ? mentee.registrationNo : null;
+      }).filter(Boolean);
+      
+      // For virtual sessions, first create a meeting link if needed
+      let meetingLink = null;
+      let location = null;
+      
+      if (sessionType === "virtual") {
         const isAuthorized = localStorage.getItem("isAuthorized");
-
+        
         if (!isAuthorized) {
           window.open("http://127.0.0.1:8000/api/utility/authorize", "_blank");
           localStorage.setItem("isAuthorized", "true");
           setIsLoading(false);
           return;
         }
-
-        const response = await fetch("http://127.0.0.1:8000/api/utility/create-meet", {
+        
+        const meetResponse = await fetch("http://127.0.0.1:8000/api/utility/create-meet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${localStorage.getItem("authToken")}`
           },
-          credentials: "include",
-          body: JSON.stringify({
-            menteeRegistrationNos: selectedMentees.map(id => {
-              const mentee = mentees.find(m => m.id === id);
-              return mentee ? mentee.registrationNo : null;
-            }).filter(Boolean)
-          })
+          credentials: "include"
         });
-
-        if (response.redirected) {
-          window.open(response.url, "_blank");
+        
+        if (meetResponse.redirected) {
+          window.open(meetResponse.url, "_blank");
           setIsLoading(false);
           return;
         }
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error("Error creating meeting:", errorData.error);
-          setIsLoading(false);
-          return;
+        
+        if (!meetResponse.ok) {
+          throw new Error("Failed to create meeting");
         }
-
-        const data = await response.json();
-        if (data.meet_link) {
-          // Get the names of selected mentees
-          const selectedMenteeNames = selectedMentees.map(id => {
-            const mentee = mentees.find(m => m.id === id);
-            return mentee ? mentee.name : null;
-          }).filter(Boolean);
-          
-          const newSession = {
-            type: sessionType,
-            date: new Date().toLocaleString(),
-            summary: "Virtual session scheduled.",
-            meetLink: data.meet_link,
-            mentor: "You",
-            duration: "Scheduled",
-            participants: selectedMenteeNames
-          };
-
-          setSessions((prevSessions) => [newSession, ...prevSessions]);
-          
-          // Reset selected mentees
-          setSelectedMentees([]);
-        }
-      } catch (error) {
-        console.error("Error creating meeting:", error);
-      } finally {
-        setIsLoading(false);
+        
+        const meetData = await meetResponse.json();
+        meetingLink = meetData.meet_link;
+      } else {
+        // For physical session
+        location = "To be determined";
       }
-    } else {
-      // Get the names of selected mentees
-      const selectedMenteeNames = selectedMentees.map(id => {
-        const mentee = mentees.find(m => m.id === id);
-        return mentee ? mentee.name : null;
-      }).filter(Boolean);
       
-      const newSession = {
-        type: sessionType,
-        date: new Date().toLocaleString(),
-        summary: "Physical session scheduled.",
-        location: "To be determined",
-        mentor: "You",
-        duration: "Scheduled",
-        participants: selectedMenteeNames
+      // Create the session in the backend
+      const sessionData = {
+        mentor: mentorRegNo,
+        session_type: sessionType,
+        date_time: new Date().toISOString(),
+        meeting_link: meetingLink,
+        location: location,
+        summary: sessionType === "virtual" ? "Virtual session scheduled." : "Physical session scheduled.",
+        participants: participantRegNos
       };
-
-      setSessions((prevSessions) => [newSession, ...prevSessions]);
+      
+      const response = await fetch("http://127.0.0.1:8000/api/mentor_mentee/sessions/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify(sessionData)
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to create session");
+      }
+      
+      // Session created successfully, now reload the sessions
+      await loadSessions(userStatus.status);
       
       // Reset selected mentees
       setSelectedMentees([]);
+      
+    } catch (error) {
+      console.error("Error creating session:", error);
+      alert("Failed to create session. Please try again.");
+    } finally {
       setIsLoading(false);
     }
   };

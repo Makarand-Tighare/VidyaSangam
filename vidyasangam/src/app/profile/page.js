@@ -514,7 +514,7 @@ export default function Profile() {
             <CardTitle>Profile Picture</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center">
-            <Avatar className="w-32 h-32 mb-4">
+          <Avatar className="w-32 h-32 mb-4">
               <AvatarImage 
                 src={profilePicture || "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380"} 
                 alt="Profile" 
@@ -524,7 +524,7 @@ export default function Profile() {
                   ? `${formData.firstName[0]}${formData.lastName[0]}`
                   : 'PP'}
               </AvatarFallback>
-            </Avatar>
+      </Avatar>
             <p className="text-sm text-muted-foreground mb-4">JPG or PNG no larger than 5 MB</p>
             
             {/* Hidden file input */}
@@ -853,37 +853,37 @@ export default function Profile() {
             <CardTitle>Change Password</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSecuritySubmit} className="space-y-4">
-              <div>
-                <Label htmlFor="currentPassword">Current Password</Label>
-                <Input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={securityData.currentPassword}
-                  onChange={handleSecurityChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="newPassword">New Password</Label>
-                <Input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={securityData.newPassword}
-                  onChange={handleSecurityChange}
-                />
-              </div>
-              <div>
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={securityData.confirmPassword}
-                  onChange={handleSecurityChange}
-                />
-              </div>
+                <form onSubmit={handleSecuritySubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Input
+                      id="currentPassword"
+                      name="currentPassword"
+                      type="password"
+                      value={securityData.currentPassword}
+                      onChange={handleSecurityChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <Input
+                      id="newPassword"
+                      name="newPassword"
+                      type="password"
+                      value={securityData.newPassword}
+                      onChange={handleSecurityChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={securityData.confirmPassword}
+                      onChange={handleSecurityChange}
+                    />
+                  </div>
               <Button type="submit" disabled={securityData.isSubmitting}>
                 {securityData.isSubmitting ? (
                   <>
@@ -899,7 +899,7 @@ export default function Profile() {
                   {securityData.message}
                 </p>
               )}
-            </form>
+                </form>
           </CardContent>
         </Card>
       </div>
