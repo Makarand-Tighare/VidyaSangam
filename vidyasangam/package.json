@@ -28,6 +28,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cohere-ai": "^7.14.0",
+    "framer-motion": "^12.9.2",
     "lucide-react": "^0.451.0",
     "marked": "^14.1.2",
     "next": "14.2.14",

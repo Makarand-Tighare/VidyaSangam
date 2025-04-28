@@ -18,6 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import AlreadyPartAnimation from '../components/AlreadyPartAnimation';
+import { checkUserMentorMenteeStatus } from '../lib/userStatus';
 
 const sections = [
   'Personal Information',
@@ -179,6 +181,13 @@ export default function MentoringForm() {
   const [showErrors, setShowErrors] = useState(false);
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
+  
+  // Add state for user status check
+  const [userStatus, setUserStatus] = useState({
+    isMentorOrMentee: false,
+    status: 'Student',
+    checking: true
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -187,6 +196,28 @@ export default function MentoringForm() {
       router.push("/login");
       return;
     }
+    
+    // Check if user is already a mentor or mentee
+    const checkStatus = async () => {
+      try {
+        const result = await checkUserMentorMenteeStatus();
+        console.log('User status check result:', result);
+        setUserStatus({
+          isMentorOrMentee: result.isMentorOrMentee,
+          status: result.status,
+          checking: false
+        });
+      } catch (error) {
+        console.error("Error checking mentor/mentee status:", error);
+        setUserStatus({
+          isMentorOrMentee: false,
+          status: 'Student',
+          checking: false
+        });
+      }
+    };
+    
+    checkStatus();
     
     // Load saved form data
     const savedData = localStorage.getItem('mentoringFormData');
@@ -203,14 +234,15 @@ export default function MentoringForm() {
     
     if (savedSection) {
       try {
-        const parsedSection = parseInt(savedSection);
-        setCurrentSection(parsedSection);
+        const section = parseInt(savedSection);
+        setCurrentSection(section);
       } catch (error) {
         console.error("Error parsing saved section:", error);
       }
     }
     
     setIsLoaded(true);
+    
   }, [router]);
 
   useEffect(() => {
@@ -500,70 +532,160 @@ export default function MentoringForm() {
     required: true
   };
 
-  if (!isLoaded) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  // If the component is still loading, show a loading spinner
+  if (!isLoaded || userStatus.checking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <NavBar />
+        <div className="flex flex-col items-center justify-center h-[70vh]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  // If user is already a mentor or mentee, show the animation
+  if (userStatus.isMentorOrMentee) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+        <NavBar />
+        <AlreadyPartAnimation status={userStatus.status} />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] p-2">
-      <NavBar/>
-      <div className="flex flex-col items-center justify-center p-4">
-        <Card className="w-full max-w-4xl">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      <NavBar />
+      <div className="p-4 max-w-5xl mx-auto pt-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Mentorship Program Application</h1>
+        
+        <div className="mb-8">
+          <ProgressBar progress={progress} />
+        </div>
+        
+        {/* Error alert */}
+        {showErrors && Object.values(errors).some(error => error) && (
+          <Alert className="mb-6 border-red-400 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-600">
+              Please fix the errors before proceeding.
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-2xl font-bold text-center mb-4">Mentor Mentee Program Application</CardTitle>
-            <ProgressBar progress={progress} />
+            <CardTitle>{sections[currentSection]}</CardTitle>
           </CardHeader>
           <CardContent>
-            {showErrors && Object.keys(errors).length > 0 && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Please fix the errors before proceeding
-                </AlertDescription>
-              </Alert>
+            {/* Render the appropriate section based on currentSection */}
+            {currentSection === 0 && (
+              <PersonalInfo
+                formData={formData}
+                updateFormData={updateFormData}
+                errors={errors}
+              />
             )}
-            <form onSubmit={handleSubmit}>
-              {currentSection === 0 && <PersonalInfo {...sectionProps} />}
-              {currentSection === 1 && <MentoringPreferences {...sectionProps} />}
-              {currentSection === 2 && <AcademicAchievements {...sectionProps} />}
-              {currentSection === 3 && <CodingCompetitions {...sectionProps} />}
-              {currentSection === 4 && <AcademicPerformance {...sectionProps} />}
-              {currentSection === 5 && <ProfessionalExperience {...sectionProps} />}
-              {currentSection === 6 && <ExtracurricularActivities {...sectionProps} />}
-              {currentSection === 7 && <Declaration {...sectionProps} />}
-            </form>
+            {currentSection === 1 && (
+              <MentoringPreferences
+                formData={formData}
+                updateFormData={updateFormData}
+                errors={errors}
+              />
+            )}
+            {currentSection === 2 && (
+              <AcademicAchievements
+                formData={formData}
+                updateFormData={updateFormData}
+                updateFormFiles={updateFormFiles}
+                errors={errors}
+              />
+            )}
+            {currentSection === 3 && (
+              <CodingCompetitions
+                formData={formData}
+                updateFormData={updateFormData}
+                updateFormFiles={updateFormFiles}
+                errors={errors}
+              />
+            )}
+            {currentSection === 4 && (
+              <AcademicPerformance
+                formData={formData}
+                updateFormData={updateFormData}
+                updateFormFiles={updateFormFiles}
+                errors={errors}
+              />
+            )}
+            {currentSection === 5 && (
+              <ProfessionalExperience
+                formData={formData}
+                updateFormData={updateFormData}
+                updateFormFiles={updateFormFiles}
+                errors={errors}
+              />
+            )}
+            {currentSection === 6 && (
+              <ExtracurricularActivities
+                formData={formData}
+                updateFormData={updateFormData}
+                updateFormFiles={updateFormFiles}
+                errors={errors}
+              />
+            )}
+            {currentSection === 7 && (
+              <Declaration
+                formData={formData}
+                updateFormData={updateFormData}
+                errors={errors}
+              />
+            )}
           </CardContent>
           <CardFooter className="flex justify-between">
-            <Button onClick={handlePrevious} disabled={currentSection === 0}>Previous</Button>
+            <Button 
+              variant="outline" 
+              onClick={handlePrevious}
+              disabled={currentSection === 0}
+            >
+              Previous
+            </Button>
+            
             {currentSection < sections.length - 1 ? (
               <Button onClick={handleNext}>Next</Button>
             ) : (
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
-                {isSubmitting ? 'Submitting...' : 'Submit'}
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isSubmitting ? "Submitting..." : "Submit Application"}
               </Button>
             )}
           </CardFooter>
         </Card>
       </div>
-
+      
+      {/* Result Modal */}
       <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center">
               {submitResult?.success ? (
-                <CheckCircle className="h-6 w-6 text-green-500" />
+                <CheckCircle className="h-6 w-6 text-green-500 mr-2" />
               ) : (
-                <AlertCircle className="h-6 w-6 text-red-500" />
+                <AlertTriangle className="h-6 w-6 text-amber-500 mr-2" />
               )}
-              {submitResult?.success ? 'Success' : 'Error'}
+              {submitResult?.success ? "Application Submitted" : "Submission Error"}
             </DialogTitle>
+            <DialogDescription>
+              {submitResult?.message}
+            </DialogDescription>
           </DialogHeader>
-          <DialogDescription>
-            {submitResult?.message}
-          </DialogDescription>
           <DialogFooter>
             <Button onClick={closeModal}>
-              {submitResult?.success ? 'Close' : 'Try Again'}
+              {submitResult?.success ? "View Profile" : "Close"}
             </Button>
           </DialogFooter>
         </DialogContent>
