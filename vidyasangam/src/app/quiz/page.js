@@ -26,14 +26,17 @@ function QuizContent() {
   const router = useRouter()
   const taskId = searchParams.get('taskId')
   const menteeId = searchParams.get('menteeId')
+  const viewResults = searchParams.get('view') === 'results'
   
   const [quiz, setQuiz] = useState(null)
+  const [quizId, setQuizId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [currentQuestion, setCurrentQuestion] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState({})
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [score, setScore] = useState(0)
+  const [resultDetails, setResultDetails] = useState([])
   
   useEffect(() => {
     if (!taskId || !menteeId) {
@@ -42,81 +45,70 @@ function QuizContent() {
       return
     }
     
-    // In a real application, fetch the quiz from the API
+    // Fetch the quiz from the API
     const fetchQuiz = async () => {
       try {
-        // Mock API call - in production, replace with actual API call
-        // const response = await fetch(`/api/tasks?taskId=${taskId}&menteeId=${menteeId}`)
-        // if (!response.ok) throw new Error('Failed to fetch quiz')
-        // const data = await response.json()
+        // If we're viewing results, use the quiz-results endpoint
+        const endpoint = viewResults 
+          ? `http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/` 
+          : `http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`;
         
-        // Mock quiz data for development
-        const mockQuiz = {
-          id: taskId,
-          title: "Mock Quiz: JavaScript Fundamentals",
-          description: "Test your knowledge of JavaScript basics",
-          questions: [
-            {
-              id: 1,
-              question: "What is JavaScript?",
-              options: [
-                "A markup language",
-                "A programming language",
-                "A database language",
-                "A styling language"
-              ],
-              answer: 1 // Index of correct answer
-            },
-            {
-              id: 2,
-              question: "Which of the following is not a JavaScript data type?",
-              options: [
-                "String",
-                "Boolean",
-                "Float",
-                "Object"
-              ],
-              answer: 2
-            },
-            {
-              id: 3,
-              question: "How do you declare a constant variable in JavaScript?",
-              options: [
-                "var x = 5",
-                "let x = 5",
-                "const x = 5",
-                "static x = 5"
-              ],
-              answer: 2
-            },
-            {
-              id: 4,
-              question: "Which method adds an element to the end of an array?",
-              options: [
-                "push()",
-                "pop()",
-                "unshift()",
-                "shift()"
-              ],
-              answer: 0
-            },
-            {
-              id: 5,
-              question: "What does DOM stand for?",
-              options: [
-                "Document Object Model",
-                "Data Object Model",
-                "Document Oriented Mode",
-                "Dynamic Object Management"
-              ],
-              answer: 0
-            }
-          ],
-          total_marks: 10,
-          created_at: new Date().toISOString()
+        const response = await fetch(endpoint);
+        
+        if (!response.ok) throw new Error('Failed to fetch quiz');
+        
+        const quizzes = await response.json();
+        
+        // Find the specific quiz by ID
+        const selectedQuiz = quizzes.find(quiz => quiz.id.toString() === taskId);
+        
+        if (!selectedQuiz) {
+          throw new Error('Quiz not found');
         }
         
-        setQuiz(mockQuiz)
+        // Format the quiz for our UI
+        const formattedQuiz = {
+          id: selectedQuiz.id,
+          title: selectedQuiz.quiz_topic,
+          description: `Quiz with ${selectedQuiz.total_questions} questions`,
+          questions: selectedQuiz.quiz_data,
+          total_marks: selectedQuiz.total_questions,
+          created_at: selectedQuiz.quiz_date,
+          percentage: selectedQuiz.percentage,
+          quiz_answers: selectedQuiz.quiz_answers || {},
+          result_details: selectedQuiz.result_details || []
+        };
+        
+        setQuizId(selectedQuiz.id);
+        setQuiz(formattedQuiz);
+        
+        // If we're viewing results, set up the completed state
+        if (viewResults) {
+          setScore(selectedQuiz.score);
+          
+          // Use result_details from the API if available
+          if (selectedQuiz.result_details && selectedQuiz.result_details.length > 0) {
+            setResultDetails(selectedQuiz.result_details);
+          } else {
+            // Otherwise generate results from the quiz data
+            const details = formattedQuiz.questions.map((question, index) => {
+              const userAnswer = selectedQuiz.quiz_answers[index];
+              const isCorrect = userAnswer === question.answer;
+              
+              return {
+                question: question.question,
+                user_answer: userAnswer,
+                correct_answer: question.answer,
+                is_correct: isCorrect,
+                explanation: question.explanation
+              };
+            });
+            setResultDetails(details);
+          }
+          
+          setQuizCompleted(true);
+          setSelectedAnswers(selectedQuiz.quiz_answers);
+        }
       } catch (error) {
         console.error('Error fetching quiz:', error)
         setError('Failed to load quiz. Please try again.')
@@ -126,12 +118,12 @@ function QuizContent() {
     }
     
     fetchQuiz()
-  }, [taskId, menteeId])
+  }, [taskId, menteeId, viewResults])
   
-  const handleAnswerSelect = (questionIndex, answerIndex) => {
+  const handleAnswerSelect = (questionIndex, option) => {
     setSelectedAnswers(prev => ({
       ...prev,
-      [questionIndex]: answerIndex
+      [questionIndex]: option
     }))
   }
   
@@ -147,49 +139,71 @@ function QuizContent() {
     }
   }
   
-  const handleSubmit = () => {
-    // Calculate score
-    let correctAnswers = 0
-    quiz.questions.forEach((question, index) => {
-      if (selectedAnswers[index] === question.answer) {
-        correctAnswers++
+  const handleSubmit = async () => {
+    try {
+      // Disable further edits during submission
+      setLoading(true);
+      
+      // Submit answers to API
+      const result = await submitQuizResult(0, selectedAnswers);
+      
+      // Set results from API response
+      setScore(result.score || 0);
+      
+      // Use result_details from the API if available
+      if (result.result_details && result.result_details.length > 0) {
+        setResultDetails(result.result_details);
+      } else {
+        // Fallback if API doesn't return result details
+        const details = quiz.questions.map((question, index) => {
+          const userAnswer = selectedAnswers[index];
+          const isCorrect = userAnswer === question.answer;
+          
+          return {
+            question: question.question,
+            user_answer: userAnswer,
+            correct_answer: question.answer,
+            is_correct: isCorrect,
+            explanation: question.explanation
+          };
+        });
+        setResultDetails(details);
       }
-    })
-    
-    // Calculate final score based on total marks
-    const finalScore = (correctAnswers / quiz.questions.length) * quiz.total_marks
-    
-    setScore(finalScore)
-    setQuizCompleted(true)
-    
-    // In a real application, submit the result to the API
-    // submitQuizResult(finalScore)
+      
+      setQuizCompleted(true);
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      alert('Failed to submit quiz. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   }
   
-  const submitQuizResult = async (finalScore) => {
+  const submitQuizResult = async (finalScore, answers) => {
     try {
-      // Mock API call - in production, replace with actual API call
-      // await fetch('/api/quiz-results', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      //   body: JSON.stringify({
-      //     taskId,
-      //     menteeId,
-      //     score: finalScore,
-      //     answers: selectedAnswers
-      //   })
-      // })
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/submit-quiz/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          participant_id: menteeId,
+          quiz_id: quizId,
+          quiz_answers: answers
+        })
+      });
       
-      console.log('Quiz result submitted', {
-        taskId,
-        menteeId,
-        score: finalScore,
-        answers: selectedAnswers
-      })
+      if (!response.ok) throw new Error('Failed to submit quiz');
+      
+      const result = await response.json();
+      
+      // Log the result and return it
+      console.log('Quiz result submitted:', result);
+      return result;
     } catch (error) {
-      console.error('Error submitting quiz result:', error)
+      console.error('Error submitting quiz result:', error);
+      throw error;
     }
   }
   
@@ -247,18 +261,45 @@ function QuizContent() {
               </div>
               
               <div className="my-8">
-                <div className="text-4xl font-bold text-blue-600">{score.toFixed(1)}/{quiz.total_marks}</div>
-                <p className="text-gray-600 mt-2">
-                  {score >= quiz.total_marks * 0.7 ? 'Great job!' : 'Keep practicing!'}
+                <div className="text-4xl font-bold text-blue-600">{score} / {quiz.total_marks}</div>
+                <p className="text-lg text-gray-600 mt-2">
+                  {(score / quiz.total_marks) * 100 >= 70 ? 'Great job!' : 'Keep learning!'}
                 </p>
               </div>
               
-              <div className="flex justify-center mt-8">
-                <Button onClick={navigateToProfile} className="px-8">
-                  Return to Profile
-                </Button>
+              <div className="mt-8 text-left">
+                <h3 className="text-xl font-bold mb-4">Results Breakdown</h3>
+                
+                <div className="space-y-6">
+                  {resultDetails.map((result, index) => (
+                    <div key={index} className={`border rounded-lg p-4 ${result.is_correct ? 'bg-green-50' : 'bg-red-50'}`}>
+                      <h4 className="font-medium mb-2">Question {index + 1}: {result.question}</h4>
+                      
+                      <div className="ml-4">
+                        <p className="mb-1">
+                          Your answer: <span className={result.is_correct ? "font-medium text-green-600" : "font-medium text-red-600"}>
+                            {result.user_answer || 'Not answered'} - {result.user_answer ? quiz.questions[index].options[result.user_answer] : ''}
+                          </span>
+                        </p>
+                        
+                        {!result.is_correct && (
+                          <p className="mb-1 font-medium text-green-600">
+                            Correct answer: {result.correct_answer} - {quiz.questions[index].options[result.correct_answer]}
+                          </p>
+                        )}
+                        
+                        <p className="mt-2 text-sm text-gray-600">
+                          {result.explanation}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
+            <CardFooter className="flex justify-center">
+              <Button onClick={navigateToProfile}>Return to Profile</Button>
+            </CardFooter>
           </Card>
         </div>
       </div>
@@ -292,14 +333,14 @@ function QuizContent() {
               
               <RadioGroup
                 value={selectedAnswers[currentQuestion]?.toString()}
-                onValueChange={(value) => handleAnswerSelect(currentQuestion, parseInt(value))}
+                onValueChange={(value) => handleAnswerSelect(currentQuestion, value)}
                 className="space-y-4"
               >
-                {currentQuestionData.options.map((option, index) => (
-                  <div key={index} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-gray-50">
-                    <RadioGroupItem value={index.toString()} id={`option-${index}`} />
-                    <Label htmlFor={`option-${index}`} className="flex-1 cursor-pointer">
-                      {option}
+                {Object.entries(currentQuestionData.options).map(([option, label]) => (
+                  <div key={option} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-gray-50">
+                    <RadioGroupItem value={option} id={`option-${option}`} />
+                    <Label htmlFor={`option-${option}`} className="flex-1 cursor-pointer">
+                      {label}
                     </Label>
                   </div>
                 ))}

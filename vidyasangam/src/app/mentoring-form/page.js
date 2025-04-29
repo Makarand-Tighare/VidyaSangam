@@ -583,63 +583,71 @@ export default function MentoringForm() {
             {/* Render the appropriate section based on currentSection */}
             {currentSection === 0 && (
               <PersonalInfo
-                formData={formData}
-                updateFormData={updateFormData}
+                data={formData}
+                updateData={updateFormData}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 1 && (
               <MentoringPreferences
-                formData={formData}
-                updateFormData={updateFormData}
+                data={formData}
+                updateData={updateFormData}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 2 && (
               <AcademicAchievements
-                formData={formData}
-                updateFormData={updateFormData}
-                updateFormFiles={updateFormFiles}
+                data={formData}
+                updateData={updateFormData}
+                updateFiles={updateFormFiles}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 3 && (
               <CodingCompetitions
-                formData={formData}
-                updateFormData={updateFormData}
-                updateFormFiles={updateFormFiles}
+                data={formData}
+                updateData={updateFormData}
+                updateFiles={updateFormFiles}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 4 && (
               <AcademicPerformance
-                formData={formData}
-                updateFormData={updateFormData}
-                updateFormFiles={updateFormFiles}
+                data={formData}
+                updateData={updateFormData}
+                updateFiles={updateFormFiles}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 5 && (
               <ProfessionalExperience
-                formData={formData}
-                updateFormData={updateFormData}
-                updateFormFiles={updateFormFiles}
+                data={formData}
+                updateData={updateFormData}
+                updateFiles={updateFormFiles}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 6 && (
               <ExtracurricularActivities
-                formData={formData}
-                updateFormData={updateFormData}
-                updateFormFiles={updateFormFiles}
+                data={formData}
+                updateData={updateFormData}
+                updateFiles={updateFormFiles}
                 errors={errors}
+                required={true}
               />
             )}
             {currentSection === 7 && (
               <Declaration
-                formData={formData}
-                updateFormData={updateFormData}
+                data={formData}
+                updateData={updateFormData}
                 errors={errors}
+                required={true}
               />
             )}
           </CardContent>

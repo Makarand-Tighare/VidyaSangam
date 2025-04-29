@@ -197,17 +197,28 @@ export default function SessionManagement() {
       const sessionsData = await response.json();
       
       // Transform API response to match our UI format
-      const formattedSessions = sessionsData.map(session => ({
-        id: session.session_id,
-        type: session.session_type,
-        date: new Date(session.date_time).toLocaleString(),
-        summary: session.summary,
-        meetLink: session.meeting_link,
-        location: session.location,
-        mentor: status === 'Mentor' ? 'You' : session.mentor_details?.name || 'Unknown',
-        duration: "Scheduled", // You might want to calculate this based on session data
-        participants: session.participant_details?.map(p => p.name) || []
-      }));
+      const formattedSessions = sessionsData.map(session => {
+        const sessionCreationTime = new Date(session.created_at);
+        const currentTime = new Date();
+        
+        // Calculate if the session is still joinable (within 30 minutes of creation)
+        const timeDifferenceInMinutes = Math.floor((currentTime - sessionCreationTime) / (1000 * 60));
+        const isJoinable = timeDifferenceInMinutes <= 30;
+        
+        return {
+          id: session.session_id,
+          type: session.session_type,
+          date: new Date(session.date_time).toLocaleString(),
+          summary: session.summary,
+          meetLink: session.meeting_link,
+          location: session.location,
+          mentor: status === 'Mentor' ? 'You' : session.mentor_details?.name || 'Unknown',
+          duration: "Scheduled", // You might want to calculate this based on session data
+          participants: session.participant_details?.map(p => p.name) || [],
+          createdAt: session.created_at,
+          isJoinable: isJoinable
+        };
+      });
       
       setSessions(formattedSessions);
     } catch (error) {
@@ -536,15 +547,23 @@ export default function SessionManagement() {
                         )}
                         
                         <div className="mt-4 pt-3 border-t border-gray-100">
-                          {session.meetLink && (
-                            <a
-                              href={session.meetLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-                            >
-                              Join Meet <ExternalLink className="ml-1 h-4 w-4" />
-                            </a>
+                          {session.type === "virtual" && (
+                            <>
+                              {session.meetLink && session.isJoinable ? (
+                                <a
+                                  href={session.meetLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                                >
+                                  Join Meet <ExternalLink className="ml-1 h-4 w-4" />
+                                </a>
+                              ) : session.meetLink ? (
+                                <div className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-gray-50 text-gray-500">
+                                  Meeting link expired (available for 30 minutes after creation)
+                                </div>
+                              ) : null}
+                            </>
                           )}
                           {session.location && (
                             <div className="inline-flex items-center px-3 py-1.5 text-sm font-medium rounded-md bg-green-50 text-green-700">

@@ -53,6 +53,7 @@ export default function Profile() {
     selectedMentee: null,
     taskPrompt: '',
     taskDescription: '',
+    numQuestions: 5, // Default value for number of questions
     isLoading: false,
   })
   
@@ -68,6 +69,9 @@ export default function Profile() {
   const [profilePicture, setProfilePicture] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef(null)
+
+  const [quizDetailsDialogOpen, setQuizDetailsDialogOpen] = useState(false);
+  const [selectedMenteeDetails, setSelectedMenteeDetails] = useState(null);
 
   useEffect(() => {
     // Fetch user data from API
@@ -122,30 +126,17 @@ export default function Profile() {
   // Add a new useEffect to update status when mentorMenteeData changes
   useEffect(() => {
     const regNo = formData.registrationNumber;
-    
     if (regNo) {
       let newStatus = 'Student';
-      
-      // First check if they have a mentor assigned
       if (mentorMenteeData.mentor !== null) {
         newStatus = 'Mentee';
-      } 
-      // Then check if they have mentees assigned
-      else if (mentorMenteeData.mentees && mentorMenteeData.mentees.length > 0) {
+      } else if (mentorMenteeData.mentees && mentorMenteeData.mentees.length > 0) {
         newStatus = 'Mentor';
       }
-      
-      console.log('Updating status to:', newStatus);
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        status: newStatus 
-      }));
-      
-      // Now that we have the correct status, fetch tasks
+      setFormData(prev => ({ ...prev, status: newStatus }));
       fetchTasks(regNo, newStatus);
     }
-  }, [mentorMenteeData]);
+  }, [mentorMenteeData, fetchTasks, formData.registrationNumber]);
 
   // Add debugging for status changes
   useEffect(() => {
@@ -287,76 +278,105 @@ export default function Profile() {
     setIsTaskDialogOpen(true)
   }
   
-  // Function to generate a quiz based on the prompt
   const generateQuiz = async () => {
-    // In a real implementation, this would call an API to generate a quiz
-    setTaskData(prev => ({ ...prev, isLoading: true }))
-    
+    setTaskData(prev => ({ ...prev, isLoading: true }));
+  
     try {
-      // Mock API call - in production, replace with actual API call
-      // const response = await fetch('http://127.0.0.1:8000/api/generate-quiz/', {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //     'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      //   },
-      //   body: JSON.stringify({
-      //     prompt: taskData.taskPrompt,
-      //     description: taskData.taskDescription,
-      //     mentee_id: taskData.selectedMentee.registration_no
-      //   })
-      // })
-      
-      // if (!response.ok) throw new Error('Failed to generate quiz')
-      // const data = await response.json()
-      
-      // Mock response for development purposes
-      const mockQuiz = {
-        id: Date.now(),
-        title: taskData.taskPrompt,
-        description: taskData.taskDescription,
-        questions: [
-          { id: 1, question: "Sample question 1 based on prompt", options: ["Option A", "Option B", "Option C", "Option D"], answer: 0 },
-          { id: 2, question: "Sample question 2 based on prompt", options: ["Option A", "Option B", "Option C", "Option D"], answer: 1 },
-        ],
-        total_marks: 10,
-        created_at: new Date().toISOString()
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/generate-quiz/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          prompt: taskData.taskPrompt,
+          description: taskData.taskDescription,
+          num_questions: parseInt(taskData.numQuestions),
+          mentee_id: taskData.selectedMentee.registration_no,
+          mentor_id: formData.registrationNumber
+        })
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to generate quiz');
       }
       
-      // Update the mentee tasks
+      const data = await response.json();
+      
+      // Extract the quiz data from the API response
+      const quizData = data.quiz;
+      const quizId = data.quiz_id;
+      
+      // Update the mentee tasks with the new quiz
+      const newQuiz = {
+        id: quizId,
+        title: taskData.taskPrompt,
+        description: taskData.taskDescription,
+        questions: quizData,
+        total_marks: quizData.length,
+        created_at: new Date().toISOString(),
+        status: data.status
+      };
+      
       setMenteeTasks(prev => ({
         ...prev,
         [taskData.selectedMentee.registration_no]: [
           ...(prev[taskData.selectedMentee.registration_no] || []),
-          mockQuiz
+          newQuiz
         ]
-      }))
+      }));
       
       // Show success message
-      alert('Task assigned successfully!')
+      alert(data.message || 'Task assigned successfully!');
       
       // Reset task form
-      setTaskData({
-        selectedMentee: null,
-        taskPrompt: '',
-        taskDescription: '',
-        isLoading: false
+      resetTaskData();
+      
+      setIsTaskDialogOpen(false);
+    } catch (error) {
+      console.error('Error generating quiz:', error);
+      alert('Error generating quiz. Please try again.');
+      setTaskData(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    
+    try {
+      // Extract only the updatable fields from formData
+      const updateData = {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        mobile_number: formData.phone,
+        section: formData.section,
+        year: formData.year,
+        semester: formData.semester
+      }
+      
+      const response = await fetch('http://127.0.0.1:8000/api/user/update-profile/', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(updateData)
       })
       
-      setIsTaskDialogOpen(false)
+      if (!response.ok) {
+        throw new Error('Failed to update profile')
+      }
+      
+      const data = await response.json()
+      alert('Profile updated successfully!')
+      
+      // Set editing to false only after successful update
+      setIsEditing(false)
     } catch (error) {
-      console.error('Error generating quiz:', error)
-      alert('Error generating quiz. Please try again.')
-    } finally {
-      setTaskData(prev => ({ ...prev, isLoading: false }))
+      alert(`Failed to update profile: ${error.message}. Please try again.`)
+      // Keep the form in edit mode if update fails
+      setIsEditing(true)
     }
-  }
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    setIsEditing(false)
-    console.log('Form Data Saved:', formData)
-    // Implement API call to save data
   }
 
   const handleSecuritySubmit = async (e) => {
@@ -412,8 +432,6 @@ export default function Profile() {
         throw new Error(data.message || 'Failed to change password')
       }
       
-      console.log('Password change API response:', data)
-      
       // Reset form after successful submission
       setSecurityData({
         currentPassword: '',
@@ -447,62 +465,357 @@ export default function Profile() {
   // Function to fetch all tasks for the user (as either mentor or mentee)
   const fetchTasks = async (regNo, status) => {
     try {
-      // In a real implementation, this would call your API
-      // const response = await fetch(`http://127.0.0.1:8000/api/tasks/${regNo}/`, {
-      //   headers: {
-      //     'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-      //     'Content-Type': 'application/json'
-      //   }
-      // })
-      
-      // if (!response.ok) throw new Error('Failed to fetch tasks')
-      // const data = await response.json()
-      
-      // Determine if the user is a mentor or mentee first by checking the current status
-      // const userStatus = formData.status;
-      
-      // Mock data for development purposes
-      // This would be replaced with actual API data in production
-      let mockTasks = {};
-      
-      // If user is a mentee, add tasks assigned to them
+      // If the user is a mentee, fetch their quizzes
       if (status === 'Mentee' || mentorMenteeData.mentor !== null) {
-        mockTasks[regNo] = [
-          {
-            id: 1,
-            title: "Introduction to Data Structures",
-            description: "Learn about basic data structures like arrays, linked lists, and stacks",
-            total_marks: 10,
-            created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days ago
-          }
-        ];
+        await fetchPendingQuizzes(regNo);
       }
       
-      // If user is a mentor, add tasks they've assigned to mentees
+      // If the user is a mentor, fetch quizzes for each mentee
       if (status === 'Mentor' || mentorMenteeData.mentees?.length > 0) {
-        // Create mock tasks for each mentee
-        mentorMenteeData.mentees.forEach(mentee => {
-          if (!mockTasks[mentee.registration_no]) {
-            mockTasks[mentee.registration_no] = [];
+        // For each mentee, fetch their quiz history
+        for (const mentee of mentorMenteeData.mentees) {
+          try {
+            await fetchMenteeQuizHistory(mentee.registration_no);
+          } catch (error) {
+            console.error(`Error fetching quizzes for mentee ${mentee.name}:`, error);
+            // Show error notification or handle gracefully
+            // Don't use mock data in production
           }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      // Show error notification
+    }
+  }
+
+  // Submit completed quiz to the server
+  const submitQuiz = async (registrationNo, quizId, userAnswers) => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/submit-quiz/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify({
+          participant_id: registrationNo,
+          quiz_id: quizId,
+          quiz_answers: userAnswers
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit quiz');
+      }
+      
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error('Error submitting quiz:', error);
+      throw error;
+    }
+  };
+
+  // Fetch a mentee's quiz history (for mentors to view)
+  const fetchMenteeQuizHistory = async (menteeId) => {
+    try {
+      // Fetch both pending and completed quizzes
+      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!pendingResponse.ok) {
+        throw new Error('Failed to fetch pending quizzes');
+      }
+      
+      const pendingQuizzes = await pendingResponse.json();
+      
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!completedResponse.ok) {
+        throw new Error('Failed to fetch quiz history');
+      }
+      
+      const completedQuizzes = await completedResponse.json();
+      
+      // Process to match UI format
+      const formattedPendingQuizzes = pendingQuizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.quiz_topic,
+        description: `Quiz with ${quiz.total_questions} questions`,
+        questions: quiz.quiz_data,
+        total_marks: quiz.total_questions,
+        created_at: quiz.quiz_date,
+        status: 'pending',
+        participant_name: quiz.participant_name
+      }));
+      
+      const formattedCompletedQuizzes = completedQuizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.quiz_topic,
+        description: `Quiz with ${quiz.total_questions} questions`,
+        questions: quiz.quiz_data,
+        total_marks: quiz.total_questions,
+        created_at: quiz.quiz_date,
+        status: 'completed',
+        participant_name: quiz.participant_name,
+        score: quiz.score,
+        percentage: quiz.percentage,
+        quiz_answers: quiz.quiz_answers,
+        result_details: quiz.result_details
+      }));
+      
+      // Combine all quizzes
+      const allQuizzes = [...formattedPendingQuizzes, ...formattedCompletedQuizzes];
+      
+      // Update the mentee tasks state
+      setMenteeTasks(prev => ({
+        ...prev,
+        [menteeId]: allQuizzes
+      }));
+      
+      return allQuizzes;
+    } catch (error) {
+      console.error('Error fetching mentee quiz history:', error);
+      throw error;
+    }
+  };
+
+  // Get quiz history for a user
+  const getQuizHistory = async (registrationNo) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${registrationNo}/`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch quiz history');
+      }
+      
+      const quizHistory = await response.json();
+      return quizHistory;
+    } catch (error) {
+      console.error('Error fetching quiz history:', error);
+      throw error;
+    }
+  };
+
+  // Fetch pending quizzes for a mentee
+  const fetchPendingQuizzes = async (menteeId) => {
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending quizzes');
+      }
+      
+      const pendingQuizzes = await response.json();
+      
+      // Fetch completed quizzes
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (!completedResponse.ok) {
+        throw new Error('Failed to fetch completed quizzes');
+      }
+      
+      const completedQuizzes = await completedResponse.json();
+      
+      // Process the API responses to match our UI format
+      const formattedPendingQuizzes = pendingQuizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.quiz_topic,
+        description: `Quiz with ${quiz.total_questions} questions`,
+        questions: quiz.quiz_data,
+        total_marks: quiz.total_questions,
+        created_at: quiz.quiz_date,
+        status: 'pending',
+        participant_name: quiz.participant_name
+      }));
+      
+      const formattedCompletedQuizzes = completedQuizzes.map(quiz => ({
+        id: quiz.id,
+        title: quiz.quiz_topic,
+        description: `Quiz with ${quiz.total_questions} questions`,
+        questions: quiz.quiz_data,
+        total_marks: quiz.total_questions,
+        created_at: quiz.quiz_date,
+        status: 'completed',
+        participant_name: quiz.participant_name,
+        score: quiz.score,
+        percentage: quiz.percentage,
+        quiz_answers: quiz.quiz_answers,
+        result_details: quiz.result_details
+      }));
+      
+      // Combine pending and completed quizzes
+      const allQuizzes = [...formattedPendingQuizzes, ...formattedCompletedQuizzes];
+      
+      // Update the mentee tasks state with all quizzes
+      setMenteeTasks(prev => ({
+        ...prev,
+        [menteeId]: allQuizzes
+      }));
+      
+      return allQuizzes;
+    } catch (error) {
+      console.error('Error fetching quizzes:', error);
+      throw error;
+    }
+  };
+
+  const resetTaskData = () => {
+    setTaskData(prev => ({
+      selectedMentee: prev.selectedMentee, // Preserve the selected mentee
+      taskPrompt: "",
+      taskDescription: "",
+      numQuestions: 5,
+      isLoading: false,
+    }));
+  };
+
+  // Function to open quiz details dialog
+  const openQuizDetailsDialog = (mentee) => {
+    // Get the mentee's quizzes
+    const menteeQuizzes = menteeTasks[mentee.registration_no] || [];
+    
+    // Count pending and completed quizzes
+    const pendingQuizzes = menteeQuizzes.filter(q => q.status === 'pending');
+    const completedQuizzes = menteeQuizzes.filter(q => q.status === 'completed');
+    
+    // Calculate average score if there are completed quizzes
+    const averageScore = completedQuizzes.length > 0
+      ? (completedQuizzes.reduce((sum, quiz) => sum + quiz.percentage, 0) / completedQuizzes.length).toFixed(1)
+      : 'N/A';
+    
+    // Store details for the dialog
+    setSelectedMenteeDetails({
+      mentee: mentee,
+      quizzes: menteeQuizzes,
+      pending: pendingQuizzes,
+      completed: completedQuizzes,
+      averageScore: averageScore
+    });
+    
+    // Open the dialog
+    setQuizDetailsDialogOpen(true);
+  };
+
+  // Function to delete a quiz
+  const deleteQuiz = async (quizId) => {
+    try {
+      // Confirm before deletion
+      if (!confirm('Are you sure you want to delete this quiz? This action cannot be undone.')) {
+        return;
+      }
+      
+      // Determine user role based on formData.status
+      const userRole = formData.status === 'Mentor' ? 'mentor' : 'mentee';
+      
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/delete-quiz/${quizId}/`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          user_id: formData.registrationNumber,
+          user_role: userRole
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete quiz');
+      }
+      
+      // First, handle the case where we're in the details dialog
+      if (selectedMenteeDetails) {
+        // Remove the deleted quiz from the list
+        const updatedQuizzes = selectedMenteeDetails.quizzes.filter(quiz => quiz.id !== quizId);
+        
+        // Recalculate pending and completed
+        const updatedPending = updatedQuizzes.filter(q => q.status === 'pending');
+        const updatedCompleted = updatedQuizzes.filter(q => q.status === 'completed');
+        
+        // Calculate new average score
+        const newAverageScore = updatedCompleted.length > 0
+          ? (updatedCompleted.reduce((sum, quiz) => sum + quiz.percentage, 0) / updatedCompleted.length).toFixed(1)
+          : 'N/A';
+        
+        // Update state with new data
+        setSelectedMenteeDetails({
+          ...selectedMenteeDetails,
+          quizzes: updatedQuizzes,
+          pending: updatedPending,
+          completed: updatedCompleted,
+          averageScore: newAverageScore
+        });
+        
+        // Update the main menteeTasks state for this mentee
+        const menteeId = selectedMenteeDetails.mentee.registration_no;
+        setMenteeTasks(prev => ({
+          ...prev,
+          [menteeId]: updatedQuizzes
+        }));
+      } else {
+        // Handle the case where we're deleting directly from the profile page
+        
+        // Update all mentee task lists by removing the deleted quiz
+        setMenteeTasks(prev => {
+          const updatedTasks = {};
           
-          mockTasks[mentee.registration_no].push({
-            id: Date.now(),
-            title: "Git Fundamentals",
-            description: "Learn basic Git commands and workflows",
-            total_marks: 10,
-            created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // 3 days ago
+          // For each mentee
+          Object.keys(prev).forEach(menteeId => {
+            // Filter out the deleted quiz
+            updatedTasks[menteeId] = prev[menteeId].filter(quiz => quiz.id !== quizId);
           });
+          
+          return updatedTasks;
         });
       }
       
-      console.log('Fetched tasks:', mockTasks);
-      setMenteeTasks(mockTasks);
+      // Show success message
+      alert('Quiz deleted successfully');
       
+      // Refresh the tasks if needed
+      if (formData.status === 'Mentor') {
+        // For mentors, refresh all mentee data
+        for (const mentee of mentorMenteeData.mentees) {
+          try {
+            await fetchMenteeQuizHistory(mentee.registration_no);
+          } catch (error) {
+            console.error(`Error refreshing quizzes for mentee ${mentee.name}:`, error);
+          }
+        }
+      } else if (formData.status === 'Mentee') {
+        // For mentees, just refresh their own data
+        await fetchPendingQuizzes(formData.registrationNumber);
+      }
     } catch (error) {
-      console.error('Error fetching tasks:', error)
+      console.error('Error deleting quiz:', error);
+      alert('Error deleting quiz. Please try again.');
     }
-  }
+  };
+
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, [fetchLeaderboardData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-2">
@@ -589,7 +902,8 @@ export default function Profile() {
                     name="registrationNumber"
                     value={formData.registrationNumber}
                     onChange={handleInputChange}
-                    disabled={!isEditing}
+                    readOnly={true}
+                    disabled={true}
                   />
                 </div>
                 <div>
@@ -619,7 +933,8 @@ export default function Profile() {
                     name="organizationName"
                     value={formData.organizationName}
                     onChange={handleInputChange}
-                    disabled={!isEditing}
+                    readOnly={true}
+                    disabled={true}
                   />
                 </div>
                 <div>
@@ -654,11 +969,52 @@ export default function Profile() {
                     disabled={!isEditing}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="section">Section</Label>
+                  <Input
+                    id="section"
+                    name="section"
+                    value={formData.section}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="year">Year</Label>
+                  <Input
+                    id="year"
+                    name="year"
+                    value={formData.year}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="semester">Semester</Label>
+                  <Input
+                    id="semester"
+                    name="semester"
+                    value={formData.semester}
+                    onChange={handleInputChange}
+                    disabled={!isEditing}
+                  />
+                </div>
               </div>
-              <Button type="submit" disabled={!isEditing} onClick={() => !isEditing && setIsEditing(true)}>
-                {isEditing ? "Save Changes" : "Edit Details"}
-              </Button>
+              {isEditing && (
+                <Button type="submit">
+                  Save Changes
+                </Button>
+              )}
             </form>
+            {!isEditing && (
+              <Button 
+                type="button" 
+                onClick={() => setIsEditing(true)}
+                style={{marginTop: '1rem'}}
+              >
+                Edit Details
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -697,44 +1053,119 @@ export default function Profile() {
         {formData.status === 'Mentee' && (
           <Card className="md:col-span-3">
             <CardHeader>
-              <CardTitle>Assigned Tasks</CardTitle>
-              <p className="text-sm text-gray-500">Tasks assigned by your mentor</p>
+              <CardTitle>Your Quizzes</CardTitle>
+              <p className="text-sm text-gray-500">Quizzes assigned by your mentor</p>
             </CardHeader>
             <CardContent>
               {/* This would typically fetch from an API */}
               {menteeTasks[formData.registrationNumber] && menteeTasks[formData.registrationNumber].length > 0 ? (
-                <div className="space-y-4">
-                  {menteeTasks[formData.registrationNumber].map((task, index) => (
-                    <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-semibold text-lg">{task.title}</h3>
-                          <p className="text-gray-600 text-sm mt-1">{task.description}</p>
-                          <p className="text-xs text-gray-500 mt-2">Assigned on: {new Date(task.created_at).toLocaleDateString()}</p>
+                <div>
+                  {/* Pending Quizzes */}
+                  <h3 className="text-lg font-semibold mb-3">Pending Quizzes</h3>
+                  <div className="space-y-4 mb-8">
+                    {menteeTasks[formData.registrationNumber]
+                      .filter(task => task.status === 'pending')
+                      .map((task, index) => (
+                        <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-lg">{task.title}</h3>
+                              <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                              <p className="text-xs text-gray-500 mt-2">Assigned on: {new Date(task.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <div>
+                              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                {task.total_marks} marks
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}`;
+                              }}
+                            >
+                              Take Quiz
+                            </Button>
+                            {formData.status === 'Mentor' && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => deleteQuiz(task.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                            {task.total_marks} marks
-                          </span>
+                      ))}
+                    
+                    {menteeTasks[formData.registrationNumber].filter(task => task.status === 'pending').length === 0 && (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>No pending quizzes.</p>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Completed Quizzes */}
+                  <h3 className="text-lg font-semibold mb-3">Completed Quizzes</h3>
+                  <div className="space-y-4">
+                    {menteeTasks[formData.registrationNumber]
+                      .filter(task => task.status === 'completed')
+                      .map((task, index) => (
+                        <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 bg-green-50">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="font-semibold text-lg">{task.title}</h3>
+                              <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                              <p className="text-xs text-gray-500 mt-2">Completed on: {new Date(task.created_at).toLocaleDateString()}</p>
+                              <div className="mt-2">
+                                <span className="text-sm font-medium text-green-700">
+                                  Score: {task.score} / {task.total_marks} ({task.percentage}%)
+                                </span>
+                              </div>
+                            </div>
+                            <div>
+                              <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                                Completed
+                              </span>
+                            </div>
+                          </div>
+                          <div className="mt-4 flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}&view=results`;
+                              }}
+                            >
+                              View Results
+                            </Button>
+                            {formData.status === 'Mentor' && (
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => deleteQuiz(task.id)}
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                      ))}
+                    
+                    {menteeTasks[formData.registrationNumber].filter(task => task.status === 'completed').length === 0 && (
+                      <div className="text-center py-4 text-gray-500">
+                        <p>No completed quizzes.</p>
                       </div>
-                      <div className="mt-4">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}`;
-                          }}
-                        >
-                          Take Quiz
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    )}
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <p>No tasks assigned yet.</p>
+                  <p>No quizzes assigned yet.</p>
                 </div>
               )}
             </CardContent>
@@ -755,7 +1186,7 @@ export default function Profile() {
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tech Stack</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz Status</th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
@@ -766,14 +1197,31 @@ export default function Profile() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.branch}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.tech_stack}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 ? (
+                            <div className="space-y-1">
+                              <div>
+                                <span className="text-xs font-medium">
+                                  {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'pending').length} pending
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-xs font-medium text-green-700">
+                                  {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'completed').length} completed
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-500">No quizzes assigned</span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <Button 
                             variant="outline" 
                             className="text-blue-600 hover:text-blue-800"
                             onClick={() => handleMenteeSelection(mentee)}
                           >
-                            Assign Task
+                            Assign Quiz
                           </Button>
                           
                           {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 && (
@@ -782,8 +1230,9 @@ export default function Profile() {
                                 variant="ghost" 
                                 size="sm"
                                 className="text-xs text-gray-500"
+                                onClick={() => openQuizDetailsDialog(mentee)}
                               >
-                                {menteeTasks[mentee.registration_no].length} task(s) assigned
+                                View Quiz Details
                               </Button>
                             </div>
                           )}
@@ -794,25 +1243,25 @@ export default function Profile() {
                 </table>
               </div>
 
-              {/* Task Assignment Dialog */}
+              {/* Quiz Assignment Dialog */}
               <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
-                    <DialogTitle>Assign Task to {taskData.selectedMentee?.name}</DialogTitle>
+                    <DialogTitle>Assign Quiz to {taskData.selectedMentee?.name}</DialogTitle>
                     <DialogDescription>
-                      Create a task or quiz for your mentee. Enter a prompt and the system will generate a 10-mark quiz.
+                      Create a quiz for your mentee. Enter a topic and the system will generate questions.
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleTaskSubmit}>
                     <div className="grid gap-4 py-4">
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="taskPrompt" className="col-span-4">
-                          Task Topic/Prompt
+                          Quiz Topic
                         </Label>
                         <Input
                           id="taskPrompt"
                           name="taskPrompt"
-                          placeholder="e.g., Data Structures and Algorithms"
+                          placeholder="e.g., Operating Systems, Data Structures, AI Fundamentals"
                           className="col-span-4"
                           value={taskData.taskPrompt}
                           onChange={handleTaskChange}
@@ -820,17 +1269,33 @@ export default function Profile() {
                       </div>
                       <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="taskDescription" className="col-span-4">
-                          Task Description (Optional)
+                          Description (Optional)
                         </Label>
                         <Textarea
                           id="taskDescription"
                           name="taskDescription"
-                          placeholder="Provide additional details about the task..."
+                          placeholder="Provide additional details about the quiz..."
                           className="col-span-4"
                           value={taskData.taskDescription}
                           onChange={handleTaskChange}
                           rows={4}
                         />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="numQuestions" className="col-span-4">
+                          Number of Questions
+                        </Label>
+                        <Input
+                          id="numQuestions"
+                          name="numQuestions"
+                          type="number"
+                          min="1"
+                          max="10"
+                          className="col-span-4"
+                          value={taskData.numQuestions}
+                          onChange={handleTaskChange}
+                        />
+                        <p className="text-xs text-gray-500 col-span-4">Choose between 1-10 questions</p>
                       </div>
                     </div>
                     <DialogFooter>
@@ -838,7 +1303,7 @@ export default function Profile() {
                         type="submit" 
                         disabled={taskData.isLoading || !taskData.taskPrompt}
                       >
-                        {taskData.isLoading ? "Generating Quiz..." : "Assign Task"}
+                        {taskData.isLoading ? "Generating Quiz..." : "Assign Quiz"}
                       </Button>
                     </DialogFooter>
                   </form>
@@ -903,6 +1368,172 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quiz Details Dialog */}
+      <Dialog open={quizDetailsDialogOpen} onOpenChange={setQuizDetailsDialogOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Quiz Details for {selectedMenteeDetails?.mentee?.name}</DialogTitle>
+            <DialogDescription>
+              View all assigned quizzes and their status
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedMenteeDetails && (
+            <div className="space-y-4">
+              {/* Summary stats */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="bg-blue-50 p-4 rounded-lg text-center">
+                  <h3 className="text-sm font-medium text-blue-800">Total Quizzes</h3>
+                  <p className="text-xl font-bold">{selectedMenteeDetails.quizzes.length}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg text-center">
+                  <h3 className="text-sm font-medium text-yellow-800">Pending</h3>
+                  <p className="text-xl font-bold">{selectedMenteeDetails.pending.length}</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg text-center">
+                  <h3 className="text-sm font-medium text-green-800">Completed</h3>
+                  <p className="text-xl font-bold">{selectedMenteeDetails.completed.length}</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg text-center">
+                  <h3 className="text-sm font-medium text-purple-800">Average Score</h3>
+                  <p className="text-xl font-bold">{selectedMenteeDetails.averageScore}%</p>
+                </div>
+              </div>
+              
+              {/* Quiz list */}
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Quiz Details</h3>
+                
+                {selectedMenteeDetails.quizzes.length === 0 ? (
+                  <p className="text-gray-500 text-center py-4">No quizzes assigned yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedMenteeDetails.quizzes.map((quiz, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`border p-3 rounded-md ${
+                          quiz.status === 'completed' 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium">{quiz.title}</h4>
+                            <p className="text-sm text-gray-600">{quiz.description}</p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {quiz.status === 'completed' ? 'Completed' : 'Assigned'} on: {new Date(quiz.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            {quiz.status === 'completed' ? (
+                              <div className="text-right">
+                                <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                  Completed
+                                </span>
+                                <p className="text-sm font-medium text-green-700 mt-1">
+                                  Score: {quiz.score}/{quiz.total_marks}
+                                </p>
+                                <p className="text-xs font-medium text-green-700">
+                                  ({quiz.percentage}%)
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="text-right">
+                                <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                  Pending
+                                </span>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {quiz.total_marks} marks
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        {quiz.status === 'completed' ? (
+                          <div className="mt-2 pl-3 border-l-2 border-green-300">
+                            <p className="text-xs text-gray-600 font-medium">Question Summary:</p>
+                            <p className="text-xs text-gray-600">
+                              {quiz.result_details ? (
+                                `${quiz.result_details.filter(q => q.is_correct).length} correct out of ${quiz.result_details.length} questions`
+                              ) : (
+                                `${quiz.score} correct out of ${quiz.total_marks} questions`
+                              )}
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  window.location.href = `/quiz?taskId=${quiz.id}&menteeId=${selectedMenteeDetails.mentee.registration_no}&view=results`;
+                                }}
+                              >
+                                View Quiz Results
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => deleteQuiz(quiz.id)}
+                              >
+                                Delete Quiz
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 pl-3 border-l-2 border-yellow-300">
+                            <p className="text-xs text-gray-600">
+                              This quiz has {quiz.questions ? quiz.questions.length : quiz.total_marks} questions.
+                            </p>
+                            <div className="mt-2 flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Copy a direct link to this quiz
+                                  const quizUrl = `${window.location.origin}/quiz?taskId=${quiz.id}&menteeId=${selectedMenteeDetails.mentee.registration_no}`;
+                                  navigator.clipboard.writeText(quizUrl);
+                                  alert('Quiz link copied to clipboard. You can share this with your mentee.');
+                                }}
+                              >
+                                Copy Quiz Link
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  // Send a reminder (this would typically call an API)
+                                  alert(`A reminder has been sent to ${selectedMenteeDetails.mentee.name} to complete this quiz.`);
+                                }}
+                              >
+                                Send Reminder
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm"
+                                onClick={() => deleteQuiz(quiz.id)}
+                              >
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button onClick={() => setQuizDetailsDialogOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
