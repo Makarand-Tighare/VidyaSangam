@@ -684,7 +684,7 @@ export default function MentoringForm() {
       setFormData({});
       setFormFiles({});
       setCurrentSection(0);
-      router.push('/');
+      router.push('/profile');
     }
   };
 

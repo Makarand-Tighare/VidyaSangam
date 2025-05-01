@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import NavBar from '../components/navBar'
 import { useRouter } from 'next/navigation';
 
@@ -15,6 +16,7 @@ export default function Leaderboard() {
   const [leaderboardData, setLeaderboardData] = useState([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [activeTab, setActiveTab] = useState("mentors") // Default to mentors tab
   const router = useRouter();
   
   // Check if the user is logged in
@@ -48,35 +50,107 @@ export default function Leaderboard() {
       
       const participantsData = await participantsResponse.json();
       
-      // Extract only mentees from the participants list
-      const mentees = participantsData.filter(participant => 
-        participant.mentoring_preferences?.toLowerCase() !== 'mentor'
-      ).map(mentee => ({
-        id: mentee.registration_no,
-        name: mentee.name,
-        mentor: mentee.mentor ? mentee.mentor.name : 'Not assigned'
-      }));
+      // Include all participants with proper role determination
+      const participants = participantsData.map(participant => {
+        // Determine actual role based on relationships:
+        // - If participant has mentees array and it's not empty -> actual role is Mentor
+        // - If participant has mentor object -> actual role is Mentee
+        // - Otherwise use their preference
+        let actualRole = participant.mentoring_preferences?.toLowerCase() || 'unknown';
+        
+        // If they have a mentor, they're definitely a mentee (regardless of preference)
+        if (participant.mentor) {
+          actualRole = 'mentee';
+        }
+        
+        // If they have mentees, they're definitely a mentor (regardless of preference)
+        if (participant.mentees && participant.mentees.length > 0) {
+          actualRole = 'mentor';
+        }
+        
+        return {
+          id: participant.registration_no,
+          name: participant.name,
+          preference: participant.mentoring_preferences?.toLowerCase(),
+          role: actualRole,
+          mentor: participant.mentor ? participant.mentor.name : 'Not assigned',
+          mentorId: participant.mentor ? participant.mentor.registration_no : null,
+          mentees: participant.mentees || [],
+          branch: participant.branch,
+          semester: participant.semester,
+          techStack: participant.tech_stack
+        };
+      });
       
-      // Create an array to hold mentee data with scores
-      const menteesWithScores = [];
+      // Create an array to hold participant data with scores
+      const participantsWithScores = [];
       
-      // For each mentee, fetch their quiz results and sessions
-      for (const mentee of mentees) {
-        try {
-          // Get completed quizzes
-          const quizResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${mentee.id}/`, {
-            headers: {
-              'Authorization': `Bearer ${authToken}`
+      // Store mentee quiz data to calculate mentor scores
+      const menteeQuizData = {};
+      
+      // First pass: process mentees and store their quiz data
+      for (const participant of participants) {
+        if (participant.role === 'mentee') {
+          try {
+            // Get completed quizzes
+            const quizResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${participant.id}/`, {
+              headers: {
+                'Authorization': `Bearer ${authToken}`
+              }
+            });
+            
+            let quizData = [];
+            if (quizResponse.ok) {
+              quizData = await quizResponse.json();
             }
-          });
+            
+            // Store quiz data for this mentee
+            menteeQuizData[participant.id] = {
+              completedQuizzes: quizData.length,
+              averageScore: quizData.length > 0 ? 
+                quizData.reduce((sum, quiz) => sum + (quiz.percentage || 0), 0) / quizData.length : 0
+            };
+          } catch (error) {
+            console.error(`Error fetching quiz data for mentee ${participant.name}:`, error);
+            menteeQuizData[participant.id] = { completedQuizzes: 0, averageScore: 0 };
+          }
+        }
+      }
+      
+      // For each participant, fetch their quiz results and sessions
+      for (const participant of participants) {
+        try {
+          // Initialize variables for participant data
+          let completedQuizzes = 0;
+          let averageScore = 0;
+          let totalScore = 0;
           
-          let quizData = [];
-          if (quizResponse.ok) {
-            quizData = await quizResponse.json();
+          // For mentees, get their own quiz data
+          if (participant.role === 'mentee') {
+            const quizData = menteeQuizData[participant.id] || { completedQuizzes: 0, averageScore: 0 };
+            completedQuizzes = quizData.completedQuizzes;
+            averageScore = quizData.averageScore;
+          } 
+          // For mentors, calculate based on their mentees' quiz performance
+          else if (participant.role === 'mentor') {
+            let menteeQuizCount = 0;
+            let menteeScoreSum = 0;
+            
+            // Calculate based on all mentees' quiz performance
+            participant.mentees.forEach(mentee => {
+              const menteeData = menteeQuizData[mentee.registration_no];
+              if (menteeData) {
+                menteeQuizCount += menteeData.completedQuizzes;
+                menteeScoreSum += menteeData.averageScore * menteeData.completedQuizzes;
+              }
+            });
+            
+            completedQuizzes = menteeQuizCount;
+            averageScore = menteeQuizCount > 0 ? menteeScoreSum / menteeQuizCount : 0;
           }
           
           // Get sessions
-          const sessionsResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/sessions/user/${mentee.id}/`, {
+          const sessionsResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/sessions/user/${participant.id}/`, {
             headers: {
               'Authorization': `Bearer ${authToken}`
             }
@@ -87,30 +161,27 @@ export default function Leaderboard() {
             sessionsData = await sessionsResponse.json();
           }
           
-          // Calculate scores and stats
-          const completedQuizzes = quizData.length;
-          
-          // Calculate average score from completed quizzes
-          let totalScore = 0;
-          let averageScore = 0;
-          
-          if (completedQuizzes > 0) {
-            totalScore = quizData.reduce((sum, quiz) => sum + (quiz.percentage || 0), 0);
-            averageScore = totalScore / completedQuizzes;
-          }
-          
           // Count the number of sessions - each session in the API response counts as one
           const sessionsAttended = sessionsData.length;
           
-          // Calculate overall score based on quizzes and sessions
-          // Quizzes are worth 50 points each, sessions are worth 100 points each
-          const overallScore = (completedQuizzes * 50) + (sessionsAttended * 100) + Math.round(averageScore * 5);
+          // Calculate overall score 
+          // For mentors: sessions are worth 100 points each, mentee quizzes worth 20 points each
+          // For mentees: sessions are worth 100 points each, quizzes are worth 50 points each
+          const quizValue = participant.role === 'mentor' ? 20 : 50;
+          const overallScore = (sessionsAttended * 100) + (completedQuizzes * quizValue) + Math.round(averageScore * 5);
           
-          // Add mentee to the array with mentor info
-          menteesWithScores.push({
-            id: mentee.id,
-            name: mentee.name,
-            mentorName: mentee.mentor,
+          // Add participant to the array with mentor/mentee info
+          participantsWithScores.push({
+            id: participant.id,
+            name: participant.name,
+            preference: participant.preference,
+            role: participant.role,
+            mentorName: participant.mentor,
+            mentorId: participant.mentorId,
+            menteesCount: participant.mentees.length,
+            branch: participant.branch,
+            semester: participant.semester,
+            techStack: participant.techStack,
             score: overallScore,
             sessionsAttended: sessionsAttended,
             tasksCompleted: completedQuizzes,
@@ -118,16 +189,33 @@ export default function Leaderboard() {
             feedbackGiven: calculateFeedbackLevel(averageScore)
           });
         } catch (error) {
-          console.error(`Error fetching data for mentee ${mentee.name}:`, error);
-          // Continue with the next mentee
+          console.error(`Error fetching data for participant ${participant.name}:`, error);
+          // Continue with the next participant with basic information
+          participantsWithScores.push({
+            id: participant.id,
+            name: participant.name,
+            preference: participant.preference,
+            role: participant.role,
+            mentorName: participant.mentor,
+            mentorId: participant.mentorId,
+            menteesCount: participant.mentees.length,
+            branch: participant.branch,
+            semester: participant.semester,
+            techStack: participant.techStack,
+            score: 0,
+            sessionsAttended: 0,
+            tasksCompleted: 0,
+            averageScore: 0,
+            feedbackGiven: 'No Data'
+          });
         }
       }
       
-      // Sort mentees by score (highest first)
-      menteesWithScores.sort((a, b) => b.score - a.score);
+      // Sort participants by score (highest first)
+      participantsWithScores.sort((a, b) => b.score - a.score);
       
       // Update state with the results
-      setLeaderboardData(menteesWithScores);
+      setLeaderboardData(participantsWithScores);
       setError(null);
     } catch (error) {
       console.error('Error building leaderboard data:', error);
@@ -135,9 +223,9 @@ export default function Leaderboard() {
       
       // Fallback data in case all APIs fail
       const fallbackData = [
-        { id: 1, name: "Makarand Tighare", mentorName: "Raj Singh", score: 1250, sessionsAttended: 15, tasksCompleted: 12, feedbackGiven: "Excellent" },
-        { id: 2, name: "Ramna Varma", mentorName: "Asha Patel", score: 1100, sessionsAttended: 12, tasksCompleted: 10, feedbackGiven: "Good" },
-        { id: 3, name: "Paras Pethe", mentorName: "Raj Singh", score: 1000, sessionsAttended: 10, tasksCompleted: 9, feedbackGiven: "Very Good" },
+        { id: 1, name: "Makarand Tighare", mentorName: "Raj Singh", score: 1250, sessionsAttended: 15, tasksCompleted: 12, feedbackGiven: "Excellent", role: "mentee" },
+        { id: 2, name: "Ramna Varma", mentorName: "Asha Patel", score: 1100, sessionsAttended: 12, tasksCompleted: 10, feedbackGiven: "Good", role: "mentee" },
+        { id: 3, name: "Paras Pethe", mentorName: "Raj Singh", score: 1000, sessionsAttended: 10, tasksCompleted: 9, feedbackGiven: "Very Good", role: "mentor" },
       ];
       setLeaderboardData(fallbackData);
     } finally {
@@ -162,9 +250,20 @@ export default function Leaderboard() {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
-  const filteredData = leaderboardData.filter((player) =>
-    player.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
-  )
+  const filteredData = leaderboardData.filter((player) => {
+    // First filter by search query (name or role)
+    const matchesSearch = player.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      (player.role && player.role.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
+    
+    // Then filter by active tab
+    if (activeTab === "mentors") {
+      return matchesSearch && player.role === "mentor";
+    } else if (activeTab === "mentees") {
+      return matchesSearch && player.role === "mentee";
+    }
+    
+    return matchesSearch;
+  });
 
   const getRankColor = (rank) => {
     switch (rank) {
@@ -198,8 +297,8 @@ export default function Leaderboard() {
           </CardHeader>
 
           <CardContent className="p-6">
-            <div className="mb-4 relative">
-              <div className="relative">
+            <div className="mb-4 flex items-center justify-between flex-wrap gap-4">
+              <div className="relative w-full md:w-1/3">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
@@ -219,6 +318,17 @@ export default function Leaderboard() {
                   </Button>
                 )}
               </div>
+              <Tabs 
+                defaultValue="mentors" 
+                className="w-full md:w-auto"
+                onValueChange={setActiveTab}
+                value={activeTab}
+              >
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="mentors">Mentors</TabsTrigger>
+                  <TabsTrigger value="mentees">Mentees</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
 
             {isLoading ? (
@@ -243,13 +353,16 @@ export default function Leaderboard() {
                     <tr className="border-b-2 border-gray-200">
                       <th className="font-bold text-lg text-center p-4">Rank</th>
                       <th className="font-bold text-lg text-center p-4">Participant</th>
-                      <th className="font-bold text-lg text-center p-4">Mentor</th>
+                      <th className="font-bold text-lg text-center p-4">
+                        {activeTab === "mentors" ? "Mentees" : "Mentor"}
+                      </th>
                       <th className="font-bold text-lg text-center p-4">Points</th>
                       <th className="font-bold text-lg text-center p-4">
                         <Users className="w-5 h-5 inline mr-2" />Sessions
                       </th>
                       <th className="font-bold text-lg text-center p-4">
-                        <CheckSquare className="w-5 h-5 inline mr-2" />Quizzes
+                        <CheckSquare className="w-5 h-5 inline mr-2" />
+                        {activeTab === "mentors" ? "Mentee Quizzes" : "Quizzes"}
                       </th>
                       <th className="font-bold text-lg text-center p-4">
                         <MessageSquare className="w-5 h-5 inline mr-2" />Performance
@@ -274,7 +387,10 @@ export default function Leaderboard() {
                             {player.name}
                           </td>
                           <td className="text-center font-semibold text-gray-800">
-                            {player.mentorName}
+                            {player.role === 'mentor' ? 
+                              `${player.menteesCount} mentees` : 
+                              player.mentorName
+                            }
                           </td>
                           <td className="text-center font-bold text-blue-600">
                             {player.score.toLocaleString()}
@@ -293,7 +409,7 @@ export default function Leaderboard() {
                     ) : (
                       <tr>
                         <td colSpan={7} className="text-center py-8 text-gray-500">
-                          {searchQuery ? "No results found" : "No leaderboard data available"}
+                          {searchQuery ? "No results found" : `No ${activeTab === "mentors" ? "mentor" : "mentee"} leaderboard data available`}
                         </td>
                       </tr>
                     )}
