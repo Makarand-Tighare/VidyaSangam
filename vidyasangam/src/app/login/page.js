@@ -3,26 +3,26 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import axios from "axios";
-import { useRouter } from "next/navigation"; // Import useRouter from next/navigation
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import NavBar from "../components/navBar";
+import { login, isLoggedIn } from "../lib/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const router = useRouter(); // Initialize router
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     // If the user is already logged in, redirect them to the home page
-    const token = localStorage.getItem("authToken");
-    if (token) {
+    if (isLoggedIn()) {
       router.push("/"); // Redirect to homepage if already logged in
     }
   }, [router]);
@@ -33,32 +33,30 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
   
+    // Special case for admin login (hardcoded check)
     if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
-      // Hardcoded check for admin credentials
       localStorage.setItem("isLoggedIn", "true");
-      setErrorMessage(""); // Clear any previous error messages
-      router.push("/adminDashboard"); // Navigate to admin dashboard
+      router.push("/adminDashboard");
       return;
     }
   
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/user/login/", { 
-        email, 
-        password 
-      });
-      if (response.status === 200) {
-        const { token } = response.data; 
-        localStorage.setItem("authToken", token["access"]);
+      const result = await login(email, password);
+      
+      if (result.success) {
         localStorage.setItem("isLoggedIn", "true"); // Track logged in status
-        setErrorMessage(""); // Clear any previous error messages
         router.push("/"); // Navigate to the homepage for regular users
       } else {
-        setErrorMessage("Invalid credentials, please try again.");
+        setErrorMessage(result.message || "Login failed. Please check your credentials.");
       }
     } catch (error) {
       console.error("Login error", error);
-      setErrorMessage("Login failed. Please check your credentials and try again.");
+      setErrorMessage("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };  
 
@@ -82,6 +80,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -94,6 +93,7 @@ export default function LoginPage() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       required
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -108,7 +108,9 @@ export default function LoginPage() {
                   <div className="text-red-500 text-sm">{errorMessage}</div>
                 )}
               </div>
-              <Button type="submit" className="w-full mt-4">Login</Button>
+              <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+                {isLoading ? "Logging in..." : "Login"}
+              </Button>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">

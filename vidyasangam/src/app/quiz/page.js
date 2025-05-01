@@ -332,14 +332,15 @@ function QuizContent() {
               </h3>
               
               <RadioGroup
-                value={selectedAnswers[currentQuestion]?.toString()}
+                key={`question-${currentQuestion}`}
+                value={selectedAnswers[currentQuestion] ? selectedAnswers[currentQuestion].toString() : undefined}
                 onValueChange={(value) => handleAnswerSelect(currentQuestion, value)}
                 className="space-y-4"
               >
                 {Object.entries(currentQuestionData.options).map(([option, label]) => (
-                  <div key={option} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-gray-50">
-                    <RadioGroupItem value={option} id={`option-${option}`} />
-                    <Label htmlFor={`option-${option}`} className="flex-1 cursor-pointer">
+                  <div key={`${currentQuestion}-${option}`} className="flex items-center space-x-2 border p-3 rounded-md hover:bg-gray-50">
+                    <RadioGroupItem value={option} id={`question-${currentQuestion}-option-${option}`} />
+                    <Label htmlFor={`question-${currentQuestion}-option-${option}`} className="flex-1 cursor-pointer">
                       {label}
                     </Label>
                   </div>

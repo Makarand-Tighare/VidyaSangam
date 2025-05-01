@@ -1,6 +1,7 @@
 import { Comfortaa, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import { AuthProvider } from "./lib/useAuth";
 
 // Load the Google Fonts with specific weights and subsets
 const comfortaa = Comfortaa({
@@ -86,7 +87,9 @@ export default function RootLayout({ children }) {
             gtag('config', 'G-EFG5FKTN9J');
           `}
         </Script>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

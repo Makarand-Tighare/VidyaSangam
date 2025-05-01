@@ -15,8 +15,10 @@ import { Loader2 } from "lucide-react"
 
 import NavBar from '../components/navBar'
 import LinkedInButton from '../components/linkedinButton';
+import { authenticatedFetch } from '../lib/auth';
+import { withAuth } from '../lib/useAuth';
 
-export default function Profile() {
+function Profile() {
   const [formData, setFormData] = useState({
     registrationNumber: '',
     firstName: '',
@@ -77,15 +79,7 @@ export default function Profile() {
     // Fetch user data from API
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem('authToken')
-        if (!token) throw new Error('No auth token found')
-
-        const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        })
+        const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
 
         if (!response.ok) throw new Error('Failed to fetch user data')
 
@@ -126,17 +120,30 @@ export default function Profile() {
   // Add a new useEffect to update status when mentorMenteeData changes
   useEffect(() => {
     const regNo = formData.registrationNumber;
+    
     if (regNo) {
       let newStatus = 'Student';
+      
+      // First check if they have a mentor assigned
       if (mentorMenteeData.mentor !== null) {
         newStatus = 'Mentee';
-      } else if (mentorMenteeData.mentees && mentorMenteeData.mentees.length > 0) {
+      } 
+      // Then check if they have mentees assigned
+      else if (mentorMenteeData.mentees && mentorMenteeData.mentees.length > 0) {
         newStatus = 'Mentor';
       }
-      setFormData(prev => ({ ...prev, status: newStatus }));
+      
+      console.log('Updating status to:', newStatus);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        status: newStatus 
+      }));
+      
+      // Now that we have the correct status, fetch tasks
       fetchTasks(regNo, newStatus);
     }
-  }, [mentorMenteeData, fetchTasks, formData.registrationNumber]);
+  }, [mentorMenteeData]);
 
   // Add debugging for status changes
   useEffect(() => {
@@ -211,7 +218,7 @@ export default function Profile() {
 
   const fetchMentorMenteeStatus = async (registrationNo) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`)
+      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`);
       
       if (!response.ok) throw new Error('Failed to fetch mentor/mentee data')
       
@@ -282,12 +289,8 @@ export default function Profile() {
     setTaskData(prev => ({ ...prev, isLoading: true }));
   
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/generate-quiz/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/generate-quiz/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
           description: taskData.taskDescription,
@@ -354,12 +357,8 @@ export default function Profile() {
         semester: formData.semester
       }
       
-      const response = await fetch('http://127.0.0.1:8000/api/user/update-profile/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/update-profile/', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
         body: JSON.stringify(updateData)
       })
       
@@ -373,6 +372,7 @@ export default function Profile() {
       // Set editing to false only after successful update
       setIsEditing(false)
     } catch (error) {
+      console.error('Error updating profile:', error)
       alert(`Failed to update profile: ${error.message}. Please try again.`)
       // Keep the form in edit mode if update fails
       setIsEditing(true)
@@ -382,15 +382,15 @@ export default function Profile() {
   const handleSecuritySubmit = async (e) => {
     e.preventDefault()
     
-    // Validate inputs
-    if (!securityData.currentPassword) {
-      setSecurityData(prev => ({
-        ...prev,
-        message: 'Current password is required',
-        success: false
-      }))
-      return
-    }
+    // // Validate inputs
+    // if (!securityData.currentPassword) {
+    //   setSecurityData(prev => ({
+    //     ...prev,
+    //     message: 'Current password is required',
+    //     success: false
+    //   }))
+    //   return
+    // }
     
     if (!securityData.newPassword) {
       setSecurityData(prev => ({
@@ -413,16 +413,12 @@ export default function Profile() {
     setSecurityData(prev => ({ ...prev, isSubmitting: true, message: '' }))
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/user/changepassword/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/changepassword/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-        },
         body: JSON.stringify({
-          current_password: securityData.currentPassword,
-          new_password: securityData.newPassword,
-          confirm_password: securityData.confirmPassword
+          // current_password: securityData.currentPassword,
+          password: securityData.newPassword,
+          password2: securityData.confirmPassword
         })
       })
       
@@ -812,10 +808,6 @@ export default function Profile() {
       alert('Error deleting quiz. Please try again.');
     }
   };
-
-  useEffect(() => {
-    fetchLeaderboardData();
-  }, [fetchLeaderboardData]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-2">
@@ -1319,7 +1311,7 @@ export default function Profile() {
           </CardHeader>
           <CardContent>
                 <form onSubmit={handleSecuritySubmit} className="space-y-4">
-                  <div>
+                  {/* <div>
                     <Label htmlFor="currentPassword">Current Password</Label>
                     <Input
                       id="currentPassword"
@@ -1328,7 +1320,7 @@ export default function Profile() {
                       value={securityData.currentPassword}
                       onChange={handleSecurityChange}
                     />
-                  </div>
+                  </div> */}
                   <div>
                     <Label htmlFor="newPassword">New Password</Label>
                     <Input
@@ -1537,3 +1529,6 @@ export default function Profile() {
     </div>
   )
 }
+
+// Export the wrapped component as default
+export default withAuth(Profile);

@@ -1,6 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 
 export function PersonalInfo({ data, updateData, errors = {}, required = false }) {
   const handleChange = (e) => {
@@ -11,8 +13,20 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
     updateData({ [name]: value });
   };
 
+  // Check if the basic fields are pre-filled from the user profile
+  const hasPreFilledData = data?.name && data?.registrationNumber;
+
   return (
     <div className="space-y-4">
+      {hasPreFilledData && (
+        <Alert variant="info" className="bg-blue-50 text-blue-800 border-blue-200 mb-4">
+          <InfoIcon className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            Your basic information has been automatically filled from your profile. These fields cannot be modified here.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-2">
         <Label htmlFor="name" className="flex items-center">
           Name
@@ -25,6 +39,8 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
           onChange={handleChange} 
           required 
           className={errors.name ? "border-red-500" : ""}
+          disabled={hasPreFilledData}
+          readOnly={hasPreFilledData}
         />
         {errors.name && (
           <p className="text-sm text-red-500">{errors.name}</p>
@@ -42,6 +58,8 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
           onChange={handleChange} 
           required 
           className={errors.registrationNumber ? "border-red-500" : ""}
+          disabled={hasPreFilledData}
+          readOnly={hasPreFilledData}
         />
         {errors.registrationNumber && (
           <p className="text-sm text-red-500">{errors.registrationNumber}</p>
@@ -55,6 +73,7 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
         <Select 
           onValueChange={(value) => handleSelectChange('semester', value)} 
           value={data?.semester || ''}
+          disabled={hasPreFilledData}
         >
           <SelectTrigger className={errors.semester ? "border-red-500" : ""}>
             <SelectValue placeholder="Select semester" />
@@ -71,24 +90,43 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
           <p className="text-sm text-red-500">{errors.semester}</p>
         )}
       </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="section" className="flex items-center">
+          Section
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </Label>
+        <Input 
+          id="section" 
+          name="section" 
+          value={data?.section || ''} 
+          onChange={handleChange} 
+          required 
+          className={errors.section ? "border-red-500" : ""}
+          disabled={hasPreFilledData}
+          readOnly={hasPreFilledData}
+        />
+        {errors.section && (
+          <p className="text-sm text-red-500">{errors.section}</p>
+        )}
+      </div>
+      
       <div className="space-y-2">
         <Label htmlFor="branch" className="flex items-center">
-          Branch
+          Branch/Department
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
         <Select 
           onValueChange={(value) => handleSelectChange('branch', value)} 
           value={data?.branch || ''}
+          disabled={false} // This field should always be editable
         >
           <SelectTrigger className={errors.branch ? "border-red-500" : ""}>
             <SelectValue placeholder="Select branch" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ct">Computer Technology</SelectItem>
-            <SelectItem value="aids">Artificial Intelligence and Data Science</SelectItem>
-            {/* <SelectItem value="ece">Electronics and Communication</SelectItem>
-            <SelectItem value="ee">Electrical Engineering</SelectItem>
-            <SelectItem value="me">Mechanical Engineering</SelectItem> */}
+            <SelectItem value="ct">Computer Technology (CT)</SelectItem>
+            <SelectItem value="aids">Artificial Intelligence and Data Science (AIDS)</SelectItem>
           </SelectContent>
         </Select>
         {errors.branch && (
