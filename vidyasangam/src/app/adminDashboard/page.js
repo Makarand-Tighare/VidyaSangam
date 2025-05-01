@@ -154,7 +154,7 @@ function AdminDashboard() {
   
   const fetchParticipants = async () => {
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/list_participants/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/list_participants/";
       const response = await axios.get(url);
       setParticipants(response.data);
       setErrorMessage("");
@@ -167,7 +167,7 @@ function AdminDashboard() {
   const fetchUnmatchedParticipants = async () => {
     setIsLoadingUnmatched(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/unmatched";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/unmatched";
       const response = await axios.get(url);
       setUnmatchedParticipants(response.data.unmatched_participants || []);
       setErrorMessage("");
@@ -192,7 +192,7 @@ function AdminDashboard() {
     
     setIsLoading(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/match/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/match/";
       const response = await axios.get(url);
       const data = response.data;
       
@@ -436,7 +436,7 @@ function AdminDashboard() {
   const fetchRelationships = async (returnData = false) => {
     setIsLoadingRelationships(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/relationships";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships";
       const response = await axios.get(url);
       
       // The response contains an array of relationships directly
@@ -495,7 +495,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/create/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/create/";
       const response = await axios.post(url, {
         mentor_registration_no: selectedMentor.registration_no,
         mentee_registration_no: selectedMentee.registration_no
@@ -599,7 +599,7 @@ function AdminDashboard() {
             mentee_registration_no: batchAssignmentParticipant.registration_no
           };
         
-        return axios.post("https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/create/", payload);
+        return axios.post("http://127.0.0.1:8000/api/mentor_mentee/relationships/create/", payload);
       });
       
       const results = await Promise.allSettled(promises);
@@ -691,7 +691,7 @@ function AdminDashboard() {
             onClick={async () => {
               if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
                 try {
-                  const response = await axios.delete(`https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/delete/${relationship.id}/`);
+                  const response = await axios.delete(`http://127.0.0.1:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
                   if (response.status === 200 || response.status === 204) {
                     await fetchRelationships();
                     await fetchUnmatchedParticipants();
@@ -764,7 +764,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/create/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/create/";
       const response = await axios.post(url, {
         mentor_registration_no: mentorRegInput,
         mentee_registration_no: menteeRegInput
@@ -855,7 +855,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/create/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/create/";
       
       // Determine who is mentor and who is mentee
       let mentorRegNo, menteeRegNo;
@@ -1487,7 +1487,7 @@ function AdminDashboard() {
                               onClick={async () => {
                                 if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
                                   try {
-                                    const response = await axios.delete(`https://project-api-qgho.onrender.com/api/mentor_mentee/relationships/delete/${relationship.id}/`);
+                                    const response = await axios.delete(`http://127.0.0.1:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
                                     if (response.status === 200 || response.status === 204) {
                                       await fetchRelationships();
                                       await fetchUnmatchedParticipants();

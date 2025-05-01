@@ -38,7 +38,7 @@ export default function Leaderboard() {
       const authToken = localStorage.getItem("authToken");
       
       // Fetch list of all participants
-      const participantsResponse = await fetch('https://project-api-qgho.onrender.com/api/mentor_mentee/list_participants/', {
+      const participantsResponse = await fetch('http://127.0.0.1:8000/api/mentor_mentee/list_participants/', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -93,7 +93,7 @@ export default function Leaderboard() {
         if (participant.role === 'mentee') {
           try {
             // Get completed quizzes
-            const quizResponse = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/quiz-results/${participant.id}/`, {
+            const quizResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${participant.id}/`, {
               headers: {
                 'Authorization': `Bearer ${authToken}`
               }
@@ -150,7 +150,7 @@ export default function Leaderboard() {
           }
           
           // Get sessions
-          const sessionsResponse = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/sessions/user/${participant.id}/`, {
+          const sessionsResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/sessions/user/${participant.id}/`, {
             headers: {
               'Authorization': `Bearer ${authToken}`
             }

@@ -104,7 +104,7 @@ function Profile() {
   const fetchUserData = async () => {
     setLoadingProfile(true);
     try {
-      const response = await authenticatedFetch('https://project-api-qgho.onrender.com/api/user/profile/');
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -248,7 +248,7 @@ function Profile() {
 
   const fetchMentorMenteeStatus = async (registrationNo) => {
     try {
-      const response = await authenticatedFetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/profile/${registrationNo}/`);
+      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`);
       
       if (!response.ok) throw new Error('Failed to fetch mentor/mentee data')
       
@@ -319,7 +319,7 @@ function Profile() {
     setTaskData(prev => ({ ...prev, isLoading: true }));
   
     try {
-      const response = await authenticatedFetch('https://project-api-qgho.onrender.com/api/mentor_mentee/generate-quiz/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/generate-quiz/', {
         method: 'POST',
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
@@ -387,7 +387,7 @@ function Profile() {
         semester: formData.semester
       }
       
-      const response = await authenticatedFetch('https://project-api-qgho.onrender.com/api/user/update-profile/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/update-profile/', {
         method: 'PATCH',
         body: JSON.stringify(updateData)
       })
@@ -443,7 +443,7 @@ function Profile() {
     setSecurityData(prev => ({ ...prev, isSubmitting: true, message: '' }))
     
     try {
-      const response = await authenticatedFetch('https://project-api-qgho.onrender.com/api/user/changepassword/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/changepassword/', {
         method: 'POST',
         body: JSON.stringify({
           // current_password: securityData.currentPassword,
@@ -518,7 +518,7 @@ function Profile() {
   // Submit completed quiz to the server
   const submitQuiz = async (registrationNo, quizId, userAnswers) => {
     try {
-      const response = await fetch('https://project-api-qgho.onrender.com/api/mentor_mentee/submit-quiz/', {
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/submit-quiz/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -547,7 +547,7 @@ function Profile() {
   const fetchMenteeQuizHistory = async (menteeId) => {
     try {
       // Fetch both pending and completed quizzes
-      const pendingResponse = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -559,7 +559,7 @@ function Profile() {
       
       const pendingQuizzes = await pendingResponse.json();
       
-      const completedResponse = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/quiz-results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -617,7 +617,7 @@ function Profile() {
   // Get quiz history for a user
   const getQuizHistory = async (registrationNo) => {
     try {
-      const response = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/quiz-results/${registrationNo}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${registrationNo}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -638,7 +638,7 @@ function Profile() {
   // Fetch pending quizzes for a mentee
   const fetchPendingQuizzes = async (menteeId) => {
     try {
-      const response = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -651,7 +651,7 @@ function Profile() {
       const pendingQuizzes = await response.json();
       
       // Fetch completed quizzes
-      const completedResponse = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/quiz-results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -754,7 +754,7 @@ function Profile() {
       // Determine user role based on formData.status
       const userRole = formData.status === 'Mentor' ? 'mentor' : 'mentee';
       
-      const response = await fetch(`https://project-api-qgho.onrender.com/api/mentor_mentee/delete-quiz/${quizId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/delete-quiz/${quizId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,

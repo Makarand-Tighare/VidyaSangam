@@ -46,7 +46,7 @@ if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
   try {
     setIsLoading(true);
     // Call admin login API using the user endpoint instead
-    const response = await fetch("https://project-api-qgho.onrender.com/api/user/admin-login/", {
+    const response = await fetch("http://127.0.0.1:8000/api/user/admin-login/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

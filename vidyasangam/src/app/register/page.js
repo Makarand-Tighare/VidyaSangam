@@ -128,7 +128,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       const response = await axios.post(
-        "https://project-api-qgho.onrender.com/api/user/send-otp/",
+        "http://127.0.0.1:8000/api/user/send-otp/",
         { email: formData.email },
         { withCredentials: true }
       )
@@ -149,7 +149,7 @@ export default function RegisterPage() {
   const handleVerifyOTP = async () => {
     try {
       const response = await axios.post(
-        "https://project-api-qgho.onrender.com/api/user/verify-otp/",
+        "http://127.0.0.1:8000/api/user/verify-otp/",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       )
@@ -174,7 +174,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const response = await axios.post("https://project-api-qgho.onrender.com/api/user/register/", {
+      const response = await axios.post("http://127.0.0.1:8000/api/user/register/", {
         email: formData.email,
         first_name: formData.firstName,
         last_name: formData.lastName,
