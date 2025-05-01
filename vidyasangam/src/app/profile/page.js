@@ -15,10 +15,15 @@ import { Loader2 } from "lucide-react"
 
 import NavBar from '../components/navBar'
 import LinkedInButton from '../components/linkedinButton';
-import { authenticatedFetch } from '../lib/auth';
+import { authenticatedFetch, isLoggedIn } from '../lib/auth';
 import { withAuth } from '../lib/useAuth';
+import { useRouter } from 'next/navigation';
 
 function Profile() {
+  const router = useRouter();
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  
   const [formData, setFormData] = useState({
     registrationNumber: '',
     firstName: '',
@@ -75,47 +80,72 @@ function Profile() {
   const [quizDetailsDialogOpen, setQuizDetailsDialogOpen] = useState(false);
   const [selectedMenteeDetails, setSelectedMenteeDetails] = useState(null);
 
+  // Check auth first before making any API calls
   useEffect(() => {
-    // Fetch user data from API
-    const fetchUserData = async () => {
-      try {
-        const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
-
-        if (!response.ok) throw new Error('Failed to fetch user data')
-
-        const data = await response.json()
-        setFormData({
-          registrationNumber: data.reg_no || '',
-          firstName: data.first_name || '',
-          lastName: data.last_name || '',
-          organizationName: 'Yeshwantrao Chavan College of Engineering (YCCE), Nagpur',
-          status: 'Loading...', // Initially set as loading
-          email: data.email || '',
-          phone: data.mobile_number || '',
-          section: data.section || '',
-          year: data.year || '',
-          semester: data.semester || '',
-          linkedin_access_token: data.linkedin_access_token || '',
-        })
-
-        // Try to load profile picture from localStorage
-        if (data.reg_no) {
-          const savedProfilePic = localStorage.getItem(`profile_picture_${data.reg_no}`);
-          if (savedProfilePic) {
-            setProfilePicture(savedProfilePic);
-          }
-          
-          // Fetch mentor/mentee status
-          fetchMentorMenteeStatus(data.reg_no)
-          // We'll fetch tasks after the status is set
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error)
+    const checkAuth = async () => {
+      setIsInitializing(true);
+      if (!isLoggedIn()) {
+        router.push('/login');
+        return;
       }
-    }
+      setIsInitializing(false);
+    };
+    checkAuth();
+  }, [router]);
 
-    fetchUserData()
-  }, [])
+  useEffect(() => {
+    // Only fetch user data if not initializing (authentication check passed)
+    if (!isInitializing) {
+      fetchUserData();
+    }
+  }, [isInitializing]);
+
+  // Fetch user data from API with better error handling
+  const fetchUserData = async () => {
+    setLoadingProfile(true);
+    try {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Unauthorized - redirect to login
+          router.push('/login');
+          return;
+        }
+        throw new Error('Failed to fetch user data');
+      }
+
+      const data = await response.json();
+      setFormData({
+        registrationNumber: data.reg_no || '',
+        firstName: data.first_name || '',
+        lastName: data.last_name || '',
+        organizationName: 'Yeshwantrao Chavan College of Engineering (YCCE), Nagpur',
+        status: 'Loading...', // Initially set as loading
+        email: data.email || '',
+        phone: data.mobile_number || '',
+        section: data.section || '',
+        year: data.year || '',
+        semester: data.semester || '',
+        linkedin_access_token: data.linkedin_access_token || '',
+      });
+
+      // Try to load profile picture from localStorage
+      if (data.reg_no) {
+        const savedProfilePic = localStorage.getItem(`profile_picture_${data.reg_no}`);
+        if (savedProfilePic) {
+          setProfilePicture(savedProfilePic);
+        }
+        
+        // Fetch mentor/mentee status
+        await fetchMentorMenteeStatus(data.reg_no);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setLoadingProfile(false);
+    }
+  };
 
   // Add a new useEffect to update status when mentorMenteeData changes
   useEffect(() => {
@@ -808,6 +838,21 @@ function Profile() {
       alert('Error deleting quiz. Please try again.');
     }
   };
+
+  // Render profile page with loading state
+  if (isInitializing || loadingProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-[#f0f8ff] via-[#e6f3ff] to-[#f0f8ff]">
+        <NavBar />
+        <div className="flex justify-center items-center h-[80vh]">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
+            <p className="mt-4 text-lg text-blue-800">Loading your profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-2">

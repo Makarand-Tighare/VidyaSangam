@@ -27,6 +27,8 @@ export const getTokens = () => {
 export const clearTokens = () => {
   localStorage.removeItem('authToken');
   localStorage.removeItem('refreshToken');
+  localStorage.removeItem('isAdmin');
+  localStorage.removeItem('isLoggedIn');
 };
 
 /**
@@ -35,6 +37,14 @@ export const clearTokens = () => {
  */
 export const isLoggedIn = () => {
   return !!localStorage.getItem('authToken');
+};
+
+/**
+ * Check if the current user is an admin
+ * @returns {boolean} True if the user is an admin
+ */
+export const isAdmin = () => {
+  return localStorage.getItem('isAdmin') === 'true';
 };
 
 /**
@@ -63,12 +73,55 @@ export const login = async (email, password) => {
     if (data.token && data.token.access && data.token.refresh) {
       // Store both tokens
       storeTokens(data.token.access, data.token.refresh);
+      
+      // Set admin status (defaulting to false for regular login)
+      localStorage.setItem('isAdmin', data.isAdmin === true ? 'true' : 'false');
+      
       return { success: true, message: data.msg || 'Login successful' };
     } else {
       throw new Error('Invalid token data received');
     }
   } catch (error) {
     console.error('Login error:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+/**
+ * Admin login function
+ * @param {string} email - Admin email
+ * @param {string} password - Admin password
+ * @returns {Promise<Object>} Login result object
+ */
+export const adminLogin = async (email, password) => {
+  try {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.msg || 'Admin login failed');
+    }
+
+    const data = await response.json();
+    
+    if (data.token) {
+      // Store token
+      localStorage.setItem('authToken', data.token);
+      localStorage.setItem('isAdmin', 'true');
+      localStorage.setItem('isLoggedIn', 'true');
+      
+      return { success: true, message: 'Admin login successful' };
+    } else {
+      throw new Error('Invalid token data received');
+    }
+  } catch (error) {
+    console.error('Admin login error:', error);
     return { success: false, message: error.message };
   }
 };
@@ -133,6 +186,11 @@ export const authenticatedFetch = async (url, options = {}) => {
   // Get the current access token
   let accessToken = localStorage.getItem('authToken');
   
+  if (!accessToken) {
+    console.error('No auth token available for API request');
+    throw new Error('Authentication required');
+  }
+  
   // Set up headers with the access token
   const headers = {
     ...options.headers,
@@ -140,26 +198,39 @@ export const authenticatedFetch = async (url, options = {}) => {
     'Content-Type': options.headers?.['Content-Type'] || 'application/json'
   };
   
-  // Make the initial request
-  let response = await fetch(url, { ...options, headers });
-  
-  // If we get a 401 Unauthorized, try to refresh the token
-  if (response.status === 401) {
-    console.log('Token expired, attempting to refresh...');
+  try {
+    // Make the initial request
+    let response = await fetch(url, { ...options, headers });
     
-    // Try to refresh the token
-    const newToken = await refreshAccessToken();
-    
-    // If token refresh was successful, retry the request with the new token
-    if (newToken) {
-      headers.Authorization = `Bearer ${newToken}`;
-      response = await fetch(url, { ...options, headers });
-    } else {
-      // If token refresh failed, throw an error or handle as needed
-      // This typically means the user needs to log in again
-      throw new Error('Authentication failed. Please log in again.');
+    // If we get a 401 Unauthorized, try to refresh the token
+    if (response.status === 401) {
+      console.log('Token expired, attempting to refresh...');
+      
+      // Try to refresh the token
+      const newToken = await refreshAccessToken();
+      
+      // If token refresh was successful, retry the request with the new token
+      if (newToken) {
+        headers.Authorization = `Bearer ${newToken}`;
+        return fetch(url, { ...options, headers });
+      } else {
+        // Clear tokens on auth failure
+        clearTokens();
+        throw new Error('Authentication failed. Please log in again.');
+      }
     }
+    
+    return response;
+  } catch (error) {
+    // Handle network errors or other exceptions
+    console.error('API request failed:', error);
+    
+    // If this is a token error (e.g., "Authentication required"),
+    // we might want to clear tokens and redirect
+    if (error.message.includes('Authentication')) {
+      clearTokens();
+    }
+    
+    throw error;
   }
-  
-  return response;
 }; 

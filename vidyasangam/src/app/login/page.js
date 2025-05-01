@@ -23,7 +23,12 @@ export default function LoginPage() {
   useEffect(() => {
     // If the user is already logged in, redirect them to the home page
     if (isLoggedIn()) {
-      router.push("/"); // Redirect to homepage if already logged in
+      const isAdmin = localStorage.getItem("isAdmin") === "true";
+      if (isAdmin) {
+        router.push("/adminDashboard"); // Redirect admins to admin dashboard
+      } else {
+        router.push("/"); // Redirect regular users to homepage
+      }
     }
   }, [router]);
 
@@ -36,18 +41,80 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage("");
   
-    // Special case for admin login (hardcoded check)
-    if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
+   // Special case for admin login (hardcoded check)
+if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
+  try {
+    setIsLoading(true);
+    // Call admin login API using the user endpoint instead
+    const response = await fetch("http://127.0.0.1:8000/api/user/admin-login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    
+    const data = await response.json();
+    console.log("Admin login response:", data); // Debug log
+    
+    if (response.ok) {
+      // Store token in localStorage
       localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("isAdmin", "true");
+      
+      // Store the token correctly - adjust this based on your actual token structure
+      if (data.token && data.token.access) {
+        localStorage.setItem("authToken", data.token.access);
+      } else if (typeof data.token === 'string') {
+        localStorage.setItem("authToken", data.token);
+      }
+      
       router.push("/adminDashboard");
-      return;
+    } else {
+      // Show error message from API
+      if (data.errors && data.errors.non_field_errors) {
+        setError(data.errors.non_field_errors.join(", "));
+      } else if (data.error) {
+        setError(data.error);
+      } else {
+        setError("Admin login failed. Please check credentials.");
+      }
+      
+      // For development only: fallback if API doesn't work but credentials are correct
+      // In production, remove this fallback
+      if (process.env.NODE_ENV === 'development') {
+        console.warn("Using development fallback for admin login");
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("isAdmin", "true");
+        localStorage.setItem("authToken", "dev-fallback-token");
+        router.push("/adminDashboard");
+      }
     }
+  } catch (error) {
+    console.error("Admin login API error:", error);
+    setError("Connection error. Could not reach authentication server.");
+    
+    // For development only: fallback if API doesn't work
+    // In production, remove this fallback
+    if (process.env.NODE_ENV === 'development') {
+      console.warn("Using development fallback for admin login");
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("isAdmin", "true");
+      localStorage.setItem("authToken", "dev-fallback-token");
+      router.push("/adminDashboard");
+    }
+  } finally {
+    setIsLoading(false);
+  }
+  return;
+} 
   
     try {
       const result = await login(email, password);
       
       if (result.success) {
-        localStorage.setItem("isLoggedIn", "true"); // Track logged in status
+        localStorage.setItem("isLoggedIn", "true");
+        localStorage.setItem("isAdmin", "false"); // Explicitly set as non-admin
         router.push("/"); // Navigate to the homepage for regular users
       } else {
         setErrorMessage(result.message || "Login failed. Please check your credentials.");

@@ -7,12 +7,15 @@ import { useRouter } from "next/navigation"
 export default function NavBar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     const checkLoginStatus = () => {
       const authToken = localStorage.getItem("authToken")
+      const adminStatus = localStorage.getItem("isAdmin") === "true"
       setIsLoggedIn(!!authToken)
+      setIsAdmin(adminStatus)
     }
 
     checkLoginStatus()
@@ -33,7 +36,11 @@ export default function NavBar() {
 
   const handleLogout = () => {
     localStorage.removeItem("authToken")
+    localStorage.removeItem("isAdmin")
+    localStorage.removeItem("isLoggedIn")
+    localStorage.removeItem("refreshToken")
     setIsLoggedIn(false)
+    setIsAdmin(false)
     router.push("/")
   }
 
@@ -87,6 +94,17 @@ export default function NavBar() {
         </Link>
         {isLoggedIn ? (
           <>
+            {isAdmin && (
+              <Link
+                href="/adminDashboard"
+                onClick={closeMenu}
+                className="relative group"
+              >
+                <span className="bg-[#ede9fe] text-[#6d28d9] font-medium transition duration-200 rounded px-3 py-1">
+                  Admin Dashboard
+                </span>
+              </Link>
+            )}
             <Link
               href="/profile"
               onClick={closeMenu}
@@ -185,6 +203,17 @@ export default function NavBar() {
             </Link>
             {isLoggedIn ? (
               <>
+                {isAdmin && (
+                  <Link
+                    href="/adminDashboard"
+                    onClick={closeMenu}
+                    className="relative group"
+                  >
+                    <span className="bg-[#ede9fe] text-[#6d28d9] font-medium transition duration-200 rounded px-3 py-1">
+                      Admin Dashboard
+                    </span>
+                  </Link>
+                )}
                 <Link
                   href="/profile"
                   onClick={closeMenu}

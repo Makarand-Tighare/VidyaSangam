@@ -86,27 +86,65 @@ export const useAuth = () => {
   return context;
 };
 
-// Protected route wrapper
+// Improved protected route wrapper with better loading handling
 export const withAuth = (Component) => {
   const AuthenticatedComponent = (props) => {
-    const { user, loading } = useAuth();
     const router = useRouter();
+    const [isAuthChecked, setIsAuthChecked] = useState(false);
+    const [isAuthorized, setIsAuthorized] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-      if (!loading && !user) {
-        router.push('/login');
-      }
-    }, [user, loading, router]);
+      // This runs once on component mount
+      const checkAuthentication = async () => {
+        setIsLoading(true);
+        
+        try {
+          // Check if auth token exists
+          if (!isLoggedIn()) {
+            // If not logged in, redirect to login page
+            router.push('/login');
+            return;
+          }
+          
+          // Try to refresh the token if needed
+          try {
+            // Even if refresh fails, we'll still try to render the component
+            // since the existing token might still be valid
+            await refreshAccessToken();
+          } catch (error) {
+            console.warn('Token refresh failed:', error);
+            // Continue anyway - the component's API calls will 
+            // handle auth errors if the token is truly invalid
+          }
+          
+          // If we got here, user has a token
+          setIsAuthorized(true);
+        } catch (error) {
+          console.error('Authentication check error:', error);
+          // On critical errors, redirect to login
+          router.push('/login');
+        } finally {
+          setIsAuthChecked(true);
+          setIsLoading(false);
+        }
+      };
 
-    if (loading) {
-      return <div>Loading...</div>;
+      checkAuthentication();
+    }, [router]);
+
+    // Show loading state while checking auth
+    if (isLoading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <span className="ml-3 text-lg text-blue-500">Checking authentication...</span>
+        </div>
+      );
     }
 
-    if (!user) {
-      return null; // Will redirect to login
-    }
-
-    return <Component {...props} />;
+    // Only render the component if authorized
+    return isAuthChecked && isAuthorized ? <Component {...props} /> : null;
   };
 
   return AuthenticatedComponent;

@@ -4,8 +4,11 @@ import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Info } from 'lucide-react';
+import AdminRoute from "@/components/AdminRoute";
+import { useRouter } from "next/navigation";
+import { isAdmin, isLoggedIn } from "@/app/lib/auth";
 
-export default function AdminDashboardPage() {
+function AdminDashboard() {
   const [mentorMentees, setMentorMentees] = useState({});
   const [participants, setParticipants] = useState([]);
   const [unmatchedParticipants, setUnmatchedParticipants] = useState([]);
@@ -23,6 +26,7 @@ export default function AdminDashboardPage() {
   const [showUnmatchedParticipantModal, setShowUnmatchedParticipantModal] = useState(false);
   const [techStackFilter, setTechStackFilter] = useState('');
   const [mentoringPreferenceFilter, setMentoringPreferenceFilter] = useState('');
+  const router = useRouter();
   
   // New state variables for manual assignment
   const [relationships, setRelationships] = useState([]);
@@ -44,6 +48,14 @@ export default function AdminDashboardPage() {
   // Add direct registration input states
   const [mentorRegInput, setMentorRegInput] = useState('');
   const [menteeRegInput, setMenteeRegInput] = useState('');
+
+  // Check auth on load
+  useEffect(() => {
+    if (!isLoggedIn() || !isAdmin()) {
+      router.push('/login');
+      return;
+    }
+  }, [router]);
 
   // Stats counters
   const stats = useMemo(() => {
@@ -2125,5 +2137,13 @@ export default function AdminDashboardPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <AdminRoute>
+      <AdminDashboard />
+    </AdminRoute>
   );
 }
