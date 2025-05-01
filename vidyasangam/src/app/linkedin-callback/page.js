@@ -22,7 +22,7 @@ function LinkedInCallback() {
       const token = localStorage.getItem('authToken');
       if (!token) throw new Error('No auth token found');
 
-      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
+      const response = await fetch('https://project-api-qgho.onrender.com/api/user/profile/', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ function LinkedInCallback() {
             return;
           }
 
-          const response = await fetch('http://127.0.0.1:8000/api/utility/linkedin-auth/', {
+          const response = await fetch('https://project-api-qgho.onrender.com/api/utility/linkedin-auth/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
