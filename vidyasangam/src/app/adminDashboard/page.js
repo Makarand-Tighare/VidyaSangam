@@ -41,6 +41,10 @@ export default function AdminDashboardPage() {
   // Add state for relationship search
   const [relationshipSearchTerm, setRelationshipSearchTerm] = useState('');
 
+  // Add direct registration input states
+  const [mentorRegInput, setMentorRegInput] = useState('');
+  const [menteeRegInput, setMenteeRegInput] = useState('');
+
   // Stats counters
   const stats = useMemo(() => {
     if (!participants.length) return { total: 0, mentors: 0, mentees: 0 };
@@ -518,15 +522,19 @@ export default function AdminDashboardPage() {
       
       if (preferredRole === "mentor") {
         setSelectedMentor(participant);
+        setMentorRegInput(participant.registration_no);
       } else if (preferredRole === "mentee") {
         setSelectedMentee(participant);
+        setMenteeRegInput(participant.registration_no);
       } else {
         // If no preference is set, try to guess based on semester
         const semester = parseInt(participant.semester);
         if (semester && semester >= 5) { // Higher semester students are likely mentors
           setSelectedMentor(participant);
+          setMentorRegInput(participant.registration_no);
         } else {
           setSelectedMentee(participant);
+          setMenteeRegInput(participant.registration_no);
         }
       }
     }
@@ -553,7 +561,22 @@ export default function AdminDashboardPage() {
       const isMentor = batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" || 
                        (parseInt(batchAssignmentParticipant.semester) >= 5);
       
-      const promises = selectedBatchParticipants.map(participant => {
+      // Filter out any participants that have the same registration number as the batch assignment participant
+      const validParticipants = selectedBatchParticipants.filter(
+        participant => participant.registration_no !== batchAssignmentParticipant.registration_no
+      );
+      
+      if (validParticipants.length < selectedBatchParticipants.length) {
+        alert("Warning: Removed participant(s) that had the same registration number as the mentor/mentee.");
+      }
+      
+      if (validParticipants.length === 0) {
+        alert("No valid participants to assign. Cannot assign someone to themselves.");
+        setIsBatchAssigning(false);
+        return;
+      }
+      
+      const promises = validParticipants.map(participant => {
         const payload = isMentor ? 
           {
             mentor_registration_no: batchAssignmentParticipant.registration_no,
@@ -714,14 +737,16 @@ export default function AdminDashboardPage() {
     });
   }
 
-  // Add direct registration input states
-  const [mentorRegInput, setMentorRegInput] = useState('');
-  const [menteeRegInput, setMenteeRegInput] = useState('');
-
   // Replace the assignMenteesToMentor function to use direct registration numbers
   const assignByRegistrationNumbers = async () => {
     if (!mentorRegInput || !menteeRegInput) {
       setErrorMessage("Please enter both mentor and mentee registration numbers.");
+      return;
+    }
+    
+    // Prevent assigning a person to themselves
+    if (mentorRegInput === menteeRegInput) {
+      setErrorMessage("Cannot assign a person to themselves. Please use different registration numbers.");
       return;
     }
     
@@ -1076,6 +1101,53 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             
+            {/* Direct Registration Number Assignment Form */}
+            <div className="p-4 bg-gray-50 border-b">
+              <h3 className="text-lg font-semibold mb-3">Direct Assignment by Registration Number</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                <div>
+                  <label htmlFor="mentorRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mentor Registration Number
+                  </label>
+                  <input
+                    id="mentorRegInput"
+                    type="text"
+                    placeholder="Enter mentor reg. no."
+                    value={mentorRegInput}
+                    onChange={(e) => setMentorRegInput(e.target.value)}
+                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="menteeRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mentee Registration Number
+                  </label>
+                  <input
+                    id="menteeRegInput"
+                    type="text"
+                    placeholder="Enter mentee reg. no."
+                    value={menteeRegInput}
+                    onChange={(e) => setMenteeRegInput(e.target.value)}
+                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <Button
+                    onClick={assignByRegistrationNumbers}
+                    disabled={isAssigning || !mentorRegInput || !menteeRegInput}
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md w-full"
+                  >
+                    {isAssigning ? "Assigning..." : "Create Relationship"}
+                  </Button>
+                </div>
+              </div>
+              {errorMessage && activeTab === "unmatched" && (
+                <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+                  {errorMessage}
+                </div>
+              )}
+            </div>
+            
             {isLoadingUnmatched ? (
               <div className="flex justify-center items-center p-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
@@ -1116,12 +1188,6 @@ export default function AdminDashboardPage() {
                               className="px-2 py-1 bg-teal-100 text-teal-700 rounded-md hover:bg-teal-200 transition-colors text-xs"
                             >
                               Assign
-                            </button>
-                            <button
-                              onClick={() => findMentorsByTechStack(participant)}
-                              className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors text-xs whitespace-normal"
-                            >
-                              Match by Tech Stack
                             </button>
                             <button
                               onClick={() => openBatchAssignmentModal(participant)}
@@ -1743,6 +1809,8 @@ export default function AdminDashboardPage() {
                     setShowAssignmentModal(false);
                     setSelectedMentor(null);
                     setSelectedMentee(null);
+                    setMentorRegInput('');
+                    setMenteeRegInput('');
                   }}
                   className="text-gray-500 hover:text-gray-700"
                 >
@@ -1767,7 +1835,10 @@ export default function AdminDashboardPage() {
                             <p className="text-sm text-gray-500">Tech Stack: {selectedMentor.tech_stack}</p>
                           </div>
                           <button 
-                            onClick={() => setSelectedMentor(null)}
+                            onClick={() => {
+                              setSelectedMentor(null);
+                              setMentorRegInput('');
+                            }}
                             className="text-red-500 hover:text-red-700"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1792,7 +1863,10 @@ export default function AdminDashboardPage() {
                               <div 
                                 key={index}
                                 className="mentor-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                                onClick={() => setSelectedMentor(mentor)}
+                                onClick={() => {
+                                  setSelectedMentor(mentor);
+                                  setMentorRegInput(mentor.registration_no);
+                                }}
                                 data-name={mentor.name}
                                 data-reg-no={mentor.registration_no}
                                 data-tech-stack={mentor.tech_stack}
@@ -1820,7 +1894,10 @@ export default function AdminDashboardPage() {
                             <p className="text-sm text-gray-500">Semester: {selectedMentee.semester}</p>
                           </div>
                           <button 
-                            onClick={() => setSelectedMentee(null)}
+                            onClick={() => {
+                              setSelectedMentee(null);
+                              setMenteeRegInput('');
+                            }}
                             className="text-red-500 hover:text-red-700"
                           >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1845,7 +1922,10 @@ export default function AdminDashboardPage() {
                               <div 
                                 key={index}
                                 className="mentee-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                                onClick={() => setSelectedMentee(mentee)}
+                                onClick={() => {
+                                  setSelectedMentee(mentee);
+                                  setMenteeRegInput(mentee.registration_no);
+                                }}
                                 data-name={mentee.name}
                                 data-reg-no={mentee.registration_no}
                               >
@@ -1858,26 +1938,6 @@ export default function AdminDashboardPage() {
                     )}
                   </div>
                 </div>
-                
-                {/* Tech Stack Compatibility Warning */}
-                {selectedMentor && selectedMentee && selectedMentor.tech_stack && selectedMentee.tech_stack && 
-                 selectedMentor.tech_stack.toLowerCase() !== selectedMentee.tech_stack.toLowerCase() && (
-                  <div className="p-4 border-l-4 border-yellow-500 bg-yellow-50 rounded">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <p className="text-sm text-yellow-700">
-                          <strong>Tech Stack Mismatch:</strong> Mentor tech stack ({selectedMentor.tech_stack}) and Mentee tech stack ({selectedMentee.tech_stack}) are different. 
-                          This might affect the quality of mentoring.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
               
               <div className="border-t p-4 flex justify-end gap-4">
@@ -1886,6 +1946,8 @@ export default function AdminDashboardPage() {
                     setShowAssignmentModal(false);
                     setSelectedMentor(null);
                     setSelectedMentee(null);
+                    setMentorRegInput('');
+                    setMenteeRegInput('');
                   }}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
                 >
@@ -1902,6 +1964,8 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Tech Stack Matching Modal - Removed */}
 
         {/* Batch Assignment Modal */}
         {showBatchAssignmentModal && batchAssignmentParticipant && (
@@ -1927,86 +1991,110 @@ export default function AdminDashboardPage() {
               
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Mentor Selection */}
+                  {/* Main Participant */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentor</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                      {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentor" : "Mentee"}
+                    </h3>
                     
-                    {batchAssignmentParticipant ? (
-                      <div className="p-4 border rounded-lg bg-green-50">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-medium">{batchAssignmentParticipant.name}</p>
-                            <p className="text-sm text-gray-500">Registration: {batchAssignmentParticipant.registration_no}</p>
-                            <p className="text-sm text-gray-500">Tech Stack: {batchAssignmentParticipant.tech_stack}</p>
-                          </div>
-                          <button 
-                            onClick={() => setBatchAssignmentParticipant(null)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
+                    <div className="p-4 border rounded-lg bg-green-50">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium">{batchAssignmentParticipant.name}</p>
+                          <p className="text-sm text-gray-500">Registration: {batchAssignmentParticipant.registration_no}</p>
+                          <p className="text-sm text-gray-500">Tech Stack: {batchAssignmentParticipant.tech_stack}</p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Search for mentors..."
-                          className="w-full p-2 border rounded-lg"
-                          onChange={handleMentorSearch}
-                        />
-                        
-                        <div className="max-h-64 overflow-y-auto border rounded-lg">
-                          {unmatchedParticipants
-                            .filter(p => p.mentoring_preferences?.toLowerCase() === "mentor")
-                            .map((mentor, index) => (
-                              <div 
-                                key={index}
-                                className="mentor-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                                onClick={() => setBatchAssignmentParticipant(mentor)}
-                                data-name={mentor.name}
-                                data-reg-no={mentor.registration_no}
-                                data-tech-stack={mentor.tech_stack}
-                              >
-                                <p className="font-medium">{mentor.name}</p>
-                                <p className="text-sm text-gray-500">Registration: {mentor.registration_no}</p>
-                                <p className="text-sm text-gray-500">Tech Stack: {mentor.tech_stack}</p>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                   
-                  {/* Mentee Selection */}
+                  {/* Multiple Selection */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentees</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                      {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Select Mentees" : "Select Mentors"}
+                    </h3>
                     
                     <div className="space-y-2">
                       <input
                         type="text"
-                        placeholder="Search for mentees..."
+                        placeholder={`Search for ${batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentees" : "mentors"}...`}
                         className="w-full p-2 border rounded-lg"
-                        onChange={handleMenteeSearch}
+                        onChange={batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? handleMenteeSearch : handleMentorSearch}
                       />
+                      
+                      {/* Display selected participants */}
+                      {selectedBatchParticipants.length > 0 && (
+                        <div className="mb-4">
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">
+                            Selected {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentees" : "Mentors"} ({selectedBatchParticipants.length})
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedBatchParticipants.map((participant, index) => (
+                              <div key={index} className="flex items-center bg-purple-50 rounded-full py-1 px-3">
+                                <span className="text-sm mr-1">{participant.name}</span>
+                                <button
+                                  onClick={() => setSelectedBatchParticipants(prev => 
+                                    prev.filter(p => p.registration_no !== participant.registration_no)
+                                  )}
+                                  className="text-red-500 hover:text-red-700"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="max-h-64 overflow-y-auto border rounded-lg">
                         {unmatchedParticipants
-                          .filter(p => p.mentoring_preferences?.toLowerCase() === "mentee")
-                          .map((mentee, index) => (
-                            <div 
-                              key={index}
-                              className="mentee-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                              onClick={() => setSelectedBatchParticipants(prev => [...prev, mentee])}
-                              data-name={mentee.name}
-                              data-reg-no={mentee.registration_no}
-                            >
-                              <p className="font-medium">{mentee.name}</p>
-                              <p className="text-sm text-gray-500">Registration: {mentee.registration_no}</p>
-                            </div>
-                          ))}
+                          .filter(p => {
+                            // Only show participants with the opposite role
+                            const oppositeRole = batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentee" : "mentor";
+                            // Don't show the current participant
+                            const notSelf = p.registration_no !== batchAssignmentParticipant.registration_no;
+                            return p.mentoring_preferences?.toLowerCase() === oppositeRole && notSelf;
+                          })
+                          .map((participant, index) => {
+                            // Check if this participant is already selected
+                            const isSelected = selectedBatchParticipants.some(
+                              p => p.registration_no === participant.registration_no
+                            );
+                            
+                            return (
+                              <div 
+                                key={index}
+                                className={`participant-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 ${isSelected ? 'bg-purple-50' : ''}`}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    // If already selected, remove from selection
+                                    setSelectedBatchParticipants(prev => 
+                                      prev.filter(p => p.registration_no !== participant.registration_no)
+                                    );
+                                  } else {
+                                    // Otherwise add to selection
+                                    setSelectedBatchParticipants(prev => [...prev, participant]);
+                                  }
+                                }}
+                                data-name={participant.name}
+                                data-reg-no={participant.registration_no}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <p className="font-medium">{participant.name}</p>
+                                    <p className="text-sm text-gray-500">Registration: {participant.registration_no}</p>
+                                  </div>
+                                  {isSelected && (
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
                   </div>
@@ -2029,118 +2117,8 @@ export default function AdminDashboardPage() {
                   disabled={isBatchAssigning || !batchAssignmentParticipant || selectedBatchParticipants.length === 0}
                   className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md"
                 >
-                  {isBatchAssigning ? "Assigning..." : "Assign Mentor-Mentee"}
+                  {isBatchAssigning ? "Assigning..." : "Create Relationships"}
                 </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tech Stack Matching Modal */}
-        {showTechStackMatchModal && currentUnmatchedParticipant && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Tech Stack Matching for {currentUnmatchedParticipant.name}
-                </h2>
-                <button 
-                  onClick={() => {
-                    setShowTechStackMatchModal(false);
-                    setCurrentUnmatchedParticipant(null);
-                    setPotentialMentors([]);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6">
-                {/* Participant Information */}
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
-                      currentUnmatchedParticipant.mentoring_preferences?.toLowerCase() === "mentor" 
-                        ? "bg-green-100 text-green-800" 
-                        : "bg-purple-100 text-purple-800"
-                    }`}>
-                      {currentUnmatchedParticipant.mentoring_preferences || "Student"}
-                    </span>
-                    <h3 className="text-lg font-medium">{currentUnmatchedParticipant.name}</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Registration Number</p>
-                      <p>{currentUnmatchedParticipant.registration_no}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Semester</p>
-                      <p>{currentUnmatchedParticipant.semester}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Tech Stack</p>
-                      <p className="font-medium text-indigo-700">{currentUnmatchedParticipant.tech_stack}</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <h3 className="text-lg font-medium mb-4 border-b pb-2">Matching Mentors by Tech Stack</h3>
-                
-                {isLoadingMentors ? (
-                  <div className="flex justify-center items-center p-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500"></div>
-                  </div>
-                ) : potentialMentors.length > 0 ? (
-                  <div className="space-y-4">
-                    {potentialMentors.map((mentor, index) => (
-                      <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 flex justify-between items-center">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block px-2 py-1 rounded-full bg-green-100 text-green-800 text-xs font-medium">
-                              {mentor.mentoring_preferences || `Semester ${mentor.semester}`}
-                            </span>
-                            <h4 className="font-medium">{mentor.name}</h4>
-                          </div>
-                          <p className="text-sm text-gray-500 mt-1">Registration No: {mentor.registration_no}</p>
-                          <div className="mt-2">
-                            <p className="text-sm text-gray-500">Tech Stack: <span className="text-indigo-700 font-medium">{mentor.tech_stack}</span></p>
-                            <p className="text-sm text-gray-500">Semester: {mentor.semester}</p>
-                          </div>
-                        </div>
-                        <div>
-                          <Button
-                            onClick={() => assignToMentor(mentor)}
-                            disabled={isAssigning}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-md"
-                          >
-                            {isAssigning ? "Assigning..." : "Assign"}
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                    <p>No matching mentors found for this tech stack.</p>
-                    <p className="text-sm mt-2">Try using the regular assignment option instead.</p>
-                  </div>
-                )}
-              </div>
-              
-              <div className="border-t p-4 flex justify-end">
-                <button
-                  onClick={() => {
-                    setShowTechStackMatchModal(false);
-                    setCurrentUnmatchedParticipant(null);
-                    setPotentialMentors([]);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </button>
               </div>
             </div>
           </div>

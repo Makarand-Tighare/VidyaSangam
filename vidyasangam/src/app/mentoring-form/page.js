@@ -192,7 +192,7 @@ const ApplicationPendingAnimation = ({ applicationData }) => {
           Your application to be a <strong>{preferences.toUpperCase()}</strong> was submitted on <strong>{submissionDate}</strong> and is currently pending review by our administrators.
         </p>
         <p className="text-gray-700 mb-6">
-          You'll be notified once your application is approved and you're matched with a {preferences === 'mentor' ? 'mentee' : 'mentor'}.
+          You&apos;ll be notified once your application is approved and you&apos;re matched with a {preferences === 'mentor' ? 'mentee' : 'mentor'}.
         </p>
         <div className="bg-white p-4 rounded-md mb-6 text-left">
           <h3 className="font-semibold text-blue-700 mb-2">Application Summary</h3>
