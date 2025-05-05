@@ -258,9 +258,9 @@ function AdminDashboard() {
     }
     
     // Load persistent state from localStorage
-    const storedMatchFetchTime = localStorage.getItem('lastMatchFetchTime');
+    const storedMatchFetchTime = localStorage.getItem(getDepartmentStorageKey('lastMatchFetchTime'));
     const storedModificationTime = localStorage.getItem('lastRelationshipModificationTime');
-    const storedMatches = localStorage.getItem('mentorMenteesData');
+    const storedMatches = localStorage.getItem(getDepartmentStorageKey('mentorMenteesData'));
     
     if (storedMatchFetchTime) {
       setLastMatchFetchTime(parseInt(storedMatchFetchTime));
@@ -442,8 +442,8 @@ function AdminDashboard() {
         // Save to localStorage and update timestamp
         const now = Date.now();
         setLastMatchFetchTime(now);
-        localStorage.setItem('lastMatchFetchTime', now.toString());
-        localStorage.setItem('mentorMenteesData', JSON.stringify(mentorMenteesObj));
+        localStorage.setItem(getDepartmentStorageKey('lastMatchFetchTime'), now.toString());
+        localStorage.setItem(getDepartmentStorageKey('mentorMenteesData'), JSON.stringify(mentorMenteesObj));
         
         // Generate CSV content
         let csvContent = "Mentor Registration No,Mentor Name,Mentor's Semester,Mentee Registration No,Mentee Name,Mentee's Semester\n";
@@ -499,8 +499,8 @@ function AdminDashboard() {
       // Save to localStorage and update timestamp
       const now = Date.now();
       setLastMatchFetchTime(now);
-      localStorage.setItem('lastMatchFetchTime', now.toString());
-      localStorage.setItem('mentorMenteesData', JSON.stringify(mentorMenteesObj));
+      localStorage.setItem(getDepartmentStorageKey('lastMatchFetchTime'), now.toString());
+      localStorage.setItem(getDepartmentStorageKey('mentorMenteesData'), JSON.stringify(mentorMenteesObj));
 
       // Refresh unmatched participants after matching
       fetchUnmatchedParticipants();
@@ -1779,6 +1779,12 @@ function AdminDashboard() {
   const handleBackToHome = () => {
     router.push('/');
   };
+
+  // Add this helper function near the top, after departmentInfo state is defined
+  function getDepartmentStorageKey(suffix) {
+    const code = departmentInfo?.code || "global";
+    return `${suffix}_${code}`;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
