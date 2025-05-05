@@ -448,7 +448,50 @@ function AdminDashboard() {
       
     } catch (error) {
       console.error("Error fetching matches:", error);
-      setErrorMessage(`Failed to fetch matches: ${error.message || "Unknown error"}`);
+      
+      // Extract detailed error information from the API response
+      const errorData = error.response?.data;
+      console.error("Error response data:", errorData);
+      
+      if (errorData) {
+        // Handle structured error responses
+        if (errorData.error === "Approval required before matching") {
+          // Display specific message for approval required
+          setErrorMessage(
+            `${errorData.message || "There are participants pending approval"}. ${errorData.action_required || "Please approve or reject pending participants before matching."} (Pending: ${errorData.pending_count || "unknown number"})`
+          );
+          
+          // Auto-switch to approval tab if there are pending approvals
+          if (errorData.pending_count > 0) {
+            setActiveTab("participants");
+            setActiveFilter("pending");
+          }
+        } else if (errorData.error === "Not enough participants") {
+          // Handle case where there aren't enough participants
+          setErrorMessage(
+            `${errorData.message || "Not enough participants for matching"}. ${errorData.action_required || "Please ensure there are enough mentors and mentees in the system."}`
+          );
+        } else if (errorData.error === "No mentors available") {
+          // Handle case where there are no mentors
+          setErrorMessage(
+            `${errorData.message || "No mentors available for matching"}. ${errorData.action_required || "Please ensure there are approved mentor participants in the system."}`
+          );
+        } else if (errorData.error === "No mentees available") {
+          // Handle case where there are no mentees
+          setErrorMessage(
+            `${errorData.message || "No mentees available for matching"}. ${errorData.action_required || "Please ensure there are approved mentee participants in the system."}`
+          );
+        } else if (errorData.message) {
+          // Use generic message from API if available
+          setErrorMessage(`Error: ${errorData.message}`);
+        } else {
+          // Fallback to generic error message
+          setErrorMessage(`Failed to fetch matches: ${error.message || "Unknown error"}`);
+        }
+      } else {
+        // Default error message if no structured response
+        setErrorMessage(`Failed to fetch matches: ${error.message || "Unknown error"}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1514,9 +1557,89 @@ function AdminDashboard() {
         </section>
         
         {errorMessage && (
-          <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded" role="alert">
-            <p className="font-bold">Error</p>
-            <p>{errorMessage}</p>
+          <div className={`border-l-4 p-4 rounded mb-8 ${
+            errorMessage.includes("pending approval") 
+              ? "bg-amber-50 border-amber-500 text-amber-800" 
+              : errorMessage.includes("Not enough") 
+                ? "bg-blue-50 border-blue-500 text-blue-800"
+                : "bg-red-50 border-red-500 text-red-800"
+          }`} role="alert">
+            <div className="flex items-start">
+              {errorMessage.includes("pending approval") ? (
+                <div className="flex-shrink-0 mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              ) : errorMessage.includes("Not enough") ? (
+                <div className="flex-shrink-0 mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              ) : (
+                <div className="flex-shrink-0 mr-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              )}
+              
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-1">
+                  {errorMessage.includes("pending approval") 
+                    ? "Action Required: Approval Needed" 
+                    : errorMessage.includes("Not enough") 
+                      ? "Information: Not Enough Participants"
+                      : errorMessage.includes("No mentors") 
+                        ? "Information: No Mentors Available"
+                        : errorMessage.includes("No mentees") 
+                          ? "Information: No Mentees Available"
+                          : "Error Occurred"}
+                </h3>
+                <p className="mb-3">{errorMessage}</p>
+                
+                {/* Show action buttons for specific errors */}
+                {errorMessage.includes("pending approval") && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => {
+                        setActiveTab("participants");
+                        setActiveFilter("pending");
+                      }}
+                      className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors mr-3"
+                    >
+                      View Pending Approvals
+                    </button>
+                  </div>
+                )}
+                
+                {(errorMessage.includes("Not enough") || 
+                 errorMessage.includes("No mentors") || 
+                 errorMessage.includes("No mentees")) && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => {
+                        // Open tab with unmatched participants
+                        setActiveTab("unmatched");
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mr-3"
+                    >
+                      View Unmatched Participants
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              <button 
+                onClick={() => setErrorMessage("")}
+                className="ml-auto text-gray-500 hover:text-gray-700"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
         )}
 
