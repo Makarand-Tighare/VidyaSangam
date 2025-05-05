@@ -182,6 +182,60 @@ function AdminDashboard() {
   });
   const [isUpdatingUserEligibility, setIsUpdatingUserEligibility] = useState(false);
 
+  // Add state for participant proofs
+  const [participantProofs, setParticipantProofs] = useState({});
+  const [isLoadingProofs, setIsLoadingProofs] = useState(false);
+  const proofTypes = [
+    'research',
+    'hackathon',
+    'coding',
+    'academic',
+    'internship',
+    'extracurricular',
+  ];
+
+  // Fetch all proofs for a participant
+  const fetchParticipantProofs = async (registrationNo) => {
+    setIsLoadingProofs(true);
+    const proofs = {};
+    const headers = getAuthHeaders();
+    try {
+      await Promise.all(
+        proofTypes.map(async (type) => {
+          try {
+            // Try to fetch as PDF first
+            const url = `http://127.0.0.1:8000/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=pdf`;
+            const response = await axios.get(url, { headers, responseType: 'blob' });
+            if (response.status === 200 && response.data) {
+              proofs[type] = {
+                url: URL.createObjectURL(response.data),
+                filetype: 'pdf',
+              };
+            }
+          } catch (err) {
+            // If not found as PDF, try as image (jpg)
+            try {
+              const imgUrl = `http://127.0.0.1:8000/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=jpg`;
+              const imgResponse = await axios.get(imgUrl, { headers, responseType: 'blob' });
+              if (imgResponse.status === 200 && imgResponse.data) {
+                proofs[type] = {
+                  url: URL.createObjectURL(imgResponse.data),
+                  filetype: 'jpg',
+                };
+              }
+            } catch (imgErr) {
+              // No proof found for this type
+            }
+          }
+        })
+      );
+      setParticipantProofs(proofs);
+    } catch (error) {
+      setParticipantProofs({});
+    } finally {
+      setIsLoadingProofs(false);
+    }
+  };
 
   // Update the useEffect that checks auth and department status
   useEffect(() => {
@@ -644,10 +698,9 @@ function AdminDashboard() {
   const viewParticipantDetails = (participant) => {
     setSelectedParticipant(participant);
     setShowParticipantModal(true);
-    
-    // Fetch the participant's badges when opening details
     if (participant.registration_no) {
       fetchParticipantBadges(participant.registration_no);
+      fetchParticipantProofs(participant.registration_no);
     }
   };
 
@@ -2868,6 +2921,46 @@ function AdminDashboard() {
                       month: 'long',
                       day: 'numeric'
                     })}
+                  </div>
+                  {/* Proofs & Certificates Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Proofs & Certificates</h3>
+                    {isLoadingProofs ? (
+                      <div className="text-gray-500">Loading proofs...</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {proofTypes.map((type) => (
+                          <div key={type} className="flex items-center gap-3 border-b last:border-b-0 py-2">
+                            <span className="font-medium capitalize w-40">{type.replace(/_/g, ' ')}</span>
+                            {participantProofs[type] ? (
+                              <>
+                                {participantProofs[type].filetype === 'pdf' ? (
+                                  <a
+                                    href={participantProofs[type].url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    View PDF
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={participantProofs[type].url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    View Image
+                                  </a>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-gray-400">No proof uploaded</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
                 
