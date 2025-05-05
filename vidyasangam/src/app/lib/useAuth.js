@@ -18,18 +18,30 @@ export const AuthProvider = ({ children }) => {
       if (isLoggedIn()) {
         // Try to refresh the token if it exists
         try {
-          const newToken = await refreshAccessToken();
-          if (newToken) {
+          const token = await refreshAccessToken();
+          if (token) {
             // If we have a valid token, consider the user logged in
-            // We could fetch user data here if needed
-            setUser({ isLoggedIn: true });
+            setUser({ 
+              isLoggedIn: true,
+              isAdmin: localStorage.getItem('isAdmin') === 'true',
+              isDepartmentAdmin: localStorage.getItem('isDepartmentAdmin') === 'true'
+            });
           } else {
-            // If refresh failed, user needs to log in again
+            // If refresh failed and we have no token, user needs to log in again
             setUser(null);
           }
         } catch (error) {
           console.error('Auth check error:', error);
-          setUser(null);
+          // Even if refresh fails, don't clear user if we still have a token
+          if (localStorage.getItem('authToken')) {
+            setUser({ 
+              isLoggedIn: true,
+              isAdmin: localStorage.getItem('isAdmin') === 'true',
+              isDepartmentAdmin: localStorage.getItem('isDepartmentAdmin') === 'true'
+            });
+          } else {
+            setUser(null);
+          }
         }
       } else {
         setUser(null);
@@ -109,17 +121,28 @@ export const withAuth = (Component) => {
           
           // Try to refresh the token if needed
           try {
-            // Even if refresh fails, we'll still try to render the component
-            // since the existing token might still be valid
-            await refreshAccessToken();
+            const token = await refreshAccessToken();
+            if (token) {
+              // If token refresh works, we're good
+              setIsAuthorized(true);
+            } else if (localStorage.getItem('authToken')) {
+              // Even if refresh fails, if we still have a token, try to continue
+              setIsAuthorized(true);
+            } else {
+              // No token at all, go to login
+              router.push('/login');
+              return;
+            }
           } catch (error) {
             console.warn('Token refresh failed:', error);
-            // Continue anyway - the component's API calls will 
-            // handle auth errors if the token is truly invalid
+            // If we still have an auth token, continue anyway
+            if (localStorage.getItem('authToken') && localStorage.getItem('isLoggedIn') === 'true') {
+              setIsAuthorized(true);
+            } else {
+              router.push('/login');
+              return;
+            }
           }
-          
-          // If we got here, user has a token
-          setIsAuthorized(true);
         } catch (error) {
           console.error('Authentication check error:', error);
           // On critical errors, redirect to login

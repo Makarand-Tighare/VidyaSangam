@@ -2349,7 +2349,7 @@ function Profile() {
                 {/* Strengths */}
                 <div className="space-y-2">
                   <Label htmlFor="strengths" className="text-sm font-medium text-gray-700">
-                    What are your mentor's strengths?
+                    What are your mentor&apos;s strengths?
                   </Label>
                   <Textarea
                     id="strengths"

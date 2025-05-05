@@ -67,6 +67,7 @@ export default function LoginPage() {
          if (data.token && data.token.access) {
            // JWT format
            localStorage.setItem("authToken", data.token.access);
+           localStorage.setItem("refreshToken", data.token.refresh || ""); // Store refresh token if available
            localStorage.setItem("tokenType", "Bearer");
          } else if (typeof data.token === 'string') {
            // Simple token
@@ -109,69 +110,13 @@ export default function LoginPage() {
            setErrorMessage("Admin login failed. Please check credentials.");
          }
          
-         // For development only: fallback if API doesn't work but credentials are correct
-         // In production, remove this fallback
-         if (process.env.NODE_ENV === 'development') {
-           console.warn("Using development fallback for admin login");
-           localStorage.setItem("isLoggedIn", "true");
-           localStorage.setItem("isAdmin", "true");
-           localStorage.setItem("tokenType", "Bearer");
-           
-           // Provide development department data based on email
-           if (email.includes("cse")) {
-             localStorage.setItem("adminDepartment", JSON.stringify({
-               id: 1,
-               name: "Computer Science Engineering",
-               code: "CSE"
-             }));
-             localStorage.setItem("isDepartmentAdmin", "true");
-           } else if (email.includes("it")) {
-             localStorage.setItem("adminDepartment", JSON.stringify({
-               id: 11,
-               name: "Information Technology",
-               code: "IT"
-             }));
-             localStorage.setItem("isDepartmentAdmin", "true");
-           } else if (email.includes("etc")) {
-             localStorage.setItem("adminDepartment", JSON.stringify({
-               id: 7,
-               name: "Electronics and Telecommunication Engineering",
-               code: "ETC"
-             }));
-             localStorage.setItem("isDepartmentAdmin", "true");
-           } else {
-             localStorage.setItem("isDepartmentAdmin", "false");
-           }
-           
-           localStorage.setItem("authToken", "dev-fallback-token");
-           router.push("/adminDashboard");
-         }
+         // Remove the development fallback completely - this was causing login with wrong credentials
        }
      } catch (error) {
        console.error("Admin login API error:", error);
        setErrorMessage("Connection error. Could not reach authentication server.");
        
-       // For development only: fallback if API doesn't work
-       // In production, remove this fallback
-       if (process.env.NODE_ENV === 'development') {
-         console.warn("Using development fallback for admin login");
-         localStorage.setItem("isLoggedIn", "true");
-         localStorage.setItem("isAdmin", "true");
-         localStorage.setItem("tokenType", "Bearer");
-         
-         // For ETC email
-         if (email.includes("etc")) {
-           localStorage.setItem("adminDepartment", JSON.stringify({
-             id: 7,
-             name: "Electronics and Telecommunication Engineering",
-             code: "ETC"
-           }));
-           localStorage.setItem("isDepartmentAdmin", "true");
-         }
-         
-         localStorage.setItem("authToken", "dev-fallback-token");
-         router.push("/adminDashboard");
-       }
+       // Remove the development fallback completely
      } finally {
        setIsLoading(false);
      }

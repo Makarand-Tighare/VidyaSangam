@@ -1195,12 +1195,22 @@ function AdminDashboard() {
   // Helper function to convert branch abbreviation to full name
   const getBranchFullName = (branchCode) => {
     const branchMap = {
+      'cse': 'Computer Science and Engineering',
       'ct': 'Computer Technology',
-      'aids': 'Artificial Intelligence and Data Science'
+      'aids': 'Artificial Intelligence and Data Science',
+      'aiml': 'Artificial Intelligence and Machine Learning',
+      'cse-iot': 'Computer Science and Engineering (IoT)',
+      'etc': 'Electronics and Telecommunication Engineering',
+      'ee': 'Electrical Engineering',
+      'me': 'Mechanical Engineering',
+      'ce': 'Civil Engineering',
+      'it': 'Information Technology',
+      'csd': 'Computer Science and Design'
     };
-    
-    return branchMap[branchCode] || branchCode;
+  
+    return branchMap[branchCode.toLowerCase()] || 'Unknown Branch';
   };
+  
 
   // Then add the fetchPendingApprovals function after other fetch functions
   const fetchPendingApprovals = async () => {
@@ -1765,226 +1775,724 @@ function AdminDashboard() {
     }));
   };
 
+  // Add a function to handle navigation back to home
+  const handleBackToHome = () => {
+    router.push('/');
+  };
+
   return (
-    <div className="container mx-auto px-2 md:px-4 py-8">
-      <header className="mb-8 text-center">
-        <h1 className="text-4xl font-bold text-gray-800">VidyaSangam Mentor-Mentee Program</h1>
-        <p className="text-gray-600 mt-2">Administrative Dashboard for Program Management</p>
-      </header>
-      
-      {/* Add the department info display to the header section, before the Tabs section */}
-      { departmentInfo && (
-        <div className={`mb-8 p-4 bg-${getDepartmentThemeColor(departmentInfo.code).light} border-l-4 border-${getDepartmentThemeColor(departmentInfo.code).border} rounded-md shadow-sm`}>
-          <div className="flex items-center">
-            <div className={`p-2 bg-${getDepartmentThemeColor(departmentInfo.code).light} text-${getDepartmentThemeColor(departmentInfo.code).text}-700 rounded-full mr-3`}>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
-              </svg>
-            </div>
-            <div>
-              <h3 className={`text-lg font-semibold text-${getDepartmentThemeColor(departmentInfo.code).text}-800`}>
-                {departmentInfo.name} Department Admin
-              </h3>
-              <p className={`text-sm text-${getDepartmentThemeColor(departmentInfo.code).text}-600`}>
-                You are viewing data for the {departmentInfo.name} ({departmentInfo.code}) department only
-              </p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header with back button */}
+      <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-indigo-100 shadow-lg border-b-2 border-indigo-200 px-8 py-7 flex items-center justify-between rounded-b-xl">
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handleBackToHome}
+            className="flex items-center text-indigo-600 hover:text-indigo-800 font-semibold transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Home
+          </button>
+          <span className="text-gray-300">|</span>
+          <h1 className="absolute left-1/2 transform -translate-x-1/2 text-2xl font-extrabold text-indigo-800 tracking-tight drop-shadow-sm">
+            {isDepartmentAdmin && departmentInfo 
+              ? `${departmentInfo.name} Admin Dashboard` 
+              : "Admin Dashboard"}
+          </h1>
         </div>
-      )}
-      
-      {/* Tabs */}
-      <div className="flex flex-wrap justify-center mb-8 gap-2 md:gap-0">
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "participants" ? "border-blue-600 text-blue-700 bg-blue-50" : "border-transparent text-gray-500 hover:text-blue-700"}`}
-          onClick={() => setActiveTab("participants")}
-        >
-          Participants Management
-          {pendingApprovalCount > 0 && (
-            <span className="ml-2 px-2 py-0.5 text-xs bg-red-500 text-white rounded-full">
-              {pendingApprovalCount}
-            </span>
-          )}
-        </button>
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "unmatched" ? "border-purple-600 text-purple-700 bg-purple-50" : "border-transparent text-gray-500 hover:text-purple-700"}`}
-          onClick={() => setActiveTab("unmatched")}
-        >
-          Unmatched Participants
-        </button>
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "relationships" ? "border-teal-600 text-teal-700 bg-teal-50" : "border-transparent text-gray-500 hover:text-teal-700"}`}
-          onClick={() => setActiveTab("relationships")}
-        >
-          Mentor-Mentee Relationships
-        </button>
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "matching" ? "border-green-600 text-green-700 bg-green-50" : "border-transparent text-gray-500 hover:text-green-700"}`}
-          onClick={() => setActiveTab("matching")}
-        >
-          Auto-Matching System
-        </button>
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "badges" ? "border-indigo-600 text-indigo-700 bg-indigo-50" : "border-transparent text-gray-500 hover:text-indigo-700"}`}
-          onClick={() => setActiveTab("badges")}
-        >
-          Badges & Super Mentors
-        </button>
-        <button
-          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "feedback" ? "border-amber-600 text-amber-700 bg-amber-50" : "border-transparent text-gray-500 hover:text-amber-700"}`}
-          onClick={() => setActiveTab("feedback")}
-        >
-          Feedback Management
-        </button>
+        <span className="text-sm font-semibold text-indigo-700 bg-indigo-100 px-4 py-1 rounded-full shadow">
+          Admin {isDepartmentAdmin && departmentInfo ? `(${departmentInfo.code})` : ""}
+        </span>
       </div>
-      
-      <main className="space-y-8">
-        {/* Stats Cards */}
-        <section className="grid md:grid-cols-4 gap-6">
-          <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-blue-500">
-            <h3 className="text-xl font-semibold text-gray-700">Total Participants</h3>
-            <p className="text-4xl font-bold text-blue-600 mt-2">{stats.total}</p>
-            <div className="flex justify-between mt-2">
-              <p className="text-sm text-gray-500">Registered Students</p>
-              {pendingApprovalCount > 0 && (
-                <span className="text-sm font-medium text-red-600">
-                  {pendingApprovalCount} pending approval
-                </span>
-              )}
-            </div>
-          </div>
-          
-          <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-green-500">
-            <h3 className="text-xl font-semibold text-gray-700">Matched Mentors</h3>
-            <p className="text-4xl font-bold text-green-600 mt-2">
-              {relationshipStats.uniqueMentors}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Active Mentors with Mentees
-            </p>
-          </div>
-          
-          <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-purple-500">
-            <h3 className="text-xl font-semibold text-gray-700">Matched Mentees</h3>
-            <p className="text-4xl font-bold text-purple-600 mt-2">
-              {relationshipStats.uniqueMentees}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Students with Assigned Mentors
-            </p>
-          </div>
-          
-          <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-amber-500">
-            <h3 className="text-xl font-semibold text-gray-700">Total Connections</h3>
-            <p className="text-4xl font-bold text-amber-600 mt-2">{relationshipStats.totalRelationships}</p>
-            <p className="text-sm text-gray-500 mt-2">Active Mentor-Mentee Pairs</p>
-          </div>
-        </section>
-        
-        {errorMessage && (
-          <div className={`border-l-4 p-4 rounded mb-8 ${
-            errorMessage.includes("pending approval") 
-              ? "bg-amber-50 border-amber-500 text-amber-800" 
-              : errorMessage.includes("Not enough") 
-                ? "bg-blue-50 border-blue-500 text-blue-800"
-                : "bg-red-50 border-red-500 text-red-800"
-          }`} role="alert">
-            <div className="flex items-start">
-              {errorMessage.includes("pending approval") ? (
-                <div className="flex-shrink-0 mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                </div>
-              ) : errorMessage.includes("Not enough") ? (
-                <div className="flex-shrink-0 mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              ) : (
-                <div className="flex-shrink-0 mr-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              )}
-              
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-1">
-                  {errorMessage.includes("pending approval") 
-                    ? "Action Required: Approval Needed" 
-                    : errorMessage.includes("Not enough") 
-                      ? "Information: Not Enough Participants"
-                      : errorMessage.includes("No mentors") 
-                        ? "Information: No Mentors Available"
-                        : errorMessage.includes("No mentees") 
-                          ? "Information: No Mentees Available"
-                          : "Error Occurred"}
-                </h3>
-                <p className="mb-3">{errorMessage}</p>
-                
-                {/* Show action buttons for specific errors */}
-                {errorMessage.includes("pending approval") && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        setActiveTab("participants");
-                        setActiveFilter("pending");
-                      }}
-                      className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors mr-3"
-                    >
-                      View Pending Approvals
-                    </button>
-                  </div>
-                )}
-                
-                {(errorMessage.includes("Not enough") || 
-                 errorMessage.includes("No mentors") || 
-                 errorMessage.includes("No mentees")) && (
-                  <div className="mt-2">
-                    <button
-                      onClick={() => {
-                        // Open tab with unmatched participants
-                        setActiveTab("unmatched");
-                      }}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mr-3"
-                    >
-                      View Unmatched Participants
-                    </button>
-                  </div>
-                )}
-              </div>
-              
-              <button 
-                onClick={() => setErrorMessage("")}
-                className="ml-auto text-gray-500 hover:text-gray-700"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+
+      {/* Main content container with padding */}
+      <div className="container mx-auto py-8 px-6">
+        {/* Department info display */}
+        {departmentInfo && (
+          <div className={`mb-8 p-5 bg-gradient-to-r from-${getDepartmentThemeColor(departmentInfo.code).light} to-indigo-50 border-l-8 border-${getDepartmentThemeColor(departmentInfo.code).border} rounded-xl shadow-md`}> 
+            <div className="flex items-center justify-center">
+              <div className={`p-3 bg-${getDepartmentThemeColor(departmentInfo.code).light} text-${getDepartmentThemeColor(departmentInfo.code).text}-700 rounded-full mr-4 shadow-sm`}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
                 </svg>
-              </button>
+              </div>
+              <div>
+                <h3 className={`text-lg font-bold text-${getDepartmentThemeColor(departmentInfo.code).text}-900`}> 
+                  {departmentInfo.name} Department Admin
+                </h3>
+                <p className={`text-sm text-${getDepartmentThemeColor(departmentInfo.code).text}-700`}> 
+                  You are viewing data for the {departmentInfo.name} ({departmentInfo.code}) department only
+                </p>
+              </div>
             </div>
           </div>
         )}
 
-        {/* Tab Content */}
-        {activeTab === "participants" && (
-          <section className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold">Participant Management</h2>
-                <span className="tooltip" title="Manage all program participants, approve new registrations, and view participant details">
-                  <Info className="w-4 h-4 text-gray-400" />
-                </span>
+        {/* Tabs - Modern, spacious, and centered design */}
+        <div className="bg-white shadow-lg rounded-xl mb-10 overflow-x-auto">
+          <div className="flex justify-center w-full min-w-max border-b-2 border-indigo-100">
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "participants" ? "border-blue-600 text-blue-700 bg-blue-50" : "border-transparent text-gray-500 hover:text-blue-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("participants")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+                All Participants
+                {pendingApprovalCount > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs bg-red-500 text-white rounded-full">
+                    {pendingApprovalCount}
+                  </span>
+                )}
               </div>
-              <div className="flex flex-col md:flex-row items-center gap-3">
+            </button>
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "unmatched" ? "border-purple-600 text-purple-700 bg-purple-50" : "border-transparent text-gray-500 hover:text-purple-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("unmatched")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                </svg>
+                Unmatched Students
+              </div>
+            </button>
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "relationships" ? "border-teal-600 text-teal-700 bg-teal-50" : "border-transparent text-gray-500 hover:text-teal-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("relationships")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+                Mentor-Mentee Pairs
+              </div>
+            </button>
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "matching" ? "border-green-600 text-green-700 bg-green-50" : "border-transparent text-gray-500 hover:text-green-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("matching")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Auto-Match
+              </div>
+            </button>
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "badges" ? "border-indigo-600 text-indigo-700 bg-indigo-50" : "border-transparent text-gray-500 hover:text-indigo-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("badges")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Badges & Rewards
+              </div>
+            </button>
+            <button
+              className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "feedback" ? "border-amber-600 text-amber-700 bg-amber-50" : "border-transparent text-gray-500 hover:text-amber-700 hover:bg-gray-50"}`}
+              onClick={() => setActiveTab("feedback")}
+            >
+              <div className="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
+                </svg>
+                User Feedback
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <main className="space-y-10">
+          {/* Stats Cards */}
+          <section className="grid md:grid-cols-4 gap-8">
+            <div className="bg-white shadow-xl rounded-xl p-7 border-l-8 border-indigo-400">
+              <h3 className="text-xl font-semibold text-gray-700">Total Participants</h3>
+              <p className="text-4xl font-extrabold text-indigo-700 mt-2">{stats.total}</p>
+              <div className="flex justify-between mt-2">
+                <p className="text-sm text-gray-500">Registered Students</p>
+                {pendingApprovalCount > 0 && (
+                  <span className="text-sm font-medium text-red-600">
+                    {pendingApprovalCount} pending approval
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="bg-white shadow-xl rounded-xl p-7 border-l-8 border-green-400">
+              <h3 className="text-xl font-semibold text-gray-700">Matched Mentors</h3>
+              <p className="text-4xl font-extrabold text-green-700 mt-2">
+                {relationshipStats.uniqueMentors}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Active Mentors with Mentees
+              </p>
+            </div>
+            <div className="bg-white shadow-xl rounded-xl p-7 border-l-8 border-purple-400">
+              <h3 className="text-xl font-semibold text-gray-700">Matched Mentees</h3>
+              <p className="text-4xl font-extrabold text-purple-700 mt-2">
+                {relationshipStats.uniqueMentees}
+              </p>
+              <p className="text-sm text-gray-500 mt-2">
+                Students with Assigned Mentors
+              </p>
+            </div>
+            
+            <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-amber-500">
+              <h3 className="text-xl font-semibold text-gray-700">Total Connections</h3>
+              <p className="text-4xl font-bold text-amber-600 mt-2">{relationshipStats.totalRelationships}</p>
+              <p className="text-sm text-gray-500 mt-2">Active Mentor-Mentee Pairs</p>
+            </div>
+          </section>
+          
+          {errorMessage && (
+            <div className={`border-l-4 p-4 rounded mb-8 ${
+              errorMessage.includes("pending approval") 
+                ? "bg-amber-50 border-amber-500 text-amber-800" 
+                : errorMessage.includes("Not enough") 
+                  ? "bg-blue-50 border-blue-500 text-blue-800"
+                  : "bg-red-50 border-red-500 text-red-800"
+            }`} role="alert">
+              <div className="flex items-start">
+                {errorMessage.includes("pending approval") ? (
+                  <div className="flex-shrink-0 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                ) : errorMessage.includes("Not enough") ? (
+                  <div className="flex-shrink-0 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="flex-shrink-0 mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                )}
+                
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1">
+                    {errorMessage.includes("pending approval") 
+                      ? "Action Required: Approval Needed" 
+                      : errorMessage.includes("Not enough") 
+                        ? "Information: Not Enough Participants"
+                        : errorMessage.includes("No mentors") 
+                          ? "Information: No Mentors Available"
+                          : errorMessage.includes("No mentees") 
+                            ? "Information: No Mentees Available"
+                            : "Error Occurred"}
+                  </h3>
+                  <p className="mb-3">{errorMessage}</p>
+                  
+                  {/* Show action buttons for specific errors */}
+                  {errorMessage.includes("pending approval") && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => {
+                          setActiveTab("participants");
+                          setActiveFilter("pending");
+                        }}
+                        className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors mr-3"
+                      >
+                        View Pending Approvals
+                      </button>
+                    </div>
+                  )}
+                  
+                  {(errorMessage.includes("Not enough") || 
+                   errorMessage.includes("No mentors") || 
+                   errorMessage.includes("No mentees")) && (
+                    <div className="mt-2">
+                      <button
+                        onClick={() => {
+                          // Open tab with unmatched participants
+                          setActiveTab("unmatched");
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mr-3"
+                      >
+                        View Unmatched Participants
+                      </button>
+                    </div>
+                  )}
+                </div>
+                
+                <button 
+                  onClick={() => setErrorMessage("")}
+                  className="ml-auto text-gray-500 hover:text-gray-700"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tab Content */}
+          {activeTab === "participants" && (
+            <section className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-semibold">Participant Management</h2>
+                  <span className="tooltip" title="Manage all program participants, approve new registrations, and view participant details">
+                    <Info className="w-4 h-4 text-gray-400" />
+                  </span>
+                </div>
+                <div className="flex flex-col md:flex-row items-center gap-3">
+                  <div className="relative w-full md:w-64">
+                    <input
+                      type="text"
+                      placeholder="Search participants..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <svg
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="pl-4 pr-8 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="active">Active</option>
+                    <option value="graduated">Graduated</option>
+                    <option value="deactivated">Deactivated</option>
+                  </select>
+                  <select
+                    value={activeFilter}
+                    onChange={(e) => setActiveFilter(e.target.value)}
+                    className="pl-4 pr-8 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Approvals</option>
+                    <option value="pending">Pending Approval</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              </div>
+              
+              {participants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg. No</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {participants
+                        .filter(p => 
+                          (p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.registration_no?.includes(searchTerm) ||
+                          p.branch?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          p.mentoring_preferences?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+                          (statusFilter === 'all' || p.status === statusFilter) &&
+                          (activeFilter === 'all' || p.approval_status === activeFilter)
+                        )
+                        .map((participant, index) => (
+                          <tr key={index} className={`hover:bg-blue-50 ${participant.approval_status === 'pending' ? 'bg-amber-50' : participant.approval_status === 'rejected' ? 'bg-red-50' : ''}`}>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {participant.approval_status === 'pending' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">Pending</span>
+                              ) : participant.approval_status === 'approved' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Approved</span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap">
+                              {participant.status === 'active' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Active</span>
+                              ) : participant.status === 'graduated' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">Graduated</span>
+                              ) : participant.status === 'deactivated' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Deactivated</span>
+                              ) : (
+                                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Active</span> // Default to active
+                              )}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.registration_no}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{participant.name}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.semester}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(participant.branch)}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                              {participant.mentoring_preferences === 'mentor' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Mentor</span>
+                              ) : participant.mentoring_preferences === 'mentee' ? (
+                                <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">Mentee</span>
+                              ) : (
+                                "—"
+                              )}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm">
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => viewParticipantDetails(participant)}
+                                  className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-xs"
+                                >
+                                  View Details
+                                </button>
+                                {participant.approval_status === 'approved' && (
+                                  <button
+                                    onClick={() => openStatusUpdateModal(participant)}
+                                    className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors text-xs"
+                                  >
+                                    Change Status
+                                  </button>
+                                )}
+                                {participant.approval_status === 'pending' && (
+                                  <>
+                                    <button
+                                      onClick={() => handleApprovalUpdate(participant.registration_no, 'approved')}
+                                      className="px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs"
+                                      disabled={isProcessingApproval}
+                                    >
+                                      Approve
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setSelectedApprovalParticipant(participant);
+                                        setShowApprovalDetailModal(true);
+                                        // Set focus to rejection reason textarea when modal opens
+                                        setTimeout(() => {
+                                          const textarea = document.getElementById('rejection-reason');
+                                          if (textarea) textarea.focus();
+                                        }, 100);
+                                      }}
+                                      className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs"
+                                      disabled={isProcessingApproval}
+                                    >
+                                      Reject
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No participants found
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === "unmatched" && (
+            <section className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-2xl font-semibold">Unmatched Participants</h2>
+                  <span className="tooltip" title="This is the preference selected by the participant. Actual roles are assigned after matching.">
+                    <Info className="w-4 h-4 text-gray-400" />
+                  </span>
+                </div>
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Filter by tech stack..."
+                      value={techStackFilter}
+                      onChange={(e) => setTechStackFilter(e.target.value)}
+                      className="pl-4 pr-4 py-2 border rounded-lg w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <select
+                    value={mentoringPreferenceFilter}
+                    onChange={(e) => setMentoringPreferenceFilter(e.target.value)}
+                    className="pl-4 pr-4 py-2 border rounded-lg w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Preferences</option>
+                    <option value="mentor">Mentors</option>
+                    <option value="mentee">Mentees</option>
+                  </select>
+                </div>
+              </div>
+              
+              {/* Direct Registration Number Assignment Form */}
+              <div className="p-4 bg-gray-50 border-b">
+                <h3 className="text-lg font-semibold mb-3">Direct Assignment by Registration Number</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label htmlFor="mentorRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                      Mentor Registration Number
+                    </label>
+                    <input
+                      id="mentorRegInput"
+                      type="text"
+                      placeholder="Enter mentor reg. no."
+                      value={mentorRegInput}
+                      onChange={(e) => setMentorRegInput(e.target.value)}
+                      className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="menteeRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                      Mentee Registration Number
+                    </label>
+                    <input
+                      id="menteeRegInput"
+                      type="text"
+                      placeholder="Enter mentee reg. no."
+                      value={menteeRegInput}
+                      onChange={(e) => setMenteeRegInput(e.target.value)}
+                      className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      onClick={assignByRegistrationNumbers}
+                      disabled={isAssigning || !mentorRegInput || !menteeRegInput}
+                      className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md w-full"
+                    >
+                      {isAssigning ? "Assigning..." : "Create Relationship"}
+                    </Button>
+                  </div>
+                </div>
+                {errorMessage && activeTab === "unmatched" && (
+                  <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+                    {errorMessage}
+                  </div>
+                )}
+              </div>
+              
+              {isLoadingUnmatched ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
+                </div>
+              ) : filteredUnmatchedParticipants.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg. No</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentoring Preference</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tech Stack</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {filteredUnmatchedParticipants.map((participant, index) => (
+                        <tr key={index} className="hover:bg-purple-50">
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.registration_no}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{participant.name}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.semester}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(participant.branch)}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{participant.mentoring_preferences || "—"}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.tech_stack}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => viewUnmatchedParticipantDetails(participant)}
+                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-xs"
+                              >
+                                View Details
+                              </button>
+                              <button
+                                onClick={() => openAssignmentModal(participant)}
+                                className="px-2 py-1 bg-teal-100 text-teal-700 rounded-md hover:bg-teal-200 transition-colors text-xs"
+                              >
+                                Assign
+                              </button>
+                              <button
+                                onClick={() => openBatchAssignmentModal(participant)}
+                                className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-xs"
+                              >
+                                Batch Assign
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  No unmatched participants found
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === "matching" && (
+            <>
+              <div className="flex justify-center mb-6">
+                <Button 
+                  onClick={() => fetchMatches(true)}
+                  disabled={isLoading}
+                  className={`${matchesFetched ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"} text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2`}
+                >
+                  {isLoading && <div className="animate-spin h-5 w-5 border-2 border-white border-opacity-50 border-t-transparent rounded-full"></div>}
+                  {isLoading ? "Fetching Matches..." : matchesFetched ? "Refresh Matches" : "Fetch Mentor-Mentee Matches"}
+                </Button>
+                {matchesFetched && !areMatchesStale && (
+                  <div className="ml-4 text-green-600 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Matches up to date</span>
+                  </div>
+                )}
+              </div>
+              
+              {matchesFetched && areMatchesStale && (
+                <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-700 rounded">
+                  <div className="flex items-start">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <div>
+                      <p className="font-bold">Matches may be outdated</p>
+                      <p>Relationships have been modified since you last fetched matches. We recommend refreshing the matches.</p>
+                      <div className="mt-2">
+                        <button 
+                          onClick={() => fetchMatches(true)}
+                          className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm"
+                        >
+                          Refresh Matches Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {isLoading ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                </div>
+              ) : Object.keys(mentorMentees).length > 0 && (
+                <section className="bg-white shadow-lg rounded-lg overflow-hidden">
+                  <div className="p-6 bg-gray-50 border-b flex justify-between items-center flex-wrap gap-4">
+                    <h2 className="text-2xl font-semibold">Mentor-Mentee Matches</h2>
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <input
+                          type="text"
+                          placeholder="Search mentors or mentees..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 pr-4 py-2 border rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <svg
+                          className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                      {csvData && (
+                        <Button 
+                          onClick={downloadCSV}
+                          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
+                        >
+                          Download CSV
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="divide-y divide-gray-200">
+                    {Object.entries(filteredMentorMentees).map(([mentorName, data], index) => {
+                      const { mentorInfo, mentees } = data;
+                      return (
+                        <div key={index} className="p-4">
+                          {/* Mentor Info */}
+                          <div className="mb-4 bg-gray-50 p-3 rounded-lg flex items-center gap-4">
+                            <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">Mentor</span>
+                            <h3 className="text-lg font-medium text-blue-700">
+                              {mentorName} (Registration: {mentorInfo.registration_no}, Semester: {mentorInfo.semester})
+                            </h3>
+                          </div>
+                          {/* Mentee Table */}
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {mentees.map((mentee, menteeIndex) => (
+                                  <tr key={menteeIndex} className="hover:bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mentee.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(mentee.branch)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                      <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-semibold text-xs">Mentee</span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          {/* Space between mentor groups */}
+                          {index < Object.entries(filteredMentorMentees).length - 1 && 
+                            <div className="border-b border-gray-200 my-4"></div>
+                          }
+                        </div>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          {activeTab === "relationships" && (
+            <section className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold">Mentor-Mentee Relationships</h2>
+                  <p className="text-gray-500 text-sm">View and manage existing mentor-mentee relationships</p>
+                </div>
                 <div className="relative w-full md:w-64">
                   <input
                     type="text"
-                    placeholder="Search participants..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search by name or ID..."
+                    value={relationshipSearchTerm}
+                    onChange={(e) => setRelationshipSearchTerm(e.target.value)}
                     className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <svg
@@ -2000,1774 +2508,1332 @@ function AdminDashboard() {
                     />
                   </svg>
                 </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="pl-4 pr-8 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="active">Active</option>
-                  <option value="graduated">Graduated</option>
-                  <option value="deactivated">Deactivated</option>
-                </select>
-                <select
-                  value={activeFilter}
-                  onChange={(e) => setActiveFilter(e.target.value)}
-                  className="pl-4 pr-8 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All Approvals</option>
-                  <option value="pending">Pending Approval</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                </select>
               </div>
-            </div>
-            
-            {participants.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approval</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg. No</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {participants
-                      .filter(p => 
-                        (p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        p.registration_no?.includes(searchTerm) ||
-                        p.branch?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        p.mentoring_preferences?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-                        (statusFilter === 'all' || p.status === statusFilter) &&
-                        (activeFilter === 'all' || p.approval_status === activeFilter)
-                      )
-                      .map((participant, index) => (
-                        <tr key={index} className={`hover:bg-blue-50 ${participant.approval_status === 'pending' ? 'bg-amber-50' : participant.approval_status === 'rejected' ? 'bg-red-50' : ''}`}>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {participant.approval_status === 'pending' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">Pending</span>
-                            ) : participant.approval_status === 'approved' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Approved</span>
-                            ) : (
-                              <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap">
-                            {participant.status === 'active' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Active</span>
-                            ) : participant.status === 'graduated' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full">Graduated</span>
-                            ) : participant.status === 'deactivated' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Deactivated</span>
-                            ) : (
-                              <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Active</span> // Default to active
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.registration_no}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{participant.name}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.semester}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(participant.branch)}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                            {participant.mentoring_preferences === 'mentor' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Mentor</span>
-                            ) : participant.mentoring_preferences === 'mentee' ? (
-                              <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">Mentee</span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => viewParticipantDetails(participant)}
-                                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-xs"
-                              >
-                                View Details
-                              </button>
-                              {participant.approval_status === 'approved' && (
-                                <button
-                                  onClick={() => openStatusUpdateModal(participant)}
-                                  className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded-md hover:bg-indigo-200 transition-colors text-xs"
-                                >
-                                  Change Status
-                                </button>
-                              )}
-                              {participant.approval_status === 'pending' && (
-                                <>
-                                  <button
-                                    onClick={() => handleApprovalUpdate(participant.registration_no, 'approved')}
-                                    className="px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs"
-                                    disabled={isProcessingApproval}
-                                  >
-                                    Approve
-                                  </button>
-                                  <button
-                                    onClick={() => {
-                                      setSelectedApprovalParticipant(participant);
-                                      setShowApprovalDetailModal(true);
-                                      // Set focus to rejection reason textarea when modal opens
-                                      setTimeout(() => {
-                                        const textarea = document.getElementById('rejection-reason');
-                                        if (textarea) textarea.focus();
-                                      }, 100);
-                                    }}
-                                    className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs"
-                                    disabled={isProcessingApproval}
-                                  >
-                                    Reject
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-8 text-center text-gray-500">
-                No participants found
-              </div>
-            )}
-          </section>
-        )}
-
-        {activeTab === "unmatched" && (
-          <section className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-semibold">Unmatched Participants</h2>
-                <span className="tooltip" title="This is the preference selected by the participant. Actual roles are assigned after matching.">
-                  <Info className="w-4 h-4 text-gray-400" />
-                </span>
-              </div>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Filter by tech stack..."
-                    value={techStackFilter}
-                    onChange={(e) => setTechStackFilter(e.target.value)}
-                    className="pl-4 pr-4 py-2 border rounded-lg w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <select
-                  value={mentoringPreferenceFilter}
-                  onChange={(e) => setMentoringPreferenceFilter(e.target.value)}
-                  className="pl-4 pr-4 py-2 border rounded-lg w-full md:w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Preferences</option>
-                  <option value="mentor">Mentors</option>
-                  <option value="mentee">Mentees</option>
-                </select>
-              </div>
-            </div>
-            
-            {/* Direct Registration Number Assignment Form */}
-            <div className="p-4 bg-gray-50 border-b">
-              <h3 className="text-lg font-semibold mb-3">Direct Assignment by Registration Number</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                <div>
-                  <label htmlFor="mentorRegInput" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mentor Registration Number
-                  </label>
-                  <input
-                    id="mentorRegInput"
-                    type="text"
-                    placeholder="Enter mentor reg. no."
-                    value={mentorRegInput}
-                    onChange={(e) => setMentorRegInput(e.target.value)}
-                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="menteeRegInput" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mentee Registration Number
-                  </label>
-                  <input
-                    id="menteeRegInput"
-                    type="text"
-                    placeholder="Enter mentee reg. no."
-                    value={menteeRegInput}
-                    onChange={(e) => setMenteeRegInput(e.target.value)}
-                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <Button
-                    onClick={assignByRegistrationNumbers}
-                    disabled={isAssigning || !mentorRegInput || !menteeRegInput}
-                    className="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-md w-full"
-                  >
-                    {isAssigning ? "Assigning..." : "Create Relationship"}
-                  </Button>
-                </div>
-              </div>
-              {errorMessage && activeTab === "unmatched" && (
-                <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                  {errorMessage}
-                </div>
-              )}
-            </div>
-            
-            {isLoadingUnmatched ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
-              </div>
-            ) : filteredUnmatchedParticipants.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reg. No</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentoring Preference</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tech Stack</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredUnmatchedParticipants.map((participant, index) => (
-                      <tr key={index} className="hover:bg-purple-50">
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.registration_no}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{participant.name}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.semester}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(participant.branch)}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{participant.mentoring_preferences || "—"}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.tech_stack}</td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm">
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => viewUnmatchedParticipantDetails(participant)}
-                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-xs"
-                            >
-                              View Details
-                            </button>
-                            <button
-                              onClick={() => openAssignmentModal(participant)}
-                              className="px-2 py-1 bg-teal-100 text-teal-700 rounded-md hover:bg-teal-200 transition-colors text-xs"
-                            >
-                              Assign
-                            </button>
-                            <button
-                              onClick={() => openBatchAssignmentModal(participant)}
-                              className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors text-xs"
-                            >
-                              Batch Assign
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-8 text-center text-gray-500">
-                No unmatched participants found
-              </div>
-            )}
-          </section>
-        )}
-
-        {activeTab === "matching" && (
-          <>
-            <div className="flex justify-center mb-6">
-              <Button 
-                onClick={() => fetchMatches(true)}
-                disabled={isLoading}
-                className={`${matchesFetched ? "bg-green-600 hover:bg-green-700" : "bg-blue-600 hover:bg-blue-700"} text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105 flex items-center gap-2`}
-              >
-                {isLoading && <div className="animate-spin h-5 w-5 border-2 border-white border-opacity-50 border-t-transparent rounded-full"></div>}
-                {isLoading ? "Fetching Matches..." : matchesFetched ? "Refresh Matches" : "Fetch Mentor-Mentee Matches"}
-              </Button>
-              {matchesFetched && !areMatchesStale && (
-                <div className="ml-4 text-green-600 flex items-center">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                  <span>Matches up to date</span>
-                </div>
-              )}
-            </div>
-            
-            {matchesFetched && areMatchesStale && (
-              <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 text-amber-700 rounded">
-                <div className="flex items-start">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
+              
+              
+              {/* Direct Registration Assignment Form */}
+              <div className="p-4 bg-gray-50 border-b">
+                <h3 className="text-lg font-semibold mb-3">Direct Assignment by Registration Number</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                   <div>
-                    <p className="font-bold">Matches may be outdated</p>
-                    <p>Relationships have been modified since you last fetched matches. We recommend refreshing the matches.</p>
-                    <div className="mt-2">
-                      <button 
-                        onClick={() => fetchMatches(true)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded text-sm"
-                      >
-                        Refresh Matches Now
-                      </button>
-                    </div>
+                    <label htmlFor="mentorRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                      Mentor Registration Number
+                    </label>
+                    <input
+                      id="mentorRegInput"
+                      type="text"
+                      placeholder="Enter mentor reg. no."
+                      value={mentorRegInput}
+                      onChange={(e) => setMentorRegInput(e.target.value)}
+                      className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="menteeRegInput" className="block text-sm font-medium text-gray-700 mb-1">
+                      Mentee Registration Number
+                    </label>
+                    <input
+                      id="menteeRegInput"
+                      type="text"
+                      placeholder="Enter mentee reg. no."
+                      value={menteeRegInput}
+                      onChange={(e) => setMenteeRegInput(e.target.value)}
+                      className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <Button
+                      onClick={assignByRegistrationNumbers}
+                      disabled={isAssigning || !mentorRegInput || !menteeRegInput}
+                      className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md w-full"
+                    >
+                      {isAssigning ? "Assigning..." : "Create Relationship"}
+                    </Button>
                   </div>
                 </div>
-              </div>
-            )}
-            
-            {isLoading ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-              </div>
-            ) : Object.keys(mentorMentees).length > 0 && (
-              <section className="bg-white shadow-lg rounded-lg overflow-hidden">
-                <div className="p-6 bg-gray-50 border-b flex justify-between items-center flex-wrap gap-4">
-                  <h2 className="text-2xl font-semibold">Mentor-Mentee Matches</h2>
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Search mentors or mentees..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 pr-4 py-2 border rounded-full w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <svg
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                          clipRule="evenodd"
-                        />
-                      </svg>
-                    </div>
-                    {csvData && (
-                      <Button 
-                        onClick={downloadCSV}
-                        className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105"
-                      >
-                        Download CSV
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                <div className="divide-y divide-gray-200">
-                  {Object.entries(filteredMentorMentees).map(([mentorName, data], index) => {
-                    const { mentorInfo, mentees } = data;
-                    return (
-                      <div key={index} className="p-4">
-                        {/* Mentor Info */}
-                        <div className="mb-4 bg-gray-50 p-3 rounded-lg flex items-center gap-4">
-                          <span className="inline-block px-3 py-1 rounded-full bg-green-100 text-green-800 font-semibold text-sm">Mentor</span>
-                          <h3 className="text-lg font-medium text-blue-700">
-                            {mentorName} (Registration: {mentorInfo.registration_no}, Semester: {mentorInfo.semester})
-                          </h3>
-                        </div>
-                        {/* Mentee Table */}
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {mentees.map((mentee, menteeIndex) => (
-                                <tr key={menteeIndex} className="hover:bg-gray-50">
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mentee.name}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(mentee.branch)}</td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    <span className="inline-block px-3 py-1 rounded-full bg-purple-100 text-purple-800 font-semibold text-xs">Mentee</span>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        {/* Space between mentor groups */}
-                        {index < Object.entries(filteredMentorMentees).length - 1 && 
-                          <div className="border-b border-gray-200 my-4"></div>
-                        }
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
-        {activeTab === "relationships" && (
-          <section className="bg-white shadow-lg rounded-lg overflow-hidden">
-            <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h2 className="text-2xl font-semibold">Mentor-Mentee Relationships</h2>
-                <p className="text-gray-500 text-sm">View and manage existing mentor-mentee relationships</p>
-              </div>
-              <div className="relative w-full md:w-64">
-                <input
-                  type="text"
-                  placeholder="Search by name or ID..."
-                  value={relationshipSearchTerm}
-                  onChange={(e) => setRelationshipSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <svg
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-            </div>
-            
-            
-            {/* Direct Registration Assignment Form */}
-            <div className="p-4 bg-gray-50 border-b">
-              <h3 className="text-lg font-semibold mb-3">Direct Assignment by Registration Number</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-                <div>
-                  <label htmlFor="mentorRegInput" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mentor Registration Number
-                  </label>
-                  <input
-                    id="mentorRegInput"
-                    type="text"
-                    placeholder="Enter mentor reg. no."
-                    value={mentorRegInput}
-                    onChange={(e) => setMentorRegInput(e.target.value)}
-                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="menteeRegInput" className="block text-sm font-medium text-gray-700 mb-1">
-                    Mentee Registration Number
-                  </label>
-                  <input
-                    id="menteeRegInput"
-                    type="text"
-                    placeholder="Enter mentee reg. no."
-                    value={menteeRegInput}
-                    onChange={(e) => setMenteeRegInput(e.target.value)}
-                    className="w-full py-2 px-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <Button
-                    onClick={assignByRegistrationNumbers}
-                    disabled={isAssigning || !mentorRegInput || !menteeRegInput}
-                    className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md w-full"
-                  >
-                    {isAssigning ? "Assigning..." : "Create Relationship"}
-                  </Button>
-                </div>
-              </div>
-              {errorMessage && (
-                <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-md text-sm">
-                  {errorMessage}
-                </div>
-              )}
-            </div>
-            
-            {isLoadingRelationships ? (
-              <div className="flex justify-center items-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-500"></div>
-              </div>
-            ) : relationships.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor ID</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor Name</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor Semester</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee ID</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee Name</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee Semester</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
-                      <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {relationships
-                      .filter(rel => {
-                        if (!relationshipSearchTerm) return true;
-                        
-                        const searchLower = relationshipSearchTerm.toLowerCase();
-                        const mentorName = rel.mentor?.name?.toLowerCase() || '';
-                        const mentorId = rel.mentor?.registration_no?.toLowerCase() || '';
-                        const menteeName = rel.mentee?.name?.toLowerCase() || '';
-                        const menteeId = rel.mentee?.registration_no?.toLowerCase() || '';
-                        
-                        return (
-                          mentorName.includes(searchLower) ||
-                          mentorId.includes(searchLower) ||
-                          menteeName.includes(searchLower) ||
-                          menteeId.includes(searchLower)
-                        );
-                      })
-                      .map((relationship, index) => (
-                        <tr key={index} className="hover:bg-teal-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentor.registration_no}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{relationship.mentor.name}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentor.semester}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentee.registration_no}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{relationship.mentee.name}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentee.semester}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                            {new Date(relationship.created_at).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm">
-                            <button
-                              onClick={async () => {
-                                if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
-                                  try {
-                                    const response = await axios.delete(`http://127.0.0.1:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
-                                    if (response.status === 200 || response.status === 204) {
-                                      await fetchRelationships();
-                                      await fetchUnmatchedParticipants();
-                                      
-                                      // Update modification time
-                                      updateRelationshipModificationTime();
-                                      
-                                      alert("Relationship deleted successfully!");
-                                    }
-                                  } catch (error) {
-                                    console.error("Error deleting relationship:", error);
-                                    alert("Failed to delete relationship. Please try again.");
-                                  }
-                                }
-                              }}
-                              className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
-                            >
-                              Remove
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="p-8 text-center text-gray-500">
-                <p>No mentor-mentee relationships found</p>
-                <p className="text-sm mt-2">Use the form above to assign mentors to mentees</p>
-              </div>
-            )}
-          </section>
-        )}
-
-        {/* Participant Details Modal */}
-        {showParticipantModal && selectedParticipant && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Participant Details
-                  {selectedParticipant.approval_status === 'pending' && (
-                    <span className="ml-3 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">Pending Approval</span>
-                  )}
-                  {selectedParticipant.approval_status === 'approved' && (
-                    <span className="ml-3 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Approved</span>
-                  )}
-                  {selectedParticipant.approval_status === 'rejected' && (
-                    <span className="ml-3 px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
-                  )}
-                  {selectedParticipant.status && (
-                    <span className="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                      {selectedParticipant.status === 'active' ? 'Active' : 
-                       selectedParticipant.status === 'graduated' ? 'Graduated' : 
-                       selectedParticipant.status === 'deactivated' ? 'Deactivated' : 'Active'}
-                    </span>
-                  )}
-                </h2>
-                <button 
-                  onClick={closeParticipantModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {/* Personal Information Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Name</span>
-                      <span className="block text-base">{selectedParticipant.name}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Registration No</span>
-                      <span className="block text-base">{selectedParticipant.registration_no}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Semester</span>
-                      <span className="block text-base">{selectedParticipant.semester}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Branch</span>
-                      <span className="block text-base">{getBranchFullName(selectedParticipant.branch)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Mentoring Preferences Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Preference</span>
-                      <span className="block text-base">{selectedParticipant.mentoring_preferences}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Previous Experience</span>
-                      <span className="block text-base">{selectedParticipant.previous_mentoring_experience || "None"}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
-                      <span className="block text-base">{selectedParticipant.tech_stack}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
-                      <span className="block text-base">{selectedParticipant.areas_of_interest}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Academic Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">CGPA</span>
-                      <span className="block text-base">{selectedParticipant.cgpa}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">SGPA</span>
-                      <span className="block text-base">{selectedParticipant.sgpa}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Research Papers</span>
-                      <span className="block text-base">{selectedParticipant.published_research_papers || "None"}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Experience Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Professional & Extracurricular Experience</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Internship Experience</span>
-                      <span className="block text-base">{selectedParticipant.internship_experience === "Yes" ? "Yes" : "No"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Number of Internships</span>
-                      <span className="block text-base">{selectedParticipant.number_of_internships || "0"}</span>
-                    </div>
-                    {selectedParticipant.internship_description && selectedParticipant.internship_description !== "nan" && (
-                      <div className="md:col-span-2">
-                        <span className="block text-sm font-medium text-gray-500">Internship Description</span>
-                        <span className="block text-base">{selectedParticipant.internship_description}</span>
-                      </div>
-                    )}
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Seminars/Workshops</span>
-                      <span className="block text-base">{selectedParticipant.seminars_or_workshops_attended === "Yes" ? "Yes" : "No"}</span>
-                    </div>
-                    {selectedParticipant.describe_seminars_or_workshops && selectedParticipant.describe_seminars_or_workshops !== "nan" && (
-                      <div className="md:col-span-2">
-                        <span className="block text-sm font-medium text-gray-500">Seminars/Workshops Description</span>
-                        <span className="block text-base">{selectedParticipant.describe_seminars_or_workshops}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Competitions Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Competitions & Hackathons</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Hackathon Participation</span>
-                      <span className="block text-base">{selectedParticipant.hackathon_participation || "None"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Hackathon Wins</span>
-                      <span className="block text-base">{selectedParticipant.number_of_wins || "0"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Total Hackathons</span>
-                      <span className="block text-base">{selectedParticipant.number_of_participations || "0"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Hackathon Role</span>
-                      <span className="block text-base">{selectedParticipant.hackathon_role || "None"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Coding Competitions</span>
-                      <span className="block text-base">{selectedParticipant.coding_competitions_participate === "Yes" ? "Yes" : "No"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Competition Level</span>
-                      <span className="block text-base">{selectedParticipant.level_of_competition || "N/A"}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Rejection Reason Section - show only if rejected */}
-                {selectedParticipant.approval_status === 'rejected' && selectedParticipant.deactivation_reason && (
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-                    <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-red-700">Rejection Reason</h3>
-                    <p className="text-red-700">{selectedParticipant.deactivation_reason}</p>
+                {errorMessage && (
+                  <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-md text-sm">
+                    {errorMessage}
                   </div>
                 )}
-                
-                {/* If pending, show approval/rejection options */}
-                {selectedParticipant.approval_status === 'pending' && (
-                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                    <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-amber-700">Approval Decision</h3>
-                    <p className="mb-4 text-amber-700">This application is pending your approval. You can approve or reject it below.</p>
-                    
-                    {/* Rejection reason field */}
-                    <div className="mb-4">
-                      <label htmlFor="modal-rejection-reason" className="block text-sm font-medium text-gray-700 mb-2">
-                        Rejection Reason (required if rejecting)
-                      </label>
-                      <textarea
-                        id="modal-rejection-reason"
-                        value={rejectionReason}
-                        onChange={(e) => setRejectionReason(e.target.value)}
-                        placeholder="Please provide a reason for rejecting this application..."
-                        className="w-full p-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white h-24"
-                      ></textarea>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'approved')}
-                        disabled={isProcessingApproval}
-                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
-                      >
-                        {isProcessingApproval ? "Processing..." : "Approve Application"}
-                      </button>
-                      <button
-                        onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'rejected', rejectionReason)}
-                        disabled={isProcessingApproval || !rejectionReason.trim()}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
-                      >
-                        {isProcessingApproval ? "Processing..." : "Reject Application"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {/* Submission Date */}
-                <div className="text-right text-sm text-gray-500">
-                  Submitted on: {new Date(selectedParticipant.date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </div>
               </div>
               
-              <div className="border-t p-4 flex justify-end">
-                <button
-                  onClick={closeParticipantModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Unmatched Participant Details Modal */}
-        {showUnmatchedParticipantModal && selectedUnmatchedParticipant && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Unmatched Participant Details
-                </h2>
-                <button 
-                  onClick={closeUnmatchedParticipantModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {/* Personal Information Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Name</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.name}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Registration No</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.registration_no}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Semester</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.semester}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Branch</span>
-                      <span className="block text-base">{getBranchFullName(selectedUnmatchedParticipant.branch)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Mentoring Preferences Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Preference</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.mentoring_preferences}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.tech_stack}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.areas_of_interest}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Academic Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">CGPA</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.cgpa || "—"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">SGPA</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.sgpa || "—"}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Experience Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Experience</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Internship Experience</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.internship_experience || "None"}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Hackathon Participation</span>
-                      <span className="block text-base">{selectedUnmatchedParticipant.hackathon_participation || "None"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t p-4 flex justify-end">
-                <button
-                  onClick={closeUnmatchedParticipantModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Manual Assignment Modal */}
-        {showAssignmentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Manually Assign Mentor-Mentee
-                </h2>
-                <button 
-                  onClick={() => {
-                    setShowAssignmentModal(false);
-                    setSelectedMentor(null);
-                    setSelectedMentee(null);
-                    setMentorRegInput('');
-                    setMenteeRegInput('');
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Mentor Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentor</h3>
-                    
-                    {selectedMentor ? (
-                      <div className="p-4 border rounded-lg bg-green-50">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-medium">{selectedMentor.name}</p>
-                            <p className="text-sm text-gray-500">Registration: {selectedMentor.registration_no}</p>
-                            <p className="text-sm text-gray-500">Tech Stack: {selectedMentor.tech_stack}</p>
-                          </div>
-                          <button 
-                            onClick={() => {
-                              setSelectedMentor(null);
-                              setMentorRegInput('');
-                            }}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Search for mentors..."
-                          className="w-full p-2 border rounded-lg"
-                          onChange={handleMentorSearch}
-                        />
-                        
-                        <div className="max-h-64 overflow-y-auto border rounded-lg">
-                          {unmatchedParticipants
-                            .filter(p => p.mentoring_preferences?.toLowerCase() === "mentor")
-                            .map((mentor, index) => (
-                              <div 
-                                key={index}
-                                className="mentor-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                                onClick={() => {
-                                  setSelectedMentor(mentor);
-                                  setMentorRegInput(mentor.registration_no);
-                                }}
-                                data-name={mentor.name}
-                                data-reg-no={mentor.registration_no}
-                                data-tech-stack={mentor.tech_stack}
-                              >
-                                <p className="font-medium">{mentor.name}</p>
-                                <p className="text-sm text-gray-500">Registration: {mentor.registration_no}</p>
-                                <p className="text-sm text-gray-500">Tech Stack: {mentor.tech_stack}</p>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Mentee Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentee</h3>
-                    
-                    {selectedMentee ? (
-                      <div className="p-4 border rounded-lg bg-purple-50">
-                        <div className="flex justify-between">
-                          <div>
-                            <p className="font-medium">{selectedMentee.name}</p>
-                            <p className="text-sm text-gray-500">Registration: {selectedMentee.registration_no}</p>
-                            <p className="text-sm text-gray-500">Semester: {selectedMentee.semester}</p>
-                          </div>
-                          <button 
-                            onClick={() => {
-                              setSelectedMentee(null);
-                              setMenteeRegInput('');
-                            }}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          placeholder="Search for mentees..."
-                          className="w-full p-2 border rounded-lg"
-                          onChange={handleMenteeSearch}
-                        />
-                        
-                        <div className="max-h-64 overflow-y-auto border rounded-lg">
-                          {unmatchedParticipants
-                            .filter(p => p.mentoring_preferences?.toLowerCase() === "mentee")
-                            .map((mentee, index) => (
-                              <div 
-                                key={index}
-                                className="mentee-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
-                                onClick={() => {
-                                  setSelectedMentee(mentee);
-                                  setMenteeRegInput(mentee.registration_no);
-                                }}
-                                data-name={mentee.name}
-                                data-reg-no={mentee.registration_no}
-                              >
-                                <p className="font-medium">{mentee.name}</p>
-                                <p className="text-sm text-gray-500">Registration: {mentee.registration_no}</p>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t p-4 flex justify-end gap-4">
-                <button
-                  onClick={() => {
-                    setShowAssignmentModal(false);
-                    setSelectedMentor(null);
-                    setSelectedMentee(null);
-                    setMentorRegInput('');
-                    setMenteeRegInput('');
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <Button
-                  onClick={assignByRegistrationNumbers}
-                  disabled={isAssigning || !mentorRegInput || !menteeRegInput}
-                  className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md"
-                >
-                  {isAssigning ? "Assigning..." : "Create Relationship"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tech Stack Matching Modal - Removed */}
-
-        {/* Batch Assignment Modal */}
-        {showBatchAssignmentModal && batchAssignmentParticipant && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Batch Assign Mentor-Mentee
-                </h2>
-                <button 
-                  onClick={() => {
-                    setShowBatchAssignmentModal(false);
-                    setBatchAssignmentParticipant(null);
-                    setSelectedBatchParticipants([]);
-                  }}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Main Participant */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                      {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentor" : "Mentee"}
-                    </h3>
-                    
-                    <div className="p-4 border rounded-lg bg-green-50">
-                      <div className="flex justify-between">
-                        <div>
-                          <p className="font-medium">{batchAssignmentParticipant.name}</p>
-                          <p className="text-sm text-gray-500">Registration: {batchAssignmentParticipant.registration_no}</p>
-                          <p className="text-sm text-gray-500">Tech Stack: {batchAssignmentParticipant.tech_stack}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Multiple Selection */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
-                      {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Select Mentees" : "Select Mentors"}
-                    </h3>
-                    
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        placeholder={`Search for ${batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentees" : "mentors"}...`}
-                        className="w-full p-2 border rounded-lg"
-                        onChange={batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? handleMenteeSearch : handleMentorSearch}
-                      />
-                      
-                      {/* Display selected participants */}
-                      {selectedBatchParticipants.length > 0 && (
-                        <div className="mb-4">
-                          <h4 className="text-sm font-medium text-gray-700 mb-2">
-                            Selected {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentees" : "Mentors"} ({selectedBatchParticipants.length})
-                          </h4>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedBatchParticipants.map((participant, index) => (
-                              <div key={index} className="flex items-center bg-purple-50 rounded-full py-1 px-3">
-                                <span className="text-sm mr-1">{participant.name}</span>
-                                <button
-                                  onClick={() => setSelectedBatchParticipants(prev => 
-                                    prev.filter(p => p.registration_no !== participant.registration_no)
-                                  )}
-                                  className="text-red-500 hover:text-red-700"
-                                >
-                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="max-h-64 overflow-y-auto border rounded-lg">
-                        {unmatchedParticipants
-                          .filter(p => {
-                            // Only show participants with the opposite role
-                            const oppositeRole = batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentee" : "mentor";
-                            // Don't show the current participant
-                            const notSelf = p.registration_no !== batchAssignmentParticipant.registration_no;
-                            return p.mentoring_preferences?.toLowerCase() === oppositeRole && notSelf;
-                          })
-                          .map((participant, index) => {
-                            // Check if this participant is already selected
-                            const isSelected = selectedBatchParticipants.some(
-                              p => p.registration_no === participant.registration_no
-                            );
-                            
-                            return (
-                              <div 
-                                key={index}
-                                className={`participant-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 ${isSelected ? 'bg-purple-50' : ''}`}
-                                onClick={() => {
-                                  if (isSelected) {
-                                    // If already selected, remove from selection
-                                    setSelectedBatchParticipants(prev => 
-                                      prev.filter(p => p.registration_no !== participant.registration_no)
-                                    );
-                                  } else {
-                                    // Otherwise add to selection
-                                    setSelectedBatchParticipants(prev => [...prev, participant]);
-                                  }
-                                }}
-                                data-name={participant.name}
-                                data-reg-no={participant.registration_no}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <p className="font-medium">{participant.name}</p>
-                                    <p className="text-sm text-gray-500">Registration: {participant.registration_no}</p>
-                                  </div>
-                                  {isSelected && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="border-t p-4 flex justify-end gap-4">
-                <button
-                  onClick={() => {
-                    setShowBatchAssignmentModal(false);
-                    setBatchAssignmentParticipant(null);
-                    setSelectedBatchParticipants([]);
-                  }}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <Button
-                  onClick={handleBatchAssignment}
-                  disabled={isBatchAssigning || !batchAssignmentParticipant || selectedBatchParticipants.length === 0}
-                  className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md"
-                >
-                  {isBatchAssigning ? "Assigning..." : "Create Relationships"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add the Approval Participant Detail Modal */}
-        {showApprovalDetailModal && selectedApprovalParticipant && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Participant Approval
-                </h2>
-                <button 
-                  onClick={closeApprovalDetailModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-6">
-                {/* Personal Information Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Name</span>
-                      <span className="block text-base">{selectedApprovalParticipant.name}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Registration No</span>
-                      <span className="block text-base">{selectedApprovalParticipant.registration_no}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Semester</span>
-                      <span className="block text-base">{selectedApprovalParticipant.semester}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Branch</span>
-                      <span className="block text-base">{getBranchFullName(selectedApprovalParticipant.branch)}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Mentoring Preferences Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Preference</span>
-                      <span className="block text-base">{selectedApprovalParticipant.mentoring_preferences}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">Previous Experience</span>
-                      <span className="block text-base">{selectedApprovalParticipant.previous_mentoring_experience || "None"}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
-                      <span className="block text-base">{selectedApprovalParticipant.tech_stack}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
-                      <span className="block text-base">{selectedApprovalParticipant.areas_of_interest}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Academic Section */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">CGPA</span>
-                      <span className="block text-base">{selectedApprovalParticipant.cgpa}</span>
-                    </div>
-                    <div>
-                      <span className="block text-sm font-medium text-gray-500">SGPA</span>
-                      <span className="block text-base">{selectedApprovalParticipant.sgpa}</span>
-                    </div>
-                    <div className="md:col-span-2">
-                      <span className="block text-sm font-medium text-gray-500">Research Papers</span>
-                      <span className="block text-base">{selectedApprovalParticipant.published_research_papers || "None"}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Rejection Reason Section */}
-                <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-red-700">Rejection Reason (Required if rejecting)</h3>
-                  <textarea
-                    id="rejection-reason"
-                    value={rejectionReason}
-                    onChange={(e) => setRejectionReason(e.target.value)}
-                    placeholder="Please provide a reason for rejecting this application..."
-                    className="w-full p-3 border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white h-24"
-                  ></textarea>
-                </div>
-                
-                {/* Submission Date */}
-                <div className="text-right text-sm text-gray-500">
-                  Submitted on: {new Date(selectedApprovalParticipant.date).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </div>
-              </div>
-              
-              <div className="border-t p-4 flex justify-end space-x-4">
-                <button
-                  onClick={closeApprovalDetailModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'approved')}
-                  disabled={isProcessingApproval}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
-                >
-                  {isProcessingApproval ? "Processing..." : "Approve"}
-                </button>
-                <button
-                  onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'rejected', rejectionReason)}
-                  disabled={isProcessingApproval || !rejectionReason.trim()}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
-                >
-                  {isProcessingApproval ? "Processing..." : "Reject"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Status Update Modal */}
-        {showStatusModal && participantForStatus && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg w-full max-w-md">
-              <div className="p-6 border-b flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">
-                  Update Participant Status
-                </h2>
-                <button 
-                  onClick={closeStatusModal}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="p-6 space-y-4">
-                <div>
-                  <p className="text-gray-700 mb-2">
-                    <span className="font-medium">Participant:</span> {participantForStatus.name}
-                  </p>
-                  <p className="text-gray-700 mb-2">
-                    <span className="font-medium">Current Status:</span> {participantForStatus.status || 'Active'}
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    New Status
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'active')}
-                      className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'active' ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 hover:bg-blue-50'}`}
-                      disabled={isUpdatingStatus}
-                    >
-                      Active
-                    </button>
-                    <button
-                      onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'graduated')}
-                      className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'graduated' ? 'bg-indigo-100 border-indigo-300 text-indigo-800' : 'border-gray-300 hover:bg-indigo-50'}`}
-                      disabled={isUpdatingStatus}
-                    >
-                      Graduated
-                    </button>
-                    <button
-                      onClick={() => {
-                        // For deactivation, we'll require a reason, so just highlight the box
-                        document.getElementById('deactivation-reason-input').focus();
-                      }}
-                      className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'deactivated' ? 'bg-gray-100 border-gray-300 text-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
-                      disabled={isUpdatingStatus}
-                    >
-                      Deactivate
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Deactivation reason field */}
-                <div className="space-y-2">
-                  <label htmlFor="deactivation-reason-input" className="block text-sm font-medium text-gray-700">
-                    Deactivation Reason <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    id="deactivation-reason-input"
-                    value={deactivationReason}
-                    onChange={(e) => setDeactivationReason(e.target.value)}
-                    placeholder="Required if deactivating the participant..."
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 h-24"
-                  ></textarea>
-                  <p className="text-xs text-gray-500">
-                    <strong>Note:</strong> Deactivating a mentor will remove all their mentee relationships.
-                  </p>
-                </div>
-              </div>
-              
-              <div className="border-t p-4 flex justify-between">
-                <button
-                  onClick={closeStatusModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-                  disabled={isUpdatingStatus}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'deactivated', deactivationReason)}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
-                  disabled={isUpdatingStatus || !deactivationReason.trim()}
-                >
-                  {isUpdatingStatus ? "Processing..." : "Deactivate Participant"}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Add the Badges tab content */}
-        {activeTab === "badges" && (
-          <section className="space-y-8">
-            {/* Badges List */}
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold">Badges & Super Mentors</h2>
-                  <p className="text-sm text-gray-500">Create badges and award them to participants</p>
-                </div>
-                <button
-                  onClick={() => setShowBadgeCreateModal(true)}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
-                >
-                  Create New Badge
-                </button>
-              </div>
-              
-              {isLoadingBadges ? (
+              {isLoadingRelationships ? (
                 <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-teal-500"></div>
                 </div>
-              ) : badges.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                  {badges.map((badge, index) => (
-                    <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-3 mb-3">
-                        {badge.icon_url ? (
-                          <img src={badge.icon_url} alt={badge.name} className="w-10 h-10 object-contain" />
-                        ) : (
-                          <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="flex-grow">
-                          <h3 className="font-semibold text-lg">{badge.name}</h3>
-                          <p className="text-sm text-gray-500">{badge.badge_type}</p>
-                        </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setBadgeToDelete(badge);
-                            setIsDeleteDefinitionDialogOpen(true);
-                          }}
-                          className="p-1.5 text-red-500 hover:bg-red-50 rounded-full"
-                          title="Delete badge definition"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                      <p className="text-gray-700 mb-3">{badge.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500">Points: {badge.points_required}</span>
-                        <button
-                          onClick={() => {
-                            setSelectedBadge(badge);
-                            setShowBadgeAwardModal(true);
-                          }}
-                          className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                        >
-                          Award to Participant
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+              ) : relationships.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor ID</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentor Semester</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee ID</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mentee Semester</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date Created</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {relationships
+                        .filter(rel => {
+                          if (!relationshipSearchTerm) return true;
+                          
+                          const searchLower = relationshipSearchTerm.toLowerCase();
+                          const mentorName = rel.mentor?.name?.toLowerCase() || '';
+                          const mentorId = rel.mentor?.registration_no?.toLowerCase() || '';
+                          const menteeName = rel.mentee?.name?.toLowerCase() || '';
+                          const menteeId = rel.mentee?.registration_no?.toLowerCase() || '';
+                          
+                          return (
+                            mentorName.includes(searchLower) ||
+                            mentorId.includes(searchLower) ||
+                            menteeName.includes(searchLower) ||
+                            menteeId.includes(searchLower)
+                          );
+                        })
+                        .map((relationship, index) => (
+                          <tr key={index} className="hover:bg-teal-50">
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentor.registration_no}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{relationship.mentor.name}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentor.semester}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentee.registration_no}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">{relationship.mentee.name}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{relationship.mentee.semester}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(relationship.created_at).toLocaleDateString()}
+                            </td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm">
+                              <button
+                                onClick={async () => {
+                                  if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
+                                    try {
+                                      const response = await axios.delete(`http://127.0.0.1:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
+                                      if (response.status === 200 || response.status === 204) {
+                                        await fetchRelationships();
+                                        await fetchUnmatchedParticipants();
+                                        
+                                        // Update modification time
+                                        updateRelationshipModificationTime();
+                                        
+                                        alert("Relationship deleted successfully!");
+                                      }
+                                    } catch (error) {
+                                      console.error("Error deleting relationship:", error);
+                                      alert("Failed to delete relationship. Please try again.");
+                                    }
+                                  }
+                                }}
+                                className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors"
+                              >
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className="p-8 text-center text-gray-500">
-                  <p>No badges created yet.</p>
-                  <p className="text-sm mt-2">Create badges to reward participants for their achievements.</p>
+                  <p>No mentor-mentee relationships found</p>
+                  <p className="text-sm mt-2">Use the form above to assign mentors to mentees</p>
                 </div>
               )}
-            </div>
-            
-            {/* Super Mentors List */}
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="p-6 bg-gray-50 border-b">
-                <h2 className="text-2xl font-semibold">Super Mentors</h2>
-                <p className="text-sm text-gray-500">Participants with 5 or more badges</p>
+            </section>
+          )}
+
+          {/* Participant Details Modal */}
+          {showParticipantModal && selectedParticipant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Participant Details
+                    {selectedParticipant.approval_status === 'pending' && (
+                      <span className="ml-3 px-2 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full">Pending Approval</span>
+                    )}
+                    {selectedParticipant.approval_status === 'approved' && (
+                      <span className="ml-3 px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Approved</span>
+                    )}
+                    {selectedParticipant.approval_status === 'rejected' && (
+                      <span className="ml-3 px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Rejected</span>
+                    )}
+                    {selectedParticipant.status && (
+                      <span className="ml-3 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                        {selectedParticipant.status === 'active' ? 'Active' : 
+                         selectedParticipant.status === 'graduated' ? 'Graduated' : 
+                         selectedParticipant.status === 'deactivated' ? 'Deactivated' : 'Active'}
+                      </span>
+                    )}
+                  </h2>
+                  <button 
+                    onClick={closeParticipantModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Personal Information Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Name</span>
+                        <span className="block text-base">{selectedParticipant.name}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Registration No</span>
+                        <span className="block text-base">{selectedParticipant.registration_no}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Semester</span>
+                        <span className="block text-base">{selectedParticipant.semester}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Branch</span>
+                        <span className="block text-base">{getBranchFullName(selectedParticipant.branch)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mentoring Preferences Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Preference</span>
+                        <span className="block text-base">{selectedParticipant.mentoring_preferences}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Previous Experience</span>
+                        <span className="block text-base">{selectedParticipant.previous_mentoring_experience || "None"}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
+                        <span className="block text-base">{selectedParticipant.tech_stack}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
+                        <span className="block text-base">{selectedParticipant.areas_of_interest}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Academic Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">CGPA</span>
+                        <span className="block text-base">{selectedParticipant.cgpa}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">SGPA</span>
+                        <span className="block text-base">{selectedParticipant.sgpa}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Research Papers</span>
+                        <span className="block text-base">{selectedParticipant.published_research_papers || "None"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Experience Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Professional & Extracurricular Experience</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Internship Experience</span>
+                        <span className="block text-base">{selectedParticipant.internship_experience === "Yes" ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Number of Internships</span>
+                        <span className="block text-base">{selectedParticipant.number_of_internships || "0"}</span>
+                      </div>
+                      {selectedParticipant.internship_description && selectedParticipant.internship_description !== "nan" && (
+                        <div className="md:col-span-2">
+                          <span className="block text-sm font-medium text-gray-500">Internship Description</span>
+                          <span className="block text-base">{selectedParticipant.internship_description}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Seminars/Workshops</span>
+                        <span className="block text-base">{selectedParticipant.seminars_or_workshops_attended === "Yes" ? "Yes" : "No"}</span>
+                      </div>
+                      {selectedParticipant.describe_seminars_or_workshops && selectedParticipant.describe_seminars_or_workshops !== "nan" && (
+                        <div className="md:col-span-2">
+                          <span className="block text-sm font-medium text-gray-500">Seminars/Workshops Description</span>
+                          <span className="block text-base">{selectedParticipant.describe_seminars_or_workshops}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {/* Competitions Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Competitions & Hackathons</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Hackathon Participation</span>
+                        <span className="block text-base">{selectedParticipant.hackathon_participation || "None"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Hackathon Wins</span>
+                        <span className="block text-base">{selectedParticipant.number_of_wins || "0"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Total Hackathons</span>
+                        <span className="block text-base">{selectedParticipant.number_of_participations || "0"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Hackathon Role</span>
+                        <span className="block text-base">{selectedParticipant.hackathon_role || "None"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Coding Competitions</span>
+                        <span className="block text-base">{selectedParticipant.coding_competitions_participate === "Yes" ? "Yes" : "No"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Competition Level</span>
+                        <span className="block text-base">{selectedParticipant.level_of_competition || "N/A"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Rejection Reason Section - show only if rejected */}
+                  {selectedParticipant.approval_status === 'rejected' && selectedParticipant.deactivation_reason && (
+                    <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-red-700">Rejection Reason</h3>
+                      <p className="text-red-700">{selectedParticipant.deactivation_reason}</p>
+                    </div>
+                  )}
+                  
+                  {/* If pending, show approval/rejection options */}
+                  {selectedParticipant.approval_status === 'pending' && (
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-amber-700">Approval Decision</h3>
+                      <p className="mb-4 text-amber-700">This application is pending your approval. You can approve or reject it below.</p>
+                      
+                      {/* Rejection reason field */}
+                      <div className="mb-4">
+                        <label htmlFor="modal-rejection-reason" className="block text-sm font-medium text-gray-700 mb-2">
+                          Rejection Reason (required if rejecting)
+                        </label>
+                        <textarea
+                          id="modal-rejection-reason"
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                          placeholder="Please provide a reason for rejecting this application..."
+                          className="w-full p-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white h-24"
+                        ></textarea>
+                      </div>
+                      
+                      <div className="flex justify-end space-x-3">
+                        <button
+                          onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'approved')}
+                          disabled={isProcessingApproval}
+                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
+                        >
+                          {isProcessingApproval ? "Processing..." : "Approve Application"}
+                        </button>
+                        <button
+                          onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'rejected', rejectionReason)}
+                          disabled={isProcessingApproval || !rejectionReason.trim()}
+                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
+                        >
+                          {isProcessingApproval ? "Processing..." : "Reject Application"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Submission Date */}
+                  <div className="text-right text-sm text-gray-500">
+                    Submitted on: {new Date(selectedParticipant.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-end">
+                  <button
+                    onClick={closeParticipantModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
-              
-              <div className="p-6">
-                {participants.filter(p => p.is_super_mentor).length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {participants
-                      .filter(p => p.is_super_mentor)
-                      .map((participant, index) => (
-                        <div key={index} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-indigo-50 transition-colors">
-                          <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                            </svg>
+            </div>
+          )}
+
+          {/* Unmatched Participant Details Modal */}
+          {showUnmatchedParticipantModal && selectedUnmatchedParticipant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Unmatched Participant Details
+                  </h2>
+                  <button 
+                    onClick={closeUnmatchedParticipantModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Personal Information Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Name</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.name}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Registration No</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.registration_no}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Semester</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.semester}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Branch</span>
+                        <span className="block text-base">{getBranchFullName(selectedUnmatchedParticipant.branch)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mentoring Preferences Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Preference</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.mentoring_preferences}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.tech_stack}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.areas_of_interest}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Academic Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">CGPA</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.cgpa || "—"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">SGPA</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.sgpa || "—"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Experience Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Experience</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Internship Experience</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.internship_experience || "None"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Hackathon Participation</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.hackathon_participation || "None"}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-end">
+                  <button
+                    onClick={closeUnmatchedParticipantModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Manual Assignment Modal */}
+          {showAssignmentModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full">
+                <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Manually Assign Mentor-Mentee
+                  </h2>
+                  <button 
+                    onClick={() => {
+                      setShowAssignmentModal(false);
+                      setSelectedMentor(null);
+                      setSelectedMentee(null);
+                      setMentorRegInput('');
+                      setMenteeRegInput('');
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Mentor Selection */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentor</h3>
+                      
+                      {selectedMentor ? (
+                        <div className="p-4 border rounded-lg bg-green-50">
+                          <div className="flex justify-between">
+                            <div>
+                              <p className="font-medium">{selectedMentor.name}</p>
+                              <p className="text-sm text-gray-500">Registration: {selectedMentor.registration_no}</p>
+                              <p className="text-sm text-gray-500">Tech Stack: {selectedMentor.tech_stack}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                setSelectedMentor(null);
+                                setMentorRegInput('');
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
                           </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Search for mentors..."
+                            className="w-full p-2 border rounded-lg"
+                            onChange={handleMentorSearch}
+                          />
+                          
+                          <div className="max-h-64 overflow-y-auto border rounded-lg">
+                            {unmatchedParticipants
+                              .filter(p => p.mentoring_preferences?.toLowerCase() === "mentor")
+                              .map((mentor, index) => (
+                                <div 
+                                  key={index}
+                                  className="mentor-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                                  onClick={() => {
+                                    setSelectedMentor(mentor);
+                                    setMentorRegInput(mentor.registration_no);
+                                  }}
+                                  data-name={mentor.name}
+                                  data-reg-no={mentor.registration_no}
+                                  data-tech-stack={mentor.tech_stack}
+                                >
+                                  <p className="font-medium">{mentor.name}</p>
+                                  <p className="text-sm text-gray-500">Registration: {mentor.registration_no}</p>
+                                  <p className="text-sm text-gray-500">Tech Stack: {mentor.tech_stack}</p>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Mentee Selection */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">Select Mentee</h3>
+                      
+                      {selectedMentee ? (
+                        <div className="p-4 border rounded-lg bg-purple-50">
+                          <div className="flex justify-between">
+                            <div>
+                              <p className="font-medium">{selectedMentee.name}</p>
+                              <p className="text-sm text-gray-500">Registration: {selectedMentee.registration_no}</p>
+                              <p className="text-sm text-gray-500">Semester: {selectedMentee.semester}</p>
+                            </div>
+                            <button 
+                              onClick={() => {
+                                setSelectedMentee(null);
+                                setMenteeRegInput('');
+                              }}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            placeholder="Search for mentees..."
+                            className="w-full p-2 border rounded-lg"
+                            onChange={handleMenteeSearch}
+                          />
+                          
+                          <div className="max-h-64 overflow-y-auto border rounded-lg">
+                            {unmatchedParticipants
+                              .filter(p => p.mentoring_preferences?.toLowerCase() === "mentee")
+                              .map((mentee, index) => (
+                                <div 
+                                  key={index}
+                                  className="mentee-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                                  onClick={() => {
+                                    setSelectedMentee(mentee);
+                                    setMenteeRegInput(mentee.registration_no);
+                                  }}
+                                  data-name={mentee.name}
+                                  data-reg-no={mentee.registration_no}
+                                >
+                                  <p className="font-medium">{mentee.name}</p>
+                                  <p className="text-sm text-gray-500">Registration: {mentee.registration_no}</p>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setShowAssignmentModal(false);
+                      setSelectedMentor(null);
+                      setSelectedMentee(null);
+                      setMentorRegInput('');
+                      setMenteeRegInput('');
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <Button
+                    onClick={assignByRegistrationNumbers}
+                    disabled={isAssigning || !mentorRegInput || !menteeRegInput}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md"
+                  >
+                    {isAssigning ? "Assigning..." : "Create Relationship"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tech Stack Matching Modal - Removed */}
+
+          {/* Batch Assignment Modal */}
+          {showBatchAssignmentModal && batchAssignmentParticipant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full">
+                <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Batch Assign Mentor-Mentee
+                  </h2>
+                  <button 
+                    onClick={() => {
+                      setShowBatchAssignmentModal(false);
+                      setBatchAssignmentParticipant(null);
+                      setSelectedBatchParticipants([]);
+                    }}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Main Participant */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                        {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentor" : "Mentee"}
+                      </h3>
+                      
+                      <div className="p-4 border rounded-lg bg-green-50">
+                        <div className="flex justify-between">
                           <div>
-                            <h3 className="font-medium">{participant.name}</h3>
-                            <p className="text-sm text-gray-500">{participant.badges_earned || 0} Badges Earned</p>
+                            <p className="font-medium">{batchAssignmentParticipant.name}</p>
+                            <p className="text-sm text-gray-500">Registration: {batchAssignmentParticipant.registration_no}</p>
+                            <p className="text-sm text-gray-500">Tech Stack: {batchAssignmentParticipant.tech_stack}</p>
                           </div>
-                          <button
-                            onClick={() => {
-                              fetchParticipantBadges(participant.registration_no);
-                              setParticipantForBadge(participant);
-                              setShowBadgeAwardModal(true);
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Multiple Selection */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-gray-800 border-b pb-2">
+                        {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Select Mentees" : "Select Mentors"}
+                      </h3>
+                      
+                      <div className="space-y-2">
+                        <input
+                          type="text"
+                          placeholder={`Search for ${batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentees" : "mentors"}...`}
+                          className="w-full p-2 border rounded-lg"
+                          onChange={batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? handleMenteeSearch : handleMentorSearch}
+                        />
+                        
+                        {/* Display selected participants */}
+                        {selectedBatchParticipants.length > 0 && (
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">
+                              Selected {batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "Mentees" : "Mentors"} ({selectedBatchParticipants.length})
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              {selectedBatchParticipants.map((participant, index) => (
+                                <div key={index} className="flex items-center bg-purple-50 rounded-full py-1 px-3">
+                                  <span className="text-sm mr-1">{participant.name}</span>
+                                  <button
+                                    onClick={() => setSelectedBatchParticipants(prev => 
+                                      prev.filter(p => p.registration_no !== participant.registration_no)
+                                    )}
+                                    className="text-red-500 hover:text-red-700"
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="max-h-64 overflow-y-auto border rounded-lg">
+                          {unmatchedParticipants
+                            .filter(p => {
+                              // Only show participants with the opposite role
+                              const oppositeRole = batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" ? "mentee" : "mentor";
+                              // Don't show the current participant
+                              const notSelf = p.registration_no !== batchAssignmentParticipant.registration_no;
+                              return p.mentoring_preferences?.toLowerCase() === oppositeRole && notSelf;
+                            })
+                            .map((participant, index) => {
+                              // Check if this participant is already selected
+                              const isSelected = selectedBatchParticipants.some(
+                                p => p.registration_no === participant.registration_no
+                              );
+                              
+                              return (
+                                <div 
+                                  key={index}
+                                  className={`participant-item p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 ${isSelected ? 'bg-purple-50' : ''}`}
+                                  onClick={() => {
+                                    if (isSelected) {
+                                      // If already selected, remove from selection
+                                      setSelectedBatchParticipants(prev => 
+                                        prev.filter(p => p.registration_no !== participant.registration_no)
+                                      );
+                                    } else {
+                                      // Otherwise add to selection
+                                      setSelectedBatchParticipants(prev => [...prev, participant]);
+                                    }
+                                  }}
+                                  data-name={participant.name}
+                                  data-reg-no={participant.registration_no}
+                                >
+                                  <div className="flex justify-between items-center">
+                                    <div>
+                                      <p className="font-medium">{participant.name}</p>
+                                      <p className="text-sm text-gray-500">Registration: {participant.registration_no}</p>
+                                    </div>
+                                    {isSelected && (
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-end gap-4">
+                  <button
+                    onClick={() => {
+                      setShowBatchAssignmentModal(false);
+                      setBatchAssignmentParticipant(null);
+                      setSelectedBatchParticipants([]);
+                    }}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <Button
+                    onClick={handleBatchAssignment}
+                    disabled={isBatchAssigning || !batchAssignmentParticipant || selectedBatchParticipants.length === 0}
+                    className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-2 px-4 rounded-md"
+                  >
+                    {isBatchAssigning ? "Assigning..." : "Create Relationships"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add the Approval Participant Detail Modal */}
+          {showApprovalDetailModal && selectedApprovalParticipant && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    Participant Approval
+                  </h2>
+                  <button 
+                    onClick={closeApprovalDetailModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* Personal Information Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Personal Information</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Name</span>
+                        <span className="block text-base">{selectedApprovalParticipant.name}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Registration No</span>
+                        <span className="block text-base">{selectedApprovalParticipant.registration_no}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Semester</span>
+                        <span className="block text-base">{selectedApprovalParticipant.semester}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Branch</span>
+                        <span className="block text-base">{getBranchFullName(selectedApprovalParticipant.branch)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Mentoring Preferences Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Mentoring Preferences</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Preference</span>
+                        <span className="block text-base">{selectedApprovalParticipant.mentoring_preferences}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Previous Experience</span>
+                        <span className="block text-base">{selectedApprovalParticipant.previous_mentoring_experience || "None"}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Tech Stack</span>
+                        <span className="block text-base">{selectedApprovalParticipant.tech_stack}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Areas of Interest</span>
+                        <span className="block text-base">{selectedApprovalParticipant.areas_of_interest}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Academic Section */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">Academic Performance</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">CGPA</span>
+                        <span className="block text-base">{selectedApprovalParticipant.cgpa}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">SGPA</span>
+                        <span className="block text-base">{selectedApprovalParticipant.sgpa}</span>
+                      </div>
+                      <div className="md:col-span-2">
+                        <span className="block text-sm font-medium text-gray-500">Research Papers</span>
+                        <span className="block text-base">{selectedApprovalParticipant.published_research_papers || "None"}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Rejection Reason Section */}
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                    <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-red-700">Rejection Reason (Required if rejecting)</h3>
+                    <textarea
+                      id="rejection-reason"
+                      value={rejectionReason}
+                      onChange={(e) => setRejectionReason(e.target.value)}
+                      placeholder="Please provide a reason for rejecting this application..."
+                      className="w-full p-3 border border-red-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white h-24"
+                    ></textarea>
+                  </div>
+                  
+                  {/* Submission Date */}
+                  <div className="text-right text-sm text-gray-500">
+                    Submitted on: {new Date(selectedApprovalParticipant.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-end space-x-4">
+                  <button
+                    onClick={closeApprovalDetailModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'approved')}
+                    disabled={isProcessingApproval}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
+                  >
+                    {isProcessingApproval ? "Processing..." : "Approve"}
+                  </button>
+                  <button
+                    onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'rejected', rejectionReason)}
+                    disabled={isProcessingApproval || !rejectionReason.trim()}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
+                  >
+                    {isProcessingApproval ? "Processing..." : "Reject"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Update Modal */}
+          {showStatusModal && participantForStatus && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg w-full max-w-md">
+                <div className="p-6 border-b flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-gray-800">
+                    Update Participant Status
+                  </h2>
+                  <button 
+                    onClick={closeStatusModal}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  <div>
+                    <p className="text-gray-700 mb-2">
+                      <span className="font-medium">Participant:</span> {participantForStatus.name}
+                    </p>
+                    <p className="text-gray-700 mb-2">
+                      <span className="font-medium">Current Status:</span> {participantForStatus.status || 'Active'}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      New Status
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'active')}
+                        className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'active' ? 'bg-blue-100 border-blue-300 text-blue-800' : 'border-gray-300 hover:bg-blue-50'}`}
+                        disabled={isUpdatingStatus}
+                      >
+                        Active
+                      </button>
+                      <button
+                        onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'graduated')}
+                        className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'graduated' ? 'bg-indigo-100 border-indigo-300 text-indigo-800' : 'border-gray-300 hover:bg-indigo-50'}`}
+                        disabled={isUpdatingStatus}
+                      >
+                        Graduated
+                      </button>
+                      <button
+                        onClick={() => {
+                          // For deactivation, we'll require a reason, so just highlight the box
+                          document.getElementById('deactivation-reason-input').focus();
+                        }}
+                        className={`py-2 px-3 rounded-md border text-center ${participantForStatus.status === 'deactivated' ? 'bg-gray-100 border-gray-300 text-gray-800' : 'border-gray-300 hover:bg-gray-50'}`}
+                        disabled={isUpdatingStatus}
+                      >
+                        Deactivate
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Deactivation reason field */}
+                  <div className="space-y-2">
+                    <label htmlFor="deactivation-reason-input" className="block text-sm font-medium text-gray-700">
+                      Deactivation Reason <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      id="deactivation-reason-input"
+                      value={deactivationReason}
+                      onChange={(e) => setDeactivationReason(e.target.value)}
+                      placeholder="Required if deactivating the participant..."
+                      className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 h-24"
+                    ></textarea>
+                    <p className="text-xs text-gray-500">
+                      <strong>Note:</strong> Deactivating a mentor will remove all their mentee relationships.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="border-t p-4 flex justify-between">
+                  <button
+                    onClick={closeStatusModal}
+                    className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                    disabled={isUpdatingStatus}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => updateParticipantStatus(participantForStatus.registration_no, 'deactivated', deactivationReason)}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
+                    disabled={isUpdatingStatus || !deactivationReason.trim()}
+                  >
+                    {isUpdatingStatus ? "Processing..." : "Deactivate Participant"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Add the Badges tab content */}
+          {activeTab === "badges" && (
+            <section className="space-y-8">
+              {/* Badges List */}
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold">Badges & Super Mentors</h2>
+                    <p className="text-sm text-gray-500">Create badges and award them to participants</p>
+                  </div>
+                  <button
+                    onClick={() => setShowBadgeCreateModal(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                  >
+                    Create New Badge
+                  </button>
+                </div>
+                
+                {isLoadingBadges ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
+                  </div>
+                ) : badges.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                    {badges.map((badge, index) => (
+                      <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-3 mb-3">
+                          {badge.icon_url ? (
+                            <img src={badge.icon_url} alt={badge.name} className="w-10 h-10 object-contain" />
+                          ) : (
+                            <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="flex-grow">
+                            <h3 className="font-semibold text-lg">{badge.name}</h3>
+                            <p className="text-sm text-gray-500">{badge.badge_type}</p>
+                          </div>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setBadgeToDelete(badge);
+                              setIsDeleteDefinitionDialogOpen(true);
                             }}
-                            className="ml-auto text-indigo-600 hover:text-indigo-800"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full"
+                            title="Delete badge definition"
                           >
-                            View Badges
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
                           </button>
                         </div>
-                      ))}
+                        <p className="text-gray-700 mb-3">{badge.description}</p>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Points: {badge.points_required}</span>
+                          <button
+                            onClick={() => {
+                              setSelectedBadge(badge);
+                              setShowBadgeAwardModal(true);
+                            }}
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          >
+                            Award to Participant
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
-                  <div className="text-center text-gray-500">
-                    <p>No super mentors yet.</p>
-                    <p className="text-sm mt-2">Participants who earn 5 or more badges will become super mentors.</p>
+                  <div className="p-8 text-center text-gray-500">
+                    <p>No badges created yet.</p>
+                    <p className="text-sm mt-2">Create badges to reward participants for their achievements.</p>
                   </div>
                 )}
               </div>
-            </div>
-          </section>
-        )}
-
-        {activeTab === "feedback" && (
-          <section className="space-y-8">
-            {/* Feedback Settings Card */}
-            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold">Feedback Settings</h2>
-                  <p className="text-sm text-gray-500">Configure feedback collection for mentors and the application</p>
-                </div>
-                <Button
-                  onClick={updateFeedbackSettings}
-                  disabled={isSavingFeedbackSettings}
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                >
-                  {isSavingFeedbackSettings ? "Saving..." : "Save Settings"}
-                </Button>
-              </div>
               
-              {isLoadingFeedbackSettings ? (
-                <div className="flex justify-center items-center p-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+              {/* Super Mentors List */}
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="p-6 bg-gray-50 border-b">
+                  <h2 className="text-2xl font-semibold">Super Mentors</h2>
+                  <p className="text-sm text-gray-500">Participants with 5 or more badges</p>
                 </div>
-              ) : (
-                <div className="p-6 space-y-6">
-                  {/* Feedback Types */}
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium border-b pb-2">Feedback Collection</h3>
-                      
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="mentor_feedback_enabled"
-                          name="mentor_feedback_enabled"
-                          checked={feedbackSettings.mentor_feedback_enabled}
-                          onChange={handleFeedbackSettingChange}
-                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <label htmlFor="mentor_feedback_enabled" className="text-sm font-medium text-gray-700">
-                          Enable Mentor Feedback Collection
-                        </label>
+                
+                <div className="p-6">
+                  {participants.filter(p => p.is_super_mentor).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {participants
+                        .filter(p => p.is_super_mentor)
+                        .map((participant, index) => (
+                          <div key={index} className="flex items-center gap-4 p-4 border rounded-lg hover:bg-indigo-50 transition-colors">
+                            <div className="p-3 bg-indigo-100 text-indigo-600 rounded-full">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <h3 className="font-medium">{participant.name}</h3>
+                              <p className="text-sm text-gray-500">{participant.badges_earned || 0} Badges Earned</p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                fetchParticipantBadges(participant.registration_no);
+                                setParticipantForBadge(participant);
+                                setShowBadgeAwardModal(true);
+                              }}
+                              className="ml-auto text-indigo-600 hover:text-indigo-800"
+                            >
+                              View Badges
+                            </button>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center text-gray-500">
+                      <p>No super mentors yet.</p>
+                      <p className="text-sm mt-2">Participants who earn 5 or more badges will become super mentors.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
+          )}
+
+          {activeTab === "feedback" && (
+            <section className="space-y-8">
+              {/* Feedback Settings Card */}
+              <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+                <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold">Feedback Settings</h2>
+                    <p className="text-sm text-gray-500">Configure feedback collection for mentors and the application</p>
+                  </div>
+                  <Button
+                    onClick={updateFeedbackSettings}
+                    disabled={isSavingFeedbackSettings}
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    {isSavingFeedbackSettings ? "Saving..." : "Save Settings"}
+                  </Button>
+                </div>
+                
+                {isLoadingFeedbackSettings ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+                  </div>
+                ) : (
+                  <div className="p-6 space-y-6">
+                    {/* Feedback Types */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium border-b pb-2">Feedback Collection</h3>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="mentor_feedback_enabled"
+                            name="mentor_feedback_enabled"
+                            checked={feedbackSettings.mentor_feedback_enabled}
+                            onChange={handleFeedbackSettingChange}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <label htmlFor="mentor_feedback_enabled" className="text-sm font-medium text-gray-700">
+                            Enable Mentor Feedback Collection
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="app_feedback_enabled"
+                            name="app_feedback_enabled"
+                            checked={feedbackSettings.app_feedback_enabled}
+                            onChange={handleFeedbackSettingChange}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <label htmlFor="app_feedback_enabled" className="text-sm font-medium text-gray-700">
+                            Enable Application Feedback Collection
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id="allow_anonymous_feedback"
+                            name="allow_anonymous_feedback"
+                            checked={feedbackSettings.allow_anonymous_feedback}
+                            onChange={handleFeedbackSettingChange}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <label htmlFor="allow_anonymous_feedback" className="text-sm font-medium text-gray-700">
+                            Allow Anonymous Feedback
+                          </label>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="app_feedback_enabled"
-                          name="app_feedback_enabled"
-                          checked={feedbackSettings.app_feedback_enabled}
-                          onChange={handleFeedbackSettingChange}
-                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <label htmlFor="app_feedback_enabled" className="text-sm font-medium text-gray-700">
-                          Enable Application Feedback Collection
-                        </label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="allow_anonymous_feedback"
-                          name="allow_anonymous_feedback"
-                          checked={feedbackSettings.allow_anonymous_feedback}
-                          onChange={handleFeedbackSettingChange}
-                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                        />
-                        <label htmlFor="allow_anonymous_feedback" className="text-sm font-medium text-gray-700">
-                          Allow Anonymous Feedback
-                        </label>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-medium border-b pb-2">Feedback Window</h3>
+                        
+                        <div className="space-y-2">
+                          <label htmlFor="feedback_start_date" className="block text-sm font-medium text-gray-700">
+                            Start Date & Time
+                          </label>
+                          <input
+                            type="datetime-local"
+                            id="feedback_start_date"
+                            name="feedback_start_date"
+                            value={feedbackSettings.feedback_start_date}
+                            onChange={handleFeedbackSettingChange}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label htmlFor="feedback_end_date" className="block text-sm font-medium text-gray-700">
+                            End Date & Time
+                          </label>
+                          <input
+                            type="datetime-local"
+                            id="feedback_end_date"
+                            name="feedback_end_date"
+                            value={feedbackSettings.feedback_end_date}
+                            onChange={handleFeedbackSettingChange}
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                          />
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-medium border-b pb-2">Feedback Window</h3>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="feedback_start_date" className="block text-sm font-medium text-gray-700">
-                          Start Date & Time
-                        </label>
-                        <input
-                          type="datetime-local"
-                          id="feedback_start_date"
-                          name="feedback_start_date"
-                          value={feedbackSettings.feedback_start_date}
-                          onChange={handleFeedbackSettingChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <label htmlFor="feedback_end_date" className="block text-sm font-medium text-gray-700">
-                          End Date & Time
-                        </label>
-                        <input
-                          type="datetime-local"
-                          id="feedback_end_date"
-                          name="feedback_end_date"
-                          value={feedbackSettings.feedback_end_date}
-                          onChange={handleFeedbackSettingChange}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
-                        />
-                      </div>
+                    {/* Feedback Status */}
+                    <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                      <h3 className="font-medium mb-2">Current Feedback Status</h3>
+                      <p>
+                        Feedback collection is {feedbackSettings.mentor_feedback_enabled || feedbackSettings.app_feedback_enabled ? (
+                          <span className="font-semibold text-green-600">active</span>
+                        ) : (
+                          <span className="font-semibold text-red-600">inactive</span>
+                        )}
+                        {feedbackSettings.feedback_start_date && feedbackSettings.feedback_end_date && (
+                          <> from {new Date(feedbackSettings.feedback_start_date).toLocaleString()} to {new Date(feedbackSettings.feedback_end_date).toLocaleString()}</>
+                        )}
+                      </p>
+                      <p className="mt-1">
+                        Mentor Feedback: <span className={`font-semibold ${feedbackSettings.mentor_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                          {feedbackSettings.mentor_feedback_enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                        &nbsp;&nbsp;|&nbsp;&nbsp;
+                        App Feedback: <span className={`font-semibold ${feedbackSettings.app_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                          {feedbackSettings.app_feedback_enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </p>
                     </div>
-                  </div>
-                  
-                  {/* Feedback Status */}
-                  <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
-                    <h3 className="font-medium mb-2">Current Feedback Status</h3>
-                    <p>
-                      Feedback collection is {feedbackSettings.mentor_feedback_enabled || feedbackSettings.app_feedback_enabled ? (
-                        <span className="font-semibold text-green-600">active</span>
-                      ) : (
-                        <span className="font-semibold text-red-600">inactive</span>
-                      )}
-                      {feedbackSettings.feedback_start_date && feedbackSettings.feedback_end_date && (
-                        <> from {new Date(feedbackSettings.feedback_start_date).toLocaleString()} to {new Date(feedbackSettings.feedback_end_date).toLocaleString()}</>
-                      )}
-                    </p>
-                    <p className="mt-1">
-                      Mentor Feedback: <span className={`font-semibold ${feedbackSettings.mentor_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
-                        {feedbackSettings.mentor_feedback_enabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                      &nbsp;&nbsp;|&nbsp;&nbsp;
-                      App Feedback: <span className={`font-semibold ${feedbackSettings.app_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
-                        {feedbackSettings.app_feedback_enabled ? 'Enabled' : 'Disabled'}
-                      </span>
-                    </p>
-                  </div>
-                  
-                  {/* Feedback Reminders */}
-                  <div className="mt-6">
-                    <h3 className="text-lg font-medium border-b pb-2 mb-3">Send Feedback Reminders</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Send email reminders to eligible users to submit their feedback during the active feedback window.
-                    </p>
                     
-                    <div className="flex flex-wrap gap-3">
-                      <Button
-                        onClick={() => sendFeedbackReminders('all')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white"
-                        disabled={isLoadingFeedbackSettings || (!feedbackSettings.mentor_feedback_enabled && !feedbackSettings.app_feedback_enabled)}
-                      >
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                          Send All Reminders
-                        </div>
-                      </Button>
+                    {/* Feedback Reminders */}
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium border-b pb-2 mb-3">Send Feedback Reminders</h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Send email reminders to eligible users to submit their feedback during the active feedback window.
+                      </p>
                       
-                      <Button
-                        onClick={() => sendFeedbackReminders('mentor')}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                        disabled={isLoadingFeedbackSettings || !feedbackSettings.mentor_feedback_enabled}
-                      >
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Mentor Feedback Reminders
-                        </div>
-                      </Button>
-                      
-                      <Button
-                        onClick={() => sendFeedbackReminders('app')}
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        disabled={isLoadingFeedbackSettings || !feedbackSettings.app_feedback_enabled}
-                      >
-                        <div className="flex items-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="flex flex-wrap gap-3">
+                        <Button
+                          onClick={() => sendFeedbackReminders('all')}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          disabled={isLoadingFeedbackSettings || (!feedbackSettings.mentor_feedback_enabled && !feedbackSettings.app_feedback_enabled)}
+                        >
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Send All Reminders
+                          </div>
+                        </Button>
+                        
+                        <Button
+                          onClick={() => sendFeedbackReminders('mentor')}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                          disabled={isLoadingFeedbackSettings || !feedbackSettings.mentor_feedback_enabled}
+                        >
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Mentor Feedback Reminders
+                          </div>
+                        </Button>
+                        
+                        <Button
+                          onClick={() => sendFeedbackReminders('app')}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          disabled={isLoadingFeedbackSettings || !feedbackSettings.app_feedback_enabled}
+                        >
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
                           App Feedback Reminders
@@ -4738,8 +4804,8 @@ function AdminDashboard() {
         </div>
       )}
     </div>
-  );
-}
+</div>
+  )}
 
 export default function AdminDashboardPage() {
   return (

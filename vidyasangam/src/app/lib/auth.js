@@ -36,7 +36,11 @@ export const clearTokens = () => {
  * @returns {boolean} True if the user has an access token
  */
 export const isLoggedIn = () => {
-  return !!localStorage.getItem('authToken');
+  const authToken = localStorage.getItem('authToken');
+  const isLoggedInFlag = localStorage.getItem('isLoggedIn');
+  
+  // Check both the auth token and the isLoggedIn flag
+  return !!authToken && isLoggedInFlag === 'true';
 };
 
 /**
@@ -76,6 +80,9 @@ export const login = async (email, password) => {
       
       // Set admin status (defaulting to false for regular login)
       localStorage.setItem('isAdmin', data.isAdmin === true ? 'true' : 'false');
+      
+      // Always set isLoggedIn flag
+      localStorage.setItem('isLoggedIn', 'true');
       
       return { success: true, message: data.msg || 'Login successful' };
     } else {
@@ -144,7 +151,9 @@ export const refreshAccessToken = async () => {
     const refreshToken = localStorage.getItem('refreshToken');
     
     if (!refreshToken) {
-      throw new Error('No refresh token available');
+      console.warn('No refresh token available');
+      // Don't throw error, but return that no refresh was possible
+      return localStorage.getItem('authToken'); // Return current token if no refresh token
     }
     
     const response = await fetch('http://127.0.0.1:8000/api/user/token/refresh/', {
@@ -165,12 +174,21 @@ export const refreshAccessToken = async () => {
     // Store the new access token
     localStorage.setItem('authToken', newAccessToken);
     
+    // Make sure isLoggedIn flag is set
+    localStorage.setItem('isLoggedIn', 'true');
+    
     console.log('Access token refreshed successfully');
     return newAccessToken;
   } catch (error) {
     console.error('Error refreshing token:', error);
     
-    // If refresh failed, clear tokens and return null
+    // If refresh failed but we still have an auth token, don't clear everything
+    if (localStorage.getItem('authToken')) {
+      console.log('Keeping existing auth token');
+      return localStorage.getItem('authToken');
+    }
+    
+    // Only if we have no tokens at all, clear everything
     clearTokens();
     return null;
   }
