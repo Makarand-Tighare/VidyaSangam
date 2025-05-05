@@ -65,11 +65,14 @@ export default function NavBar() {
           </span>
         </Link>
         
+        {!isAdmin && (
         <Link href="/sessions" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
             Sessions
           </span>
         </Link>
+      )}
+
         <Link href="/chatbot" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
             Chatbot
