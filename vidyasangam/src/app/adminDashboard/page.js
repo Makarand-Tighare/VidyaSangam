@@ -7,6 +7,7 @@ import { Info } from 'lucide-react';
 import AdminRoute from "@/components/AdminRoute";
 import { useRouter } from "next/navigation";
 import { isAdmin, isLoggedIn } from "@/app/lib/auth";
+import { toast } from 'sonner';
 
 // Add this helper function to get department theme color
 const getDepartmentThemeColor = (departmentCode) => {
@@ -21,8 +22,32 @@ const getDepartmentThemeColor = (departmentCode) => {
       return { bg: 'indigo', text: 'indigo', light: 'indigo-50', border: 'indigo-500' };
     case 'etc':
       return { bg: 'purple', text: 'purple', light: 'purple-50', border: 'purple-500' };
+    case 'ce':
     case 'civil':
       return { bg: 'green', text: 'green', light: 'green-50', border: 'green-500' };
+    case 'me':
+    case 'mech':
+      return { bg: 'red', text: 'red', light: 'red-50', border: 'red-500' };
+    case 'ee':
+    case 'electrical':
+    case 'eee':
+      return { bg: 'yellow', text: 'yellow', light: 'yellow-50', border: 'yellow-500' };
+    case 'ece':
+      return { bg: 'orange', text: 'orange', light: 'orange-50', border: 'orange-500' };
+    case 'biotech':
+      return { bg: 'lime', text: 'lime', light: 'lime-50', border: 'lime-500' };
+    case 'chem':
+      return { bg: 'emerald', text: 'emerald', light: 'emerald-50', border: 'emerald-500' };
+    case 'ct':
+      return { bg: 'teal', text: 'teal', light: 'teal-50', border: 'teal-500' };
+    case 'aids':
+      return { bg: 'cyan', text: 'cyan', light: 'cyan-50', border: 'cyan-500' };
+    case 'aiml':
+      return { bg: 'sky', text: 'sky', light: 'sky-50', border: 'sky-500' };
+    case 'cse-iot':
+      return { bg: 'violet', text: 'violet', light: 'violet-50', border: 'violet-500' };
+    case 'csd':
+      return { bg: 'fuchsia', text: 'fuchsia', light: 'fuchsia-50', border: 'fuchsia-500' };
     default:
       return { bg: 'gray', text: 'gray', light: 'gray-50', border: 'gray-500' };
   }
@@ -109,6 +134,54 @@ function AdminDashboard() {
   // Add this right after the router declaration in the AdminDashboard component
   const [departmentInfo, setDepartmentInfo] = useState(null);
   const [isDepartmentAdmin, setIsDepartmentAdmin] = useState(false);
+
+  // Add feedback management states
+  const [feedbackSettings, setFeedbackSettings] = useState({
+    mentor_feedback_enabled: false,
+    app_feedback_enabled: false,
+    allow_anonymous_feedback: false,
+    feedback_start_date: '',
+    feedback_end_date: '',
+    department: null,
+    department_name: 'Global Settings'
+  });
+  const [isLoadingFeedbackSettings, setIsLoadingFeedbackSettings] = useState(false);
+  const [mentorFeedback, setMentorFeedback] = useState([]);
+  const [appFeedback, setAppFeedback] = useState([]);
+  const [isLoadingMentorFeedback, setIsLoadingMentorFeedback] = useState(false);
+  const [isLoadingAppFeedback, setIsLoadingAppFeedback] = useState(false);
+  const [feedbackSelectedMentor, setFeedbackSelectedMentor] = useState(null);
+  const [appFeedbackStats, setAppFeedbackStats] = useState({
+    feedback_count: 0,
+    average_ratings: {
+      usability: 0,
+      features: 0,
+      performance: 0,
+      overall: 0,
+      nps: 0
+    },
+    nps: {
+      score: 0,
+      promoters: 0,
+      passives: 0,
+      detractors: 0
+    }
+  });
+  const [isSavingFeedbackSettings, setIsSavingFeedbackSettings] = useState(false);
+  const [feedbackSearchTerm, setFeedbackSearchTerm] = useState('');
+  
+  // Add new state variables for user eligibility management
+  const [userFeedbackEligibility, setUserFeedbackEligibility] = useState([]);
+  const [isLoadingUserEligibility, setIsLoadingUserEligibility] = useState(false);
+  const [eligibilitySearchTerm, setEligibilitySearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userEligibilityOverrides, setUserEligibilityOverrides] = useState({
+    mentor_feedback_eligible: false,
+    app_feedback_eligible: false,
+    override_until: ''
+  });
+  const [isUpdatingUserEligibility, setIsUpdatingUserEligibility] = useState(false);
+
 
   // Update the useEffect that checks auth and department status
   useEffect(() => {
@@ -1446,6 +1519,252 @@ function AdminDashboard() {
     }
   };
 
+  // Add effect to fetch feedback data when tab is active
+  useEffect(() => {
+    if (activeTab === "feedback") {
+      fetchFeedbackSettings();
+      fetchAppFeedbackSummary();
+      
+      // Reset user eligibility search when tab becomes active
+      setEligibilitySearchTerm('');
+      setSelectedUser(null);
+    }
+  }, [activeTab]);
+  
+  // Fetch feedback settings
+  const fetchFeedbackSettings = async () => {
+    setIsLoadingFeedbackSettings(true);
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/feedback/settings/";
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
+      setFeedbackSettings(response.data);
+    } catch (error) {
+      console.error("Error fetching feedback settings:", error);
+      alert("Failed to fetch feedback settings. Please try again.");
+    } finally {
+      setIsLoadingFeedbackSettings(false);
+    }
+  };
+  
+  // Update feedback settings
+  const updateFeedbackSettings = async () => {
+    setIsSavingFeedbackSettings(true);
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/feedback/settings/update/";
+      const headers = getAuthHeaders();
+      
+      const payload = {
+        mentor_feedback_enabled: feedbackSettings.mentor_feedback_enabled,
+        app_feedback_enabled: feedbackSettings.app_feedback_enabled,
+        allow_anonymous_feedback: feedbackSettings.allow_anonymous_feedback,
+        feedback_start_date: feedbackSettings.feedback_start_date,
+        feedback_end_date: feedbackSettings.feedback_end_date
+      };
+      
+      const response = await axios.post(url, payload, { headers });
+      
+      if (response.status === 200) {
+        setFeedbackSettings(response.data.settings);
+        alert("Feedback settings updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating feedback settings:", error);
+      alert("Failed to update feedback settings. Please try again.");
+    } finally {
+      setIsSavingFeedbackSettings(false);
+    }
+  };
+  
+  const sendFeedbackReminders = async (feedbackType = 'all') => {
+    try {
+      setIsLoadingFeedbackSettings(true);
+      const response = await axios.post(
+        `http://127.0.0.1:8000/api/mentor_mentee/feedback/send-reminders/`,
+        { feedback_type: feedbackType },
+        { headers: getAuthHeaders() }
+      );
+      
+      if (response.status === 200) {
+        toast.success("Reminders sent successfully", {
+          description: `Feedback reminders for ${feedbackType === 'all' ? 'all types' : feedbackType + ' feedback'} have been sent.`
+        });
+      }
+    } catch (error) {
+      console.error("Error sending feedback reminders:", error);
+      toast.error("Error sending reminders", {
+        description: error.response?.data?.detail || "Failed to send feedback reminders."
+      });
+    } finally {
+      setIsLoadingFeedbackSettings(false);
+    }
+  };
+  
+  // Get mentor feedback data
+  const fetchMentorFeedback = async (mentorId) => {
+    setIsLoadingMentorFeedback(true);
+    try {
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/feedback/mentor/${mentorId}/`;
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
+      setMentorFeedback(response.data.feedback || []);
+      setFeedbackSelectedMentor(response.data.mentor);
+    } catch (error) {
+      console.error("Error fetching mentor feedback:", error);
+      alert("Failed to fetch mentor feedback. Please try again.");
+    } finally {
+      setIsLoadingMentorFeedback(false);
+    }
+  };
+  
+  // Get application feedback summary
+  const fetchAppFeedbackSummary = async () => {
+    setIsLoadingAppFeedback(true);
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/feedback/app/summary/";
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
+      setAppFeedback(response.data.feedback || []);
+      
+      // Extract stats
+      const stats = {
+        feedback_count: response.data.feedback_count || 0,
+        average_ratings: response.data.average_ratings || {
+          usability: 0,
+          features: 0,
+          performance: 0,
+          overall: 0,
+          nps: 0
+        },
+        nps: response.data.nps || {
+          score: 0,
+          promoters: 0,
+          passives: 0,
+          detractors: 0
+        }
+      };
+      
+      setAppFeedbackStats(stats);
+    } catch (error) {
+      console.error("Error fetching application feedback:", error);
+      alert("Failed to fetch application feedback. Please try again.");
+    } finally {
+      setIsLoadingAppFeedback(false);
+    }
+  };
+  
+  // Delete feedback item
+  const deleteFeedback = async (feedbackType, feedbackId) => {
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/feedback/delete/";
+      const headers = getAuthHeaders();
+      
+      const payload = {
+        feedback_type: feedbackType,
+        feedback_id: feedbackId
+      };
+      
+      const response = await axios.delete(url, { 
+        headers,
+        data: payload
+      });
+      
+      if (response.status === 200) {
+        alert(response.data.message || "Feedback deleted successfully!");
+        
+        // Refresh the appropriate feedback list
+        if (feedbackType === 'mentor') {
+          if (feedbackSelectedMentor) {
+            fetchMentorFeedback(feedbackSelectedMentor.registration_no);
+          }
+        } else {
+          fetchAppFeedbackSummary();
+        }
+      }
+    } catch (error) {
+      console.error("Error deleting feedback:", error);
+      alert("Failed to delete feedback. Please try again.");
+    }
+  };
+  
+  // Handle feedback setting changes
+  const handleFeedbackSettingChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFeedbackSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Fetch user eligibility status
+  const fetchUserEligibility = async (registrationNo) => {
+    setIsLoadingUserEligibility(true);
+    try {
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/feedback/eligibility/${registrationNo}/`;
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
+      setSelectedUser({
+        registration_no: registrationNo,
+        ...response.data
+      });
+      
+      // Initialize override values with current values
+      setUserEligibilityOverrides({
+        mentor_feedback_eligible: response.data.mentor_feedback_eligible,
+        app_feedback_eligible: response.data.app_feedback_eligible,
+        override_until: response.data.override_until || ''
+      });
+      
+    } catch (error) {
+      console.error("Error fetching user eligibility:", error);
+      alert("Failed to fetch user eligibility. Please try again.");
+    } finally {
+      setIsLoadingUserEligibility(false);
+    }
+  };
+
+  // Update user eligibility overrides
+  const updateUserEligibility = async () => {
+    setIsUpdatingUserEligibility(true);
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/feedback/eligibility/update/";
+      const headers = getAuthHeaders();
+      
+      const payload = {
+        registration_no: selectedUser.registration_no,
+        mentor_feedback_eligible: userEligibilityOverrides.mentor_feedback_eligible,
+        app_feedback_eligible: userEligibilityOverrides.app_feedback_eligible,
+        override_until: userEligibilityOverrides.override_until
+      };
+      
+      const response = await axios.post(url, payload, { headers });
+      
+      if (response.status === 200) {
+        // Refresh the user's eligibility status
+        await fetchUserEligibility(selectedUser.registration_no);
+        alert("User feedback eligibility updated successfully!");
+      }
+    } catch (error) {
+      console.error("Error updating user eligibility:", error);
+      alert("Failed to update user eligibility. Please try again.");
+    } finally {
+      setIsUpdatingUserEligibility(false);
+    }
+  };
+
+  // Handle eligibility override changes
+  const handleEligibilityChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setUserEligibilityOverrides(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
   return (
     <div className="container mx-auto px-2 md:px-4 py-8">
       <header className="mb-8 text-center">
@@ -1510,6 +1829,12 @@ function AdminDashboard() {
           onClick={() => setActiveTab("badges")}
         >
           Badges & Super Mentors
+        </button>
+        <button
+          className={`px-6 py-2 rounded-t-lg font-semibold border-b-2 transition-colors duration-200 ${activeTab === "feedback" ? "border-amber-600 text-amber-700 bg-amber-50" : "border-transparent text-gray-500 hover:text-amber-700"}`}
+          onClick={() => setActiveTab("feedback")}
+        >
+          Feedback Management
         </button>
       </div>
       
@@ -3266,6 +3591,630 @@ function AdminDashboard() {
                   <div className="text-center text-gray-500">
                     <p>No super mentors yet.</p>
                     <p className="text-sm mt-2">Participants who earn 5 or more badges will become super mentors.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTab === "feedback" && (
+          <section className="space-y-8">
+            {/* Feedback Settings Card */}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold">Feedback Settings</h2>
+                  <p className="text-sm text-gray-500">Configure feedback collection for mentors and the application</p>
+                </div>
+                <Button
+                  onClick={updateFeedbackSettings}
+                  disabled={isSavingFeedbackSettings}
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {isSavingFeedbackSettings ? "Saving..." : "Save Settings"}
+                </Button>
+              </div>
+              
+              {isLoadingFeedbackSettings ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+                </div>
+              ) : (
+                <div className="p-6 space-y-6">
+                  {/* Feedback Types */}
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium border-b pb-2">Feedback Collection</h3>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="mentor_feedback_enabled"
+                          name="mentor_feedback_enabled"
+                          checked={feedbackSettings.mentor_feedback_enabled}
+                          onChange={handleFeedbackSettingChange}
+                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <label htmlFor="mentor_feedback_enabled" className="text-sm font-medium text-gray-700">
+                          Enable Mentor Feedback Collection
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="app_feedback_enabled"
+                          name="app_feedback_enabled"
+                          checked={feedbackSettings.app_feedback_enabled}
+                          onChange={handleFeedbackSettingChange}
+                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <label htmlFor="app_feedback_enabled" className="text-sm font-medium text-gray-700">
+                          Enable Application Feedback Collection
+                        </label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="allow_anonymous_feedback"
+                          name="allow_anonymous_feedback"
+                          checked={feedbackSettings.allow_anonymous_feedback}
+                          onChange={handleFeedbackSettingChange}
+                          className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                        />
+                        <label htmlFor="allow_anonymous_feedback" className="text-sm font-medium text-gray-700">
+                          Allow Anonymous Feedback
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium border-b pb-2">Feedback Window</h3>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="feedback_start_date" className="block text-sm font-medium text-gray-700">
+                          Start Date & Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          id="feedback_start_date"
+                          name="feedback_start_date"
+                          value={feedbackSettings.feedback_start_date}
+                          onChange={handleFeedbackSettingChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="feedback_end_date" className="block text-sm font-medium text-gray-700">
+                          End Date & Time
+                        </label>
+                        <input
+                          type="datetime-local"
+                          id="feedback_end_date"
+                          name="feedback_end_date"
+                          value={feedbackSettings.feedback_end_date}
+                          onChange={handleFeedbackSettingChange}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Feedback Status */}
+                  <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-800">
+                    <h3 className="font-medium mb-2">Current Feedback Status</h3>
+                    <p>
+                      Feedback collection is {feedbackSettings.mentor_feedback_enabled || feedbackSettings.app_feedback_enabled ? (
+                        <span className="font-semibold text-green-600">active</span>
+                      ) : (
+                        <span className="font-semibold text-red-600">inactive</span>
+                      )}
+                      {feedbackSettings.feedback_start_date && feedbackSettings.feedback_end_date && (
+                        <> from {new Date(feedbackSettings.feedback_start_date).toLocaleString()} to {new Date(feedbackSettings.feedback_end_date).toLocaleString()}</>
+                      )}
+                    </p>
+                    <p className="mt-1">
+                      Mentor Feedback: <span className={`font-semibold ${feedbackSettings.mentor_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                        {feedbackSettings.mentor_feedback_enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                      &nbsp;&nbsp;|&nbsp;&nbsp;
+                      App Feedback: <span className={`font-semibold ${feedbackSettings.app_feedback_enabled ? 'text-green-600' : 'text-red-600'}`}>
+                        {feedbackSettings.app_feedback_enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </p>
+                  </div>
+                  
+                  {/* Feedback Reminders */}
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium border-b pb-2 mb-3">Send Feedback Reminders</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Send email reminders to eligible users to submit their feedback during the active feedback window.
+                    </p>
+                    
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => sendFeedbackReminders('all')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        disabled={isLoadingFeedbackSettings || (!feedbackSettings.mentor_feedback_enabled && !feedbackSettings.app_feedback_enabled)}
+                      >
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Send All Reminders
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        onClick={() => sendFeedbackReminders('mentor')}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                        disabled={isLoadingFeedbackSettings || !feedbackSettings.mentor_feedback_enabled}
+                      >
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Mentor Feedback Reminders
+                        </div>
+                      </Button>
+                      
+                      <Button
+                        onClick={() => sendFeedbackReminders('app')}
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        disabled={isLoadingFeedbackSettings || !feedbackSettings.app_feedback_enabled}
+                      >
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          App Feedback Reminders
+                        </div>
+                      </Button>
+                    </div>
+                    
+                    <div className="mt-2 text-xs text-gray-500 flex items-center">
+                      <Info className="w-3 h-3 mr-1" /> 
+                      Reminders will only be sent to eligible users during the active feedback window.
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* App Feedback Summary */}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b">
+                <h2 className="text-2xl font-semibold">Application Feedback Summary</h2>
+                <p className="text-sm text-gray-500">Overview of user feedback about the VidyaSangam platform</p>
+              </div>
+              
+              {isLoadingAppFeedback ? (
+                <div className="flex justify-center items-center p-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+                </div>
+              ) : (
+                <div className="p-6">
+                  {/* NPS and Rating Stats Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-amber-50 p-4 rounded-lg shadow-sm border border-amber-200">
+                      <h3 className="text-sm font-medium text-amber-800 mb-1">Net Promoter Score</h3>
+                      <p className="text-2xl font-bold text-amber-600">{appFeedbackStats.nps.score}</p>
+                      <div className="mt-2 text-xs text-amber-700">
+                        <div className="flex justify-between">
+                          <span>Promoters: {appFeedbackStats.nps.promoters}</span>
+                          <span>Passives: {appFeedbackStats.nps.passives}</span>
+                          <span>Detractors: {appFeedbackStats.nps.detractors}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-50 p-4 rounded-lg shadow-sm border border-blue-200">
+                      <h3 className="text-sm font-medium text-blue-800 mb-1">Usability Rating</h3>
+                      <p className="text-2xl font-bold text-blue-600">{appFeedbackStats.average_ratings.usability.toFixed(1)}/5</p>
+                      <div className="mt-2 text-xs text-blue-700">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${(appFeedbackStats.average_ratings.usability / 5) * 100}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-4 rounded-lg shadow-sm border border-purple-200">
+                      <h3 className="text-sm font-medium text-purple-800 mb-1">Features Rating</h3>
+                      <p className="text-2xl font-bold text-purple-600">{appFeedbackStats.average_ratings.features.toFixed(1)}/5</p>
+                      <div className="mt-2 text-xs text-purple-700">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${(appFeedbackStats.average_ratings.features / 5) * 100}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-green-50 p-4 rounded-lg shadow-sm border border-green-200">
+                      <h3 className="text-sm font-medium text-green-800 mb-1">Overall Rating</h3>
+                      <p className="text-2xl font-bold text-green-600">{appFeedbackStats.average_ratings.overall.toFixed(1)}/5</p>
+                      <div className="mt-2 text-xs text-green-700">
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="bg-green-600 h-2 rounded-full" style={{ width: `${(appFeedbackStats.average_ratings.overall / 5) * 100}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <h3 className="text-lg font-medium border-b pb-2 mb-4">All Application Feedback ({appFeedbackStats.feedback_count})</h3>
+                  
+                  {appFeedback.length > 0 ? (
+                    <div className="space-y-4">
+                      {appFeedback.map((feedback, index) => (
+                        <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+                          <div className="flex justify-between">
+                            <div>
+                              <h4 className="font-medium">{feedback.anonymous ? 'Anonymous User' : feedback.participant_name}</h4>
+                              <p className="text-xs text-gray-500">{new Date(feedback.created_at).toLocaleString()}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Usability: {feedback.usability_rating}/5</div>
+                              <div className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Features: {feedback.features_rating}/5</div>
+                              <div className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Overall: {feedback.overall_rating}/5</div>
+                            </div>
+                          </div>
+                          
+                          <div className="mt-3">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <h5 className="text-sm font-medium mb-1">What they like:</h5>
+                                <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.what_you_like || "No comments provided"}</p>
+                              </div>
+                              <div>
+                                <h5 className="text-sm font-medium mb-1">What could be improved:</h5>
+                                <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.what_to_improve || "No comments provided"}</p>
+                              </div>
+                            </div>
+                            {feedback.feature_requests && (
+                              <div className="mt-2">
+                                <h5 className="text-sm font-medium mb-1">Feature requests:</h5>
+                                <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.feature_requests}</p>
+                              </div>
+                            )}
+                            {feedback.additional_comments && (
+                              <div className="mt-2">
+                                <h5 className="text-sm font-medium mb-1">Additional comments:</h5>
+                                <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.additional_comments}</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="mt-3 text-right">
+                            <button
+                              onClick={() => {
+                                if (confirm('Are you sure you want to delete this feedback?')) {
+                                  deleteFeedback('app', feedback.id);
+                                }
+                              }}
+                              className="text-red-600 hover:text-red-800 text-xs"
+                            >
+                              Delete Feedback
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center p-8 text-gray-500">
+                      No application feedback has been submitted yet.
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Mentor Feedback Section */}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+              <div className="p-6 bg-gray-50 border-b">
+                <h2 className="text-2xl font-semibold">Mentor Feedback</h2>
+                <p className="text-sm text-gray-500">View feedback submitted by mentees for their mentors</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="mb-6">
+                  <label htmlFor="mentorFeedbackSearch" className="block text-sm font-medium text-gray-700 mb-2">
+                    Search for a mentor by registration number to view their feedback:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="mentorFeedbackSearch"
+                      placeholder="Enter mentor registration number"
+                      value={feedbackSearchTerm}
+                      onChange={(e) => setFeedbackSearchTerm(e.target.value)}
+                      className="w-full md:w-64 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <Button
+                      onClick={() => {
+                        if (feedbackSearchTerm) {
+                          fetchMentorFeedback(feedbackSearchTerm);
+                        } else {
+                          alert('Please enter a mentor registration number');
+                        }
+                      }}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      Search
+                    </Button>
+                  </div>
+                </div>
+                
+                {isLoadingMentorFeedback ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+                  </div>
+                ) : feedbackSelectedMentor ? (
+                  <div>
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200 mb-6">
+                      <h3 className="font-medium">Feedback for: {feedbackSelectedMentor.name} ({feedbackSelectedMentor.registration_no})</h3>
+                      {mentorFeedback.length > 0 ? (
+                        <div className="mt-2 grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div className="bg-white p-3 rounded shadow-sm">
+                            <h4 className="text-xs font-medium text-gray-500">COMMUNICATION</h4>
+                            <p className="text-xl font-bold text-amber-600">{feedbackSelectedMentor.average_ratings?.communication.toFixed(1)}/5</p>
+                          </div>
+                          <div className="bg-white p-3 rounded shadow-sm">
+                            <h4 className="text-xs font-medium text-gray-500">KNOWLEDGE</h4>
+                            <p className="text-xl font-bold text-amber-600">{feedbackSelectedMentor.average_ratings?.knowledge.toFixed(1)}/5</p>
+                          </div>
+                          <div className="bg-white p-3 rounded shadow-sm">
+                            <h4 className="text-xs font-medium text-gray-500">AVAILABILITY</h4>
+                            <p className="text-xl font-bold text-amber-600">{feedbackSelectedMentor.average_ratings?.availability.toFixed(1)}/5</p>
+                          </div>
+                          <div className="bg-white p-3 rounded shadow-sm">
+                            <h4 className="text-xs font-medium text-gray-500">OVERALL</h4>
+                            <p className="text-xl font-bold text-amber-600">{feedbackSelectedMentor.average_ratings?.overall.toFixed(1)}/5</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="mt-2 text-gray-600">No feedback has been submitted for this mentor yet.</p>
+                      )}
+                    </div>
+                    
+                    {mentorFeedback.length > 0 ? (
+                      <div className="space-y-4">
+                        {mentorFeedback.map((feedback, index) => (
+                          <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+                            <div className="flex justify-between">
+                              <div>
+                                <h4 className="font-medium">{feedback.anonymous ? 'Anonymous Mentee' : feedback.mentee_name}</h4>
+                                <p className="text-xs text-gray-500">{new Date(feedback.created_at).toLocaleString()}</p>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                <div className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">Comm: {feedback.communication_rating}/5</div>
+                                <div className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Knowledge: {feedback.knowledge_rating}/5</div>
+                                <div className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs">Avail: {feedback.availability_rating}/5</div>
+                                <div className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Help: {feedback.helpfulness_rating}/5</div>
+                                <div className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded text-xs">Overall: {feedback.overall_rating}/5</div>
+                              </div>
+                            </div>
+                            
+                            <div className="mt-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <h5 className="text-sm font-medium mb-1">Strengths:</h5>
+                                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.strengths || "No strengths mentioned"}</p>
+                                </div>
+                                <div>
+                                  <h5 className="text-sm font-medium mb-1">Areas for improvement:</h5>
+                                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.areas_for_improvement || "No improvements suggested"}</p>
+                                </div>
+                              </div>
+                              {feedback.additional_comments && (
+                                <div className="mt-2">
+                                  <h5 className="text-sm font-medium mb-1">Additional comments:</h5>
+                                  <p className="text-sm text-gray-700 bg-gray-50 p-2 rounded">{feedback.additional_comments}</p>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <div className="mt-3 text-right">
+                              <button
+                                onClick={() => {
+                                  if (confirm('Are you sure you want to delete this feedback?')) {
+                                    deleteFeedback('mentor', feedback.id);
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-800 text-xs"
+                              >
+                                Delete Feedback
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center p-8 text-gray-500">
+                        No feedback has been submitted for this mentor yet.
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-gray-500">
+                    Search for a mentor to view their feedback.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* User Feedback Eligibility Management Section */}
+            <div className="bg-white shadow-lg rounded-lg overflow-hidden mt-8">
+              <div className="p-6 bg-gray-50 border-b">
+                <h2 className="text-2xl font-semibold">User Eligibility Management</h2>
+                <p className="text-sm text-gray-500">Override feedback eligibility for specific users</p>
+              </div>
+              
+              <div className="p-6">
+                <div className="mb-6">
+                  <label htmlFor="eligibilitySearch" className="block text-sm font-medium text-gray-700 mb-2">
+                    Search for a user by registration number to manage their feedback eligibility:
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="eligibilitySearch"
+                      placeholder="Enter user registration number"
+                      value={eligibilitySearchTerm}
+                      onChange={(e) => setEligibilitySearchTerm(e.target.value)}
+                      className="w-full md:w-64 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <Button
+                      onClick={() => {
+                        if (eligibilitySearchTerm) {
+                          fetchUserEligibility(eligibilitySearchTerm);
+                        } else {
+                          alert('Please enter a user registration number');
+                        }
+                      }}
+                      className="bg-amber-600 hover:bg-amber-700 text-white"
+                    >
+                      Search
+                    </Button>
+                  </div>
+                </div>
+                
+                {isLoadingUserEligibility ? (
+                  <div className="flex justify-center items-center p-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-amber-500"></div>
+                  </div>
+                ) : selectedUser ? (
+                  <div className="space-y-6">
+                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                      <h3 className="font-medium mb-2">Eligibility Status for User: {selectedUser.registration_no}</h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Current Eligibility</h4>
+                          <ul className="space-y-2">
+                            <li className="flex items-center gap-2">
+                              <span className={`w-3 h-3 rounded-full ${selectedUser.mentor_feedback_eligible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                              <span>Mentor Feedback: {selectedUser.mentor_feedback_eligible ? 'Eligible' : 'Not Eligible'}</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className={`w-3 h-3 rounded-full ${selectedUser.app_feedback_eligible ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                              <span>App Feedback: {selectedUser.app_feedback_eligible ? 'Eligible' : 'Not Eligible'}</span>
+                            </li>
+                            <li className="flex items-center gap-2">
+                              <span className={`w-3 h-3 rounded-full ${selectedUser.is_mentee ? 'bg-green-500' : 'bg-gray-500'}`}></span>
+                              <span>Is Mentee: {selectedUser.is_mentee ? 'Yes' : 'No'}</span>
+                            </li>
+                          </ul>
+                          
+                          {selectedUser.already_submitted_mentor_feedback && (
+                            <div className="mt-3 py-1 px-2 bg-blue-100 text-blue-800 text-xs inline-block rounded">
+                              Has already submitted mentor feedback
+                            </div>
+                          )}
+                          
+                          {selectedUser.already_submitted_app_feedback && (
+                            <div className="mt-1 py-1 px-2 bg-purple-100 text-purple-800 text-xs inline-block rounded">
+                              Has already submitted app feedback
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div>
+                          <h4 className="text-sm font-medium text-gray-700 mb-2">Feedback Window</h4>
+                          {selectedUser.window ? (
+                            <div className="text-sm">
+                              <p>Start: {new Date(selectedUser.window.start_date).toLocaleString()}</p>
+                              <p>End: {new Date(selectedUser.window.end_date).toLocaleString()}</p>
+                            </div>
+                          ) : (
+                            <p className="text-sm text-gray-500">No feedback window active</p>
+                          )}
+                          
+                          {selectedUser.override_until && (
+                            <div className="mt-3">
+                              <p className="text-xs font-medium text-amber-700">Override active until:</p>
+                              <p className="text-sm">{new Date(selectedUser.override_until).toLocaleString()}</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="border rounded-lg p-5">
+                      <h3 className="font-medium border-b pb-2 mb-4">Manage Eligibility Overrides</h3>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="mentor_feedback_eligible"
+                            name="mentor_feedback_eligible"
+                            checked={userEligibilityOverrides.mentor_feedback_eligible}
+                            onChange={handleEligibilityChange}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <label htmlFor="mentor_feedback_eligible" className="text-sm font-medium text-gray-700">
+                            Allow Mentor Feedback Submission
+                          </label>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="app_feedback_eligible"
+                            name="app_feedback_eligible"
+                            checked={userEligibilityOverrides.app_feedback_eligible}
+                            onChange={handleEligibilityChange}
+                            className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                          />
+                          <label htmlFor="app_feedback_eligible" className="text-sm font-medium text-gray-700">
+                            Allow Application Feedback Submission
+                          </label>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <label htmlFor="override_until" className="block text-sm font-medium text-gray-700">
+                            Override Until (Leave empty for permanent override)
+                          </label>
+                          <input
+                            type="datetime-local"
+                            id="override_until"
+                            name="override_until"
+                            value={userEligibilityOverrides.override_until}
+                            onChange={handleEligibilityChange}
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-amber-500 focus:ring-amber-500"
+                          />
+                          <p className="text-xs text-gray-500">If set, the override will expire after this date and time</p>
+                        </div>
+                        
+                        <div className="pt-3 border-t mt-4">
+                          <Button
+                            onClick={updateUserEligibility}
+                            disabled={isUpdatingUserEligibility}
+                            className="bg-amber-600 hover:bg-amber-700 text-white w-full"
+                          >
+                            {isUpdatingUserEligibility ? "Updating..." : "Update Eligibility Overrides"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-amber-50 p-4 rounded-lg text-sm">
+                      <h4 className="font-medium text-amber-800 mb-2">About Eligibility Overrides</h4>
+                      <p className="text-amber-700 mb-2">
+                        Overrides allow you to make specific users eligible or ineligible for feedback submission,
+                        regardless of the global feedback settings. This is useful for:
+                      </p>
+                      <ul className="list-disc pl-5 text-amber-700 space-y-1">
+                        <li>Extending feedback windows for specific users</li>
+                        <li>Testing feedback forms outside of the normal collection period</li>
+                        <li>Allowing a user to resubmit feedback in special circumstances</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center p-8 text-gray-500">
+                    Search for a user to manage their feedback eligibility.
                   </div>
                 )}
               </div>

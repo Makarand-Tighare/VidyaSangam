@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Loader2 } from "lucide-react"
+import { Loader2, Star, AlertCircle } from "lucide-react"
 import axios from 'axios'
 import { toast } from 'sonner'
 
@@ -91,6 +91,47 @@ function Profile() {
   const [approvalStatus, setApprovalStatus] = useState('');
   const [participantStatus, setParticipantStatus] = useState('');
 
+  // Add feedback-related state
+  const [feedbackEligibility, setFeedbackEligibility] = useState({
+    mentor_feedback_eligible: false,
+    app_feedback_eligible: false,
+    allow_anonymous_feedback: false,
+    is_mentee: false,
+    already_submitted_mentor_feedback: false,
+    already_submitted_app_feedback: false,
+    window: null
+  });
+  
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [feedbackType, setFeedbackType] = useState(''); // 'mentor' or 'app'
+  
+  const [mentorFeedback, setMentorFeedback] = useState({
+    communication_rating: 0,
+    knowledge_rating: 0,
+    availability_rating: 0,
+    helpfulness_rating: 0,
+    overall_rating: 0,
+    strengths: '',
+    areas_for_improvement: '',
+    additional_comments: '',
+    anonymous: false,
+    isSubmitting: false
+  });
+  
+  const [appFeedback, setAppFeedback] = useState({
+    usability_rating: 0,
+    features_rating: 0,
+    performance_rating: 0,
+    overall_rating: 0,
+    nps_score: 7, // Default NPS score
+    what_you_like: '',
+    what_to_improve: '',
+    feature_requests: '',
+    additional_comments: '',
+    anonymous: false,
+    isSubmitting: false
+  });
+  
   // Check auth first before making any API calls
   useEffect(() => {
     const checkAuth = async () => {
@@ -1010,6 +1051,259 @@ function Profile() {
     });
   };
 
+  // Check feedback eligibility when user is loaded
+  useEffect(() => {
+    if (formData.registrationNumber) {
+      checkFeedbackEligibility();
+    }
+  }, [formData.registrationNumber]);
+  
+  // Check if user is eligible to submit feedback
+  const checkFeedbackEligibility = async () => {
+    try {
+      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/feedback/eligibility/${formData.registrationNumber}/`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to check feedback eligibility');
+      }
+      
+      const data = await response.json();
+      setFeedbackEligibility(data);
+      
+    } catch (error) {
+      console.error('Error checking feedback eligibility:', error);
+      // Default to not eligible if there's an error
+      setFeedbackEligibility({
+        mentor_feedback_eligible: false,
+        app_feedback_eligible: false,
+        allow_anonymous_feedback: false,
+        is_mentee: false,
+        already_submitted_mentor_feedback: false,
+        already_submitted_app_feedback: false,
+        window: null
+      });
+    }
+  };
+  
+  // Handle mentor feedback input changes
+  const handleMentorFeedbackChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setMentorFeedback(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+  
+  // Handle mentor feedback rating changes
+  const handleMentorRatingChange = (name, value) => {
+    setMentorFeedback(prev => ({
+      ...prev,
+      [name]: parseInt(value)
+    }));
+  };
+  
+  // Handle app feedback input changes
+  const handleAppFeedbackChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setAppFeedback(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+  
+  // Handle app feedback rating changes
+  const handleAppRatingChange = (name, value) => {
+    setAppFeedback(prev => ({
+      ...prev,
+      [name]: parseInt(value)
+    }));
+  };
+  
+  // Open feedback dialog
+  const openFeedbackDialog = (type) => {
+    setFeedbackType(type);
+    setFeedbackDialogOpen(true);
+  };
+  
+  // Submit mentor feedback
+  const submitMentorFeedback = async (e) => {
+    e.preventDefault();
+    
+    // Validate ratings
+    if (mentorFeedback.communication_rating === 0 ||
+        mentorFeedback.knowledge_rating === 0 ||
+        mentorFeedback.availability_rating === 0 ||
+        mentorFeedback.helpfulness_rating === 0 ||
+        mentorFeedback.overall_rating === 0) {
+      toast.error("Please provide ratings for all categories");
+      return;
+    }
+    
+    setMentorFeedback(prev => ({ ...prev, isSubmitting: true }));
+    
+    try {
+      const payload = {
+        mentee_id: formData.registrationNumber,
+        communication_rating: mentorFeedback.communication_rating,
+        knowledge_rating: mentorFeedback.knowledge_rating,
+        availability_rating: mentorFeedback.availability_rating,
+        helpfulness_rating: mentorFeedback.helpfulness_rating,
+        overall_rating: mentorFeedback.overall_rating,
+        strengths: mentorFeedback.strengths,
+        areas_for_improvement: mentorFeedback.areas_for_improvement,
+        additional_comments: mentorFeedback.additional_comments,
+        anonymous: mentorFeedback.anonymous
+      };
+      
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/mentor/submit/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit mentor feedback');
+      }
+      
+      const data = await response.json();
+      
+      // Update feedback eligibility to reflect submission
+      setFeedbackEligibility(prev => ({
+        ...prev,
+        already_submitted_mentor_feedback: true
+      }));
+      
+      // Show success message
+      toast.success("Mentor feedback submitted successfully!");
+      
+      // Reset form and close dialog
+      resetMentorFeedback();
+      setFeedbackDialogOpen(false);
+      
+    } catch (error) {
+      console.error('Error submitting mentor feedback:', error);
+      toast.error(error.message || 'Failed to submit feedback. Please try again.');
+    } finally {
+      setMentorFeedback(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+  
+  // Submit app feedback
+  const submitAppFeedback = async (e) => {
+    e.preventDefault();
+    
+    // Validate ratings
+    if (appFeedback.usability_rating === 0 ||
+        appFeedback.features_rating === 0 ||
+        appFeedback.performance_rating === 0 ||
+        appFeedback.overall_rating === 0) {
+      toast.error("Please provide ratings for all categories");
+      return;
+    }
+    
+    setAppFeedback(prev => ({ ...prev, isSubmitting: true }));
+    
+    try {
+      const payload = {
+        participant_id: formData.registrationNumber,
+        usability_rating: appFeedback.usability_rating,
+        features_rating: appFeedback.features_rating,
+        performance_rating: appFeedback.performance_rating,
+        overall_rating: appFeedback.overall_rating,
+        nps_score: appFeedback.nps_score,
+        what_you_like: appFeedback.what_you_like,
+        what_to_improve: appFeedback.what_to_improve,
+        feature_requests: appFeedback.feature_requests,
+        additional_comments: appFeedback.additional_comments,
+        anonymous: appFeedback.anonymous
+      };
+      
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/app/submit/', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to submit application feedback');
+      }
+      
+      const data = await response.json();
+      
+      // Update feedback eligibility to reflect submission
+      setFeedbackEligibility(prev => ({
+        ...prev,
+        already_submitted_app_feedback: true
+      }));
+      
+      // Show success message
+      toast.success("Application feedback submitted successfully!");
+      
+      // Reset form and close dialog
+      resetAppFeedback();
+      setFeedbackDialogOpen(false);
+      
+    } catch (error) {
+      console.error('Error submitting application feedback:', error);
+      toast.error(error.message || 'Failed to submit feedback. Please try again.');
+    } finally {
+      setAppFeedback(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+  
+  // Reset mentor feedback form
+  const resetMentorFeedback = () => {
+    setMentorFeedback({
+      communication_rating: 0,
+      knowledge_rating: 0,
+      availability_rating: 0,
+      helpfulness_rating: 0,
+      overall_rating: 0,
+      strengths: '',
+      areas_for_improvement: '',
+      additional_comments: '',
+      anonymous: false,
+      isSubmitting: false
+    });
+  };
+  
+  // Reset app feedback form
+  const resetAppFeedback = () => {
+    setAppFeedback({
+      usability_rating: 0,
+      features_rating: 0,
+      performance_rating: 0,
+      overall_rating: 0,
+      nps_score: 7,
+      what_you_like: '',
+      what_to_improve: '',
+      feature_requests: '',
+      additional_comments: '',
+      anonymous: false,
+      isSubmitting: false
+    });
+  };
+  
+  // Render rating component for feedback forms
+  const renderRatingSelector = (label, name, value, onChange) => (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium text-gray-700">{label}</Label>
+      <div className="flex items-center space-x-1">
+        {[1, 2, 3, 4, 5].map((rating) => (
+          <button
+            key={rating}
+            type="button"
+            className={`p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 ${rating <= value ? 'text-yellow-500' : 'text-gray-300'}`}
+            onClick={() => onChange(name, rating)}
+          >
+            <Star className="h-6 w-6 fill-current" />
+          </button>
+        ))}
+        <span className="ml-2 text-sm text-gray-600">
+          {value > 0 ? `${value}/5` : 'Not rated'}
+        </span>
+      </div>
+    </div>
+  );
+
   // Render profile page with loading state
   if (isInitializing || loadingProfile) {
     return (
@@ -1778,6 +2072,87 @@ function Profile() {
               </CardContent>
             </Card>
           )}
+
+          {/* Feedback Card - Show if eligible for any type of feedback */}
+          {(feedbackEligibility.mentor_feedback_eligible || feedbackEligibility.app_feedback_eligible) && (
+            <Card className="md:col-span-3 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-xl">Feedback</CardTitle>
+                <p className="text-sm text-gray-500">
+                  {feedbackEligibility.window && (
+                    <>Feedback window is open until {new Date(feedbackEligibility.window.end_date).toLocaleDateString()}</>
+                  )}
+                </p>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Mentor Feedback Card */}
+                  {feedbackEligibility.mentor_feedback_eligible && mentorMenteeData.mentor && (
+                    <div className={`p-6 rounded-lg border ${feedbackEligibility.already_submitted_mentor_feedback 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-blue-50 border-blue-200'}`}>
+                      <h3 className="text-lg font-semibold mb-2">
+                        Mentor Feedback
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        {feedbackEligibility.already_submitted_mentor_feedback 
+                          ? 'You have already submitted feedback for your mentor.' 
+                          : `Share your experience working with ${mentorMenteeData.mentor.name}.`}
+                      </p>
+                      
+                      {feedbackEligibility.already_submitted_mentor_feedback ? (
+                        <div className="flex items-center text-green-600 gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span>Feedback submitted</span>
+                        </div>
+                      ) : (
+                        <Button 
+                          onClick={() => openFeedbackDialog('mentor')}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          Provide Mentor Feedback
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Application Feedback Card */}
+                  {feedbackEligibility.app_feedback_eligible && (
+                    <div className={`p-6 rounded-lg border ${feedbackEligibility.already_submitted_app_feedback 
+                      ? 'bg-green-50 border-green-200' 
+                      : 'bg-purple-50 border-purple-200'}`}>
+                      <h3 className="text-lg font-semibold mb-2">
+                        Application Feedback
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-4">
+                        {feedbackEligibility.already_submitted_app_feedback 
+                          ? 'You have already submitted feedback for the application.' 
+                          : 'Help us improve by sharing your thoughts on the platform.'}
+                      </p>
+                      
+                      {feedbackEligibility.already_submitted_app_feedback ? (
+                        <div className="flex items-center text-green-600 gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                          <span>Feedback submitted</span>
+                        </div>
+                      ) : (
+                        <Button 
+                          onClick={() => openFeedbackDialog('app')}
+                          className="bg-purple-600 hover:bg-purple-700"
+                        >
+                          Provide Application Feedback
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
 
@@ -1944,6 +2319,281 @@ function Profile() {
               Close
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Feedback Dialog */}
+      <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {feedbackType === 'mentor' ? 'Mentor Feedback' : 'Application Feedback'}
+            </DialogTitle>
+            <DialogDescription>
+              {feedbackType === 'mentor' 
+                ? 'Share your experience working with your mentor. Your feedback helps improve the mentoring program.'
+                : 'Share your thoughts on the platform. Your feedback helps us improve the user experience.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {feedbackType === 'mentor' ? (
+            <form onSubmit={submitMentorFeedback} className="space-y-6 py-4">
+              <div className="space-y-4">
+                {/* Mentor Ratings */}
+                {renderRatingSelector('Communication', 'communication_rating', mentorFeedback.communication_rating, handleMentorRatingChange)}
+                {renderRatingSelector('Technical Knowledge', 'knowledge_rating', mentorFeedback.knowledge_rating, handleMentorRatingChange)}
+                {renderRatingSelector('Availability & Responsiveness', 'availability_rating', mentorFeedback.availability_rating, handleMentorRatingChange)}
+                {renderRatingSelector('Helpfulness', 'helpfulness_rating', mentorFeedback.helpfulness_rating, handleMentorRatingChange)}
+                {renderRatingSelector('Overall Experience', 'overall_rating', mentorFeedback.overall_rating, handleMentorRatingChange)}
+                
+                {/* Strengths */}
+                <div className="space-y-2">
+                  <Label htmlFor="strengths" className="text-sm font-medium text-gray-700">
+                    What are your mentor's strengths?
+                  </Label>
+                  <Textarea
+                    id="strengths"
+                    name="strengths"
+                    placeholder="E.g., technical expertise, communication style, teaching ability..."
+                    value={mentorFeedback.strengths}
+                    onChange={handleMentorFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Areas for Improvement */}
+                <div className="space-y-2">
+                  <Label htmlFor="areas_for_improvement" className="text-sm font-medium text-gray-700">
+                    Areas for improvement (optional)
+                  </Label>
+                  <Textarea
+                    id="areas_for_improvement"
+                    name="areas_for_improvement"
+                    placeholder="What could your mentor improve on?"
+                    value={mentorFeedback.areas_for_improvement}
+                    onChange={handleMentorFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Additional Comments */}
+                <div className="space-y-2">
+                  <Label htmlFor="additional_comments" className="text-sm font-medium text-gray-700">
+                    Additional comments (optional)
+                  </Label>
+                  <Textarea
+                    id="additional_comments"
+                    name="additional_comments"
+                    placeholder="Any other thoughts you'd like to share..."
+                    value={mentorFeedback.additional_comments}
+                    onChange={handleMentorFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Anonymous Option */}
+                {feedbackEligibility.allow_anonymous_feedback && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="anonymous"
+                      name="anonymous"
+                      checked={mentorFeedback.anonymous}
+                      onChange={handleMentorFeedbackChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label htmlFor="anonymous" className="text-sm font-medium text-gray-700">
+                      Submit feedback anonymously
+                    </Label>
+                  </div>
+                )}
+                
+                {/* Notice */}
+                <div className="bg-blue-50 p-3 rounded-md flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <p className="text-xs text-blue-700">
+                    Your honest feedback is valuable for improving the mentoring program. 
+                    {mentorFeedback.anonymous 
+                      ? ' Your identity will be kept anonymous when sharing this feedback with your mentor.'
+                      : ' Your mentor will be able to see your name with this feedback.'}
+                  </p>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setFeedbackDialogOpen(false)}
+                  disabled={mentorFeedback.isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={mentorFeedback.isSubmitting}
+                >
+                  {mentorFeedback.isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Feedback'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <form onSubmit={submitAppFeedback} className="space-y-6 py-4">
+              <div className="space-y-4">
+                {/* App Ratings */}
+                {renderRatingSelector('Usability', 'usability_rating', appFeedback.usability_rating, handleAppRatingChange)}
+                {renderRatingSelector('Features & Functionality', 'features_rating', appFeedback.features_rating, handleAppRatingChange)}
+                {renderRatingSelector('Performance & Reliability', 'performance_rating', appFeedback.performance_rating, handleAppRatingChange)}
+                {renderRatingSelector('Overall Experience', 'overall_rating', appFeedback.overall_rating, handleAppRatingChange)}
+                
+                {/* NPS Score */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    How likely are you to recommend this platform to others? (0-10)
+                  </Label>
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      id="nps_score"
+                      name="nps_score"
+                      min="0"
+                      max="10"
+                      value={appFeedback.nps_score}
+                      onChange={handleAppFeedbackChange}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>0</span>
+                      <span className="text-center">{appFeedback.nps_score}</span>
+                      <span>10</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span>Not likely</span>
+                      <span>Very likely</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* What You Like */}
+                <div className="space-y-2">
+                  <Label htmlFor="what_you_like" className="text-sm font-medium text-gray-700">
+                    What do you like about the platform?
+                  </Label>
+                  <Textarea
+                    id="what_you_like"
+                    name="what_you_like"
+                    placeholder="E.g., user interface, specific features, ease of use..."
+                    value={appFeedback.what_you_like}
+                    onChange={handleAppFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* What to Improve */}
+                <div className="space-y-2">
+                  <Label htmlFor="what_to_improve" className="text-sm font-medium text-gray-700">
+                    What could be improved?
+                  </Label>
+                  <Textarea
+                    id="what_to_improve"
+                    name="what_to_improve"
+                    placeholder="Any aspects of the platform you find challenging or frustrating?"
+                    value={appFeedback.what_to_improve}
+                    onChange={handleAppFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Feature Requests */}
+                <div className="space-y-2">
+                  <Label htmlFor="feature_requests" className="text-sm font-medium text-gray-700">
+                    Feature requests (optional)
+                  </Label>
+                  <Textarea
+                    id="feature_requests"
+                    name="feature_requests"
+                    placeholder="Any features or functionality you'd like to see added?"
+                    value={appFeedback.feature_requests}
+                    onChange={handleAppFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Additional Comments */}
+                <div className="space-y-2">
+                  <Label htmlFor="additional_comments" className="text-sm font-medium text-gray-700">
+                    Additional comments (optional)
+                  </Label>
+                  <Textarea
+                    id="additional_comments"
+                    name="additional_comments"
+                    placeholder="Any other thoughts you'd like to share..."
+                    value={appFeedback.additional_comments}
+                    onChange={handleAppFeedbackChange}
+                    className="min-h-[80px]"
+                  />
+                </div>
+                
+                {/* Anonymous Option */}
+                {feedbackEligibility.allow_anonymous_feedback && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="anonymous"
+                      name="anonymous"
+                      checked={appFeedback.anonymous}
+                      onChange={handleAppFeedbackChange}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <Label htmlFor="anonymous" className="text-sm font-medium text-gray-700">
+                      Submit feedback anonymously
+                    </Label>
+                  </div>
+                )}
+                
+                {/* Notice */}
+                <div className="bg-purple-50 p-3 rounded-md flex items-start space-x-2">
+                  <AlertCircle className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <p className="text-xs text-purple-700">
+                    Your feedback helps us improve the platform. All feedback is reviewed by our development team.
+                  </p>
+                </div>
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setFeedbackDialogOpen(false)}
+                  disabled={appFeedback.isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="bg-purple-600 hover:bg-purple-700"
+                  disabled={appFeedback.isSubmitting}
+                >
+                  {appFeedback.isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Feedback'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
         </DialogContent>
       </Dialog>
     </div>
