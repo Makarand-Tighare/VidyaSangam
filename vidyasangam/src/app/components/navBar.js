@@ -64,15 +64,7 @@ export default function NavBar() {
             Home
           </span>
         </Link>
-        <Link
-          href="/mentoring-form"
-          onClick={closeMenu}
-          className="relative group"
-        >
-          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
-            Be a Part
-          </span>
-        </Link>
+        
         <Link href="/sessions" onClick={closeMenu} className="relative group">
           <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
             Sessions
@@ -92,6 +84,18 @@ export default function NavBar() {
             Leaderboard
           </span>
         </Link>
+
+        <Link
+          href="/mentoring-form"
+          onClick={closeMenu}
+          className="relative group"
+        >
+          <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">
+          Apply Now
+          </span>
+        </Link>
+
+        
         {isLoggedIn ? (
           <>
             {isAdmin && (
@@ -105,6 +109,8 @@ export default function NavBar() {
                 </span>
               </Link>
             )}
+            
+            
             <Link
               href="/profile"
               onClick={closeMenu}

@@ -50,8 +50,8 @@ function QuizContent() {
       try {
         // If we're viewing results, use the quiz-results endpoint
         const endpoint = viewResults 
-          ? `http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/` 
-          : `http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`;
+          ? `http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/` 
+          : `http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`;
         
         const response = await fetch(endpoint);
         
@@ -181,7 +181,7 @@ function QuizContent() {
   
   const submitQuizResult = async (finalScore, answers) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/submit-quiz/', {
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/submit/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

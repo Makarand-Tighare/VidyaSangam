@@ -2,34 +2,35 @@ import { Comfortaa, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "./lib/useAuth";
+import { Toaster } from "sonner";
 
 // Load the Google Fonts with specific weights and subsets
 const comfortaa = Comfortaa({
   subsets: ["latin"],
   weight: ["400", "700"],
   variable: "--font-comfortaa",
-  adjustFontFallback: false,
+  display: "swap", // Optimize font loading
 });
 
 const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-poppins",
-  adjustFontFallback: false,
+  display: "swap", // Optimize font loading
 });
 
 const roboto = Roboto({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "700"],
   variable: "--font-roboto",
-  adjustFontFallback: false,
+  display: "swap", // Optimize font loading
 });
 
 // Metadata for the Vidyasangam platform
 export const metadata = {
-  title: "Vidya Sangam",
+  title: "VidyaSangam - Mentor-Mentee Platform",
   description:
-    "Empowering students to bridge the gap between academia and industry.",
+    "Empowering mentors to guide, and mentees to grow in a collaborative ecosystem designed for academic excellence.",
   icons: {
     icon: [
       {
@@ -69,10 +70,34 @@ export default function RootLayout({ children }) {
         />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
-      {/* <body className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-r from-orange-50 from-10% via-violet-100 via-30% mb-0 pb-0`}> */}
       <body
-        className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] h-full mb-0 pb-0`}
+        className={`${poppins.variable} ${comfortaa.variable} ${roboto.variable} bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 min-h-screen`}
+        style={{
+          backgroundImage: `
+            linear-gradient(to bottom right, rgba(238, 242, 255, 0.9), rgba(224, 231, 255, 0.9), rgba(238, 242, 255, 0.9)), 
+            url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%234f46e5' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+          `,
+          backgroundAttachment: "fixed"
+        }}
       >
+        {/* Sonner Toast Container with themed colors */}
+        <Toaster 
+          position="top-right" 
+          richColors 
+          toastOptions={{
+            style: {
+              background: 'white',
+              border: '1px solid #e5edff',
+              boxShadow: '0 4px 12px rgba(79, 70, 229, 0.1)'
+            },
+            success: {
+              style: {
+                background: 'linear-gradient(to right, #4f46e5, #3b82f6)',
+                color: 'white'
+              }
+            }
+          }}
+        />
 
         {/* Google Analytics Scripts */}
         <Script

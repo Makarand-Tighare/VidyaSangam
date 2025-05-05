@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { Trophy, Users, CheckSquare, MessageSquare, Search, X, Loader2 } from 'lucide-react'
+import { Trophy, Users, CheckSquare, MessageSquare, Search, X, Loader2, RefreshCw, Shield } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -9,14 +9,19 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import NavBar from '../components/navBar'
 import { useRouter } from 'next/navigation';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { toast } from 'sonner';
 
 export default function Leaderboard() {
   const [searchQuery, setSearchQuery] = useState('')
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('')
   const [leaderboardData, setLeaderboardData] = useState([])
   const [isLoading, setIsLoading] = useState(true)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [isRecalculating, setIsRecalculating] = useState(false)
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState("mentors") // Default to mentors tab
+  const [lastRecalculatedAt, setLastRecalculatedAt] = useState(null)
   const router = useRouter();
   
   // Check if the user is logged in
@@ -26,206 +31,90 @@ export default function Leaderboard() {
       // If user is not logged in, redirect to the login page
       router.push("/login");
     } else {
-      // If user is logged in, fetch leaderboard data
-      fetchLeaderboardData();
-    }
-  }, [router]);
-
-  // Fetch leaderboard data from existing APIs
-  const fetchLeaderboardData = async () => {
-    try {
-      setIsLoading(true);
-      const authToken = localStorage.getItem("authToken");
-      
-      // Fetch list of all participants
-      const participantsResponse = await fetch('http://127.0.0.1:8000/api/mentor_mentee/list_participants/', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-      
-      if (!participantsResponse.ok) {
-        throw new Error('Failed to fetch participants data');
-      }
-      
-      const participantsData = await participantsResponse.json();
-      
-      // Include all participants with proper role determination
-      const participants = participantsData.map(participant => {
-        // Determine actual role based on relationships:
-        // - If participant has mentees array and it's not empty -> actual role is Mentor
-        // - If participant has mentor object -> actual role is Mentee
-        // - Otherwise use their preference
-        let actualRole = participant.mentoring_preferences?.toLowerCase() || 'unknown';
-        
-        // If they have a mentor, they're definitely a mentee (regardless of preference)
-        if (participant.mentor) {
-          actualRole = 'mentee';
-        }
-        
-        // If they have mentees, they're definitely a mentor (regardless of preference)
-        if (participant.mentees && participant.mentees.length > 0) {
-          actualRole = 'mentor';
-        }
-        
-        return {
-          id: participant.registration_no,
-          name: participant.name,
-          preference: participant.mentoring_preferences?.toLowerCase(),
-          role: actualRole,
-          mentor: participant.mentor ? participant.mentor.name : 'Not assigned',
-          mentorId: participant.mentor ? participant.mentor.registration_no : null,
-          mentees: participant.mentees || [],
-          branch: participant.branch,
-          semester: participant.semester,
-          techStack: participant.tech_stack
-        };
-      });
-      
-      // Create an array to hold participant data with scores
-      const participantsWithScores = [];
-      
-      // Store mentee quiz data to calculate mentor scores
-      const menteeQuizData = {};
-      
-      // First pass: process mentees and store their quiz data
-      for (const participant of participants) {
-        if (participant.role === 'mentee') {
-          try {
-            // Get completed quizzes
-            const quizResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${participant.id}/`, {
-              headers: {
-                'Authorization': `Bearer ${authToken}`
-              }
-            });
-            
-            let quizData = [];
-            if (quizResponse.ok) {
-              quizData = await quizResponse.json();
-            }
-            
-            // Store quiz data for this mentee
-            menteeQuizData[participant.id] = {
-              completedQuizzes: quizData.length,
-              averageScore: quizData.length > 0 ? 
-                quizData.reduce((sum, quiz) => sum + (quiz.percentage || 0), 0) / quizData.length : 0
-            };
-          } catch (error) {
-            console.error(`Error fetching quiz data for mentee ${participant.name}:`, error);
-            menteeQuizData[participant.id] = { completedQuizzes: 0, averageScore: 0 };
-          }
-        }
-      }
-      
-      // For each participant, fetch their quiz results and sessions
-      for (const participant of participants) {
+      // First recalculate points, then fetch leaderboard data
+      (async () => {
         try {
-          // Initialize variables for participant data
-          let completedQuizzes = 0;
-          let averageScore = 0;
-          let totalScore = 0;
-          
-          // For mentees, get their own quiz data
-          if (participant.role === 'mentee') {
-            const quizData = menteeQuizData[participant.id] || { completedQuizzes: 0, averageScore: 0 };
-            completedQuizzes = quizData.completedQuizzes;
-            averageScore = quizData.averageScore;
-          } 
-          // For mentors, calculate based on their mentees' quiz performance
-          else if (participant.role === 'mentor') {
-            let menteeQuizCount = 0;
-            let menteeScoreSum = 0;
-            
-            // Calculate based on all mentees' quiz performance
-            participant.mentees.forEach(mentee => {
-              const menteeData = menteeQuizData[mentee.registration_no];
-              if (menteeData) {
-                menteeQuizCount += menteeData.completedQuizzes;
-                menteeScoreSum += menteeData.averageScore * menteeData.completedQuizzes;
-              }
-            });
-            
-            completedQuizzes = menteeQuizCount;
-            averageScore = menteeQuizCount > 0 ? menteeScoreSum / menteeQuizCount : 0;
-          }
-          
-          // Get sessions
-          const sessionsResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/sessions/user/${participant.id}/`, {
+          setIsRecalculating(true);
+          const recalculateResponse = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/calculate/', {
             headers: {
               'Authorization': `Bearer ${authToken}`
             }
           });
           
-          let sessionsData = [];
-          if (sessionsResponse.ok) {
-            sessionsData = await sessionsResponse.json();
+          if (recalculateResponse.ok) {
+            const result = await recalculateResponse.json();
+            console.log("Points recalculated automatically:", result.message);
+            
+            // Show a toast notification that points have been recalculated
+            toast.success("Leaderboard points automatically recalculated", {
+              description: "Rankings are now up-to-date with the latest activities",
+              duration: 3000
+            });
+            
+            // Set the last recalculation timestamp
+            setLastRecalculatedAt(new Date());
           }
           
-          // Count the number of sessions - each session in the API response counts as one
-          const sessionsAttended = sessionsData.length;
+          // Fetch the leaderboard data after recalculation
+          fetchLeaderboardData();
           
-          // Calculate overall score 
-          // For mentors: sessions are worth 100 points each, mentee quizzes worth 20 points each
-          // For mentees: sessions are worth 100 points each, quizzes are worth 50 points each
-          const quizValue = participant.role === 'mentor' ? 20 : 50;
-          const overallScore = (sessionsAttended * 100) + (completedQuizzes * quizValue) + Math.round(averageScore * 5);
-          
-          // Add participant to the array with mentor/mentee info
-          participantsWithScores.push({
-            id: participant.id,
-            name: participant.name,
-            preference: participant.preference,
-            role: participant.role,
-            mentorName: participant.mentor,
-            mentorId: participant.mentorId,
-            menteesCount: participant.mentees.length,
-            branch: participant.branch,
-            semester: participant.semester,
-            techStack: participant.techStack,
-            score: overallScore,
-            sessionsAttended: sessionsAttended,
-            tasksCompleted: completedQuizzes,
-            averageScore: averageScore,
-            feedbackGiven: calculateFeedbackLevel(averageScore)
-          });
         } catch (error) {
-          console.error(`Error fetching data for participant ${participant.name}:`, error);
-          // Continue with the next participant with basic information
-          participantsWithScores.push({
-            id: participant.id,
-            name: participant.name,
-            preference: participant.preference,
-            role: participant.role,
-            mentorName: participant.mentor,
-            mentorId: participant.mentorId,
-            menteesCount: participant.mentees.length,
-            branch: participant.branch,
-            semester: participant.semester,
-            techStack: participant.techStack,
-            score: 0,
-            sessionsAttended: 0,
-            tasksCompleted: 0,
-            averageScore: 0,
-            feedbackGiven: 'No Data'
-          });
+          console.error("Error auto-recalculating points:", error);
+          // Don't show error toast to avoid confusion
+          // Fall back to regular fetch
+          fetchLeaderboardData();
+        } finally {
+          setIsRecalculating(false);
         }
+      })();
+    }
+  }, [router, activeTab]);
+
+  // Fetch leaderboard data from the API
+  const fetchLeaderboardData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const authToken = localStorage.getItem("authToken");
+      
+      // Use the new GET leaderboard API endpoint with role filter
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/leaderboard/?role=${activeTab.slice(0, -1)}&search=${debouncedSearchQuery}`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch leaderboard data');
+      }
+        
+      const data = await response.json();
+      
+      // Log raw data for debugging
+      console.clear();
+      console.log("===== LEADERBOARD API RESPONSE =====");
+      console.log(JSON.stringify(data, null, 2));
+      
+      // Get sample object to inspect structure
+      if (data.length > 0) {
+        console.log("Sample participant object keys:", Object.keys(data[0]));
       }
       
-      // Sort participants by score (highest first)
-      participantsWithScores.sort((a, b) => b.score - a.score);
+      // Create a new array to hold processed data
+      let processedData = [...data];
       
-      // Update state with the results
-      setLeaderboardData(participantsWithScores);
-      setError(null);
+      // No need to fetch mentor names as they're already in the API response
+      
+      setLeaderboardData(processedData);
     } catch (error) {
-      console.error('Error building leaderboard data:', error);
+      console.error('Error fetching leaderboard data:', error);
       setError('Failed to load leaderboard data. Please try again later.');
       
-      // Fallback data in case all APIs fail
+      // Fallback data in case the API fails
       const fallbackData = [
-        { id: 1, name: "Makarand Tighare", mentorName: "Raj Singh", score: 1250, sessionsAttended: 15, tasksCompleted: 12, feedbackGiven: "Excellent", role: "mentee" },
-        { id: 2, name: "Ramna Varma", mentorName: "Asha Patel", score: 1100, sessionsAttended: 12, tasksCompleted: 10, feedbackGiven: "Good", role: "mentee" },
-        { id: 3, name: "Paras Pethe", mentorName: "Raj Singh", score: 1000, sessionsAttended: 10, tasksCompleted: 9, feedbackGiven: "Very Good", role: "mentor" },
+        { id: 1, name: "Makarand Tighare", mentorName: "Raj Singh", score: 1250, sessionsAttended: 15, tasksCompleted: 12, feedbackGiven: "Excellent", role: "mentee", badges_earned: 0 },
+        { id: 2, name: "Ramna Varma", mentorName: "Asha Patel", score: 1100, sessionsAttended: 12, tasksCompleted: 10, feedbackGiven: "Good", role: "mentee", badges_earned: 1 },
+        { id: 3, name: "Paras Pethe", mentorName: "Raj Singh", score: 1000, sessionsAttended: 10, tasksCompleted: 0, assignedQuizzes: 9, feedbackGiven: "Very Good", role: "mentor", badges_earned: 2, is_super_mentor: false, menteesCount: 3 },
       ];
       setLeaderboardData(fallbackData);
     } finally {
@@ -233,37 +122,100 @@ export default function Leaderboard() {
     }
   };
   
-  // Calculate feedback level based on average score
-  const calculateFeedbackLevel = (averageScore) => {
-    if (averageScore >= 90) return "Excellent";
-    if (averageScore >= 80) return "Very Good";
-    if (averageScore >= 70) return "Good";
-    if (averageScore >= 60) return "Satisfactory";
-    return "Needs Improvement";
+  // Recalculate leaderboard points using server-side calculation
+  const recalculateLeaderboardPoints = async () => {
+    try {
+      setIsRecalculating(true);
+      const authToken = localStorage.getItem("authToken");
+      
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/calculate/', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to recalculate leaderboard points');
+      }
+      
+      const result = await response.json();
+      
+      console.log("Leaderboard calculation response:", result);
+      
+      // Check if we need to fetch fresh leaderboard data
+      const shouldFetchLeaderboard = !result.updated_participants || result.updated_participants.length === 0;
+      
+      if (shouldFetchLeaderboard) {
+        // If no updated participants, fetch fresh leaderboard data
+        await fetchLeaderboardData();
+      } else {
+        // Otherwise, use the data from the calculation response
+        toast.success(`${result.message}`);
+      }
+      
+      // Set the last recalculation timestamp
+      setLastRecalculatedAt(new Date());
+      
+    } catch (error) {
+      console.error('Error recalculating leaderboard points:', error);
+      toast.error('Failed to recalculate leaderboard points');
+      // Fallback to regular fetch
+      fetchLeaderboardData();
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+  
+  // Sync leaderboard points from frontend to backend
+  const syncLeaderboardPoints = async () => {
+    try {
+      setIsSyncing(true);
+      const authToken = localStorage.getItem("authToken");
+      
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/sync/', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          leaderboard_data: leaderboardData
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to sync leaderboard points');
+      }
+      
+      const result = await response.json();
+      toast.success(`${result.message}`);
+      
+      // Refresh the leaderboard data
+      fetchLeaderboardData();
+    } catch (error) {
+      console.error('Error syncing leaderboard points:', error);
+      toast.error('Failed to sync leaderboard points');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
+  // Debounced search query effect
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-    }, 300)
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
 
-    return () => clearTimeout(timer)
-  }, [searchQuery])
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const filteredData = leaderboardData.filter((player) => {
-    // First filter by search query (name or role)
-    const matchesSearch = player.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
-      (player.role && player.role.toLowerCase().includes(debouncedSearchQuery.toLowerCase()));
-    
-    // Then filter by active tab
-    if (activeTab === "mentors") {
-      return matchesSearch && player.role === "mentor";
-    } else if (activeTab === "mentees") {
-      return matchesSearch && player.role === "mentee";
+  // Effect to refetch data when tab or search query changes
+  useEffect(() => {
+    if (!isLoading) {
+      fetchLeaderboardData();
     }
-    
-    return matchesSearch;
-  });
+  }, [activeTab, debouncedSearchQuery]);
 
   const getRankColor = (rank) => {
     switch (rank) {
@@ -275,7 +227,7 @@ export default function Leaderboard() {
   }
 
   const getFeedbackColor = (feedback) => {
-    switch (feedback.toLowerCase()) {
+    switch (feedback?.toLowerCase()) {
       case 'excellent': return 'text-green-600'
       case 'very good': return 'text-blue-600'
       case 'good': return 'text-cyan-600'
@@ -289,16 +241,77 @@ export default function Leaderboard() {
       <NavBar />
       <div className="container mx-auto px-4 py-8">
         <Card className="shadow-xl rounded-xl overflow-hidden border-none">
-          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 w-full flex justify-center">
-            <CardTitle className="text-3xl font-bold flex items-center gap-3 justify-center">
+          <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 w-full flex justify-between items-center">
+            <CardTitle className="text-3xl font-bold flex items-center gap-3">
               <Trophy className="w-8 h-8" />
               <span>Leaderboard Rankings</span>
             </CardTitle>
+            <div className="flex gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white text-blue-700 hover:bg-blue-50"
+                      onClick={recalculateLeaderboardPoints}
+                      disabled={isRecalculating || isLoading}
+                    >
+                      {isRecalculating ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                      )}
+                      Recalculate
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Recalculate points based on all activities</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Points are automatically recalculated when the page loads
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      className="bg-white text-blue-700 hover:bg-blue-50"
+                      onClick={syncLeaderboardPoints}
+                      disabled={isSyncing || isLoading}
+                    >
+                      {isSyncing ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <Shield className="h-4 w-4 mr-2" />
+                      )}
+                      Sync Points
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sync current points to database</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
           </CardHeader>
 
           <CardContent className="p-6">
+            {/* Auto-recalculation status banner */}
+            {isRecalculating && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center text-blue-700">
+                <Loader2 className="h-5 w-5 mr-2 animate-spin text-blue-600" />
+                <p>Automatically recalculating leaderboard points for the most up-to-date rankings...</p>
+              </div>
+            )}
+            
             <div className="mb-4 flex items-center justify-between flex-wrap gap-4">
-              <div className="relative w-full md:w-1/3">
+              <div className="flex flex-col md:flex-row gap-2 items-center">
+                <div className="relative w-full md:w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
                   type="text"
@@ -316,6 +329,13 @@ export default function Leaderboard() {
                   >
                     <X className="h-4 w-4" />
                   </Button>
+                  )}
+                </div>
+                {lastRecalculatedAt && (
+                  <div className="text-xs text-gray-500 flex items-center">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Last updated: {lastRecalculatedAt.toLocaleTimeString()}
+                  </div>
                 )}
               </div>
               <Tabs 
@@ -358,20 +378,43 @@ export default function Leaderboard() {
                       </th>
                       <th className="font-bold text-lg text-center p-4">Points</th>
                       <th className="font-bold text-lg text-center p-4">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="flex items-center justify-center w-full">
                         <Users className="w-5 h-5 inline mr-2" />Sessions
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Number of mentoring sessions attended</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </th>
                       <th className="font-bold text-lg text-center p-4">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger className="flex items-center justify-center w-full">
                         <CheckSquare className="w-5 h-5 inline mr-2" />
-                        {activeTab === "mentors" ? "Mentee Quizzes" : "Quizzes"}
+                              {activeTab === "mentors" ? "Assigned Quizzes" : "Quizzes"}
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                {activeTab === "mentors" 
+                                  ? "Number of quizzes assigned to mentees" 
+                                  : "Number of quizzes completed"}
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </th>
                       <th className="font-bold text-lg text-center p-4">
                         <MessageSquare className="w-5 h-5 inline mr-2" />Performance
                       </th>
+                      <th className="font-bold text-lg text-center p-4">Badges</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredData.length > 0 ? (
-                      filteredData.map((player, index) => (
+                    {leaderboardData.length > 0 ? (
+                      leaderboardData.map((player, index) => (
                         <tr 
                           key={player.id} 
                           className="transition-colors hover:bg-blue-50/50"
@@ -385,9 +428,12 @@ export default function Leaderboard() {
                           </td>
                           <td className="text-center font-semibold text-gray-800">
                             {player.name}
+                            {player.is_super_mentor && (
+                              <Badge className="ml-2 bg-purple-600 text-white">Super Mentor</Badge>
+                            )}
                           </td>
                           <td className="text-center font-semibold text-gray-800">
-                            {player.role === 'mentor' ? 
+                            {activeTab === "mentors" ? 
                               `${player.menteesCount} mentees` : 
                               player.mentorName
                             }
@@ -396,19 +442,25 @@ export default function Leaderboard() {
                             {player.score.toLocaleString()}
                           </td>
                           <td className="text-center text-gray-700">
-                            {player.sessionsAttended}
+                            {player.sessionsAttended || 0}
                           </td>
                           <td className="text-center text-gray-700">
-                            {player.tasksCompleted}
+                            {activeTab === "mentors" 
+                              ? (player.assignedQuizzes !== undefined ? player.assignedQuizzes : 0)
+                              : (player.tasksCompleted || 0)
+                            }
                           </td>
                           <td className={`text-center font-medium ${getFeedbackColor(player.feedbackGiven)}`}>
                             {player.feedbackGiven}
+                          </td>
+                          <td className="text-center text-gray-700">
+                            {player.badges_earned || 0}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-gray-500">
+                        <td colSpan={8} className="text-center py-8 text-gray-500">
                           {searchQuery ? "No results found" : `No ${activeTab === "mentors" ? "mentor" : "mentee"} leaderboard data available`}
                         </td>
                       </tr>

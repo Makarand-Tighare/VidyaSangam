@@ -10,8 +10,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { toast } from "@/components/ui/toast"
 import { Loader2 } from "lucide-react"
+import axios from 'axios'
+import { toast } from 'sonner'
 
 import NavBar from '../components/navBar'
 import LinkedInButton from '../components/linkedinButton';
@@ -79,6 +80,15 @@ function Profile() {
 
   const [quizDetailsDialogOpen, setQuizDetailsDialogOpen] = useState(false);
   const [selectedMenteeDetails, setSelectedMenteeDetails] = useState(null);
+
+  // Add state for badges
+  const [badges, setBadges] = useState([]);
+  const [userBadges, setUserBadges] = useState([]);
+  const [isLoadingBadges, setIsLoadingBadges] = useState(false);
+  const [isClaimingBadge, setIsClaimingBadge] = useState(false);
+  const [userPoints, setUserPoints] = useState(0);
+  const [approvalStatus, setApprovalStatus] = useState('');
+  const [participantStatus, setParticipantStatus] = useState('');
 
   // Check auth first before making any API calls
   useEffect(() => {
@@ -319,7 +329,7 @@ function Profile() {
     setTaskData(prev => ({ ...prev, isLoading: true }));
   
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/generate-quiz/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/generate/', {
         method: 'POST',
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
@@ -518,7 +528,7 @@ function Profile() {
   // Submit completed quiz to the server
   const submitQuiz = async (registrationNo, quizId, userAnswers) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/submit-quiz/', {
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/submit/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -547,7 +557,7 @@ function Profile() {
   const fetchMenteeQuizHistory = async (menteeId) => {
     try {
       // Fetch both pending and completed quizzes
-      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -559,7 +569,7 @@ function Profile() {
       
       const pendingQuizzes = await pendingResponse.json();
       
-      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -583,20 +593,28 @@ function Profile() {
         participant_name: quiz.participant_name
       }));
       
-      const formattedCompletedQuizzes = completedQuizzes.map(quiz => ({
-        id: quiz.id,
-        title: quiz.quiz_topic,
-        description: `Quiz with ${quiz.total_questions} questions`,
-        questions: quiz.quiz_data,
-        total_marks: quiz.total_questions,
-        created_at: quiz.quiz_date,
-        status: 'completed',
-        participant_name: quiz.participant_name,
-        score: quiz.score,
-        percentage: quiz.percentage,
-        quiz_answers: quiz.quiz_answers,
-        result_details: quiz.result_details
-      }));
+      // Only include completed quizzes that have actually been attempted (have answers or score > 0)
+      const formattedCompletedQuizzes = completedQuizzes
+        .filter(quiz => {
+          // Check if quiz has been actually attempted
+          const hasAnswers = quiz.quiz_answers && Object.keys(quiz.quiz_answers).length > 0;
+          const hasScore = quiz.score > 0;
+          return hasAnswers || hasScore;
+        })
+        .map(quiz => ({
+          id: quiz.id,
+          title: quiz.quiz_topic,
+          description: `Quiz with ${quiz.total_questions} questions`,
+          questions: quiz.quiz_data,
+          total_marks: quiz.total_questions,
+          created_at: quiz.quiz_date,
+          status: 'completed',
+          participant_name: quiz.participant_name,
+          score: quiz.score,
+          percentage: quiz.percentage,
+          quiz_answers: quiz.quiz_answers,
+          result_details: quiz.result_details
+        }));
       
       // Combine all quizzes
       const allQuizzes = [...formattedPendingQuizzes, ...formattedCompletedQuizzes];
@@ -617,7 +635,7 @@ function Profile() {
   // Get quiz history for a user
   const getQuizHistory = async (registrationNo) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${registrationNo}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${registrationNo}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -638,7 +656,7 @@ function Profile() {
   // Fetch pending quizzes for a mentee
   const fetchPendingQuizzes = async (menteeId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/pending-quizzes/${menteeId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -651,7 +669,7 @@ function Profile() {
       const pendingQuizzes = await response.json();
       
       // Fetch completed quizzes
-      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz-results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -675,20 +693,28 @@ function Profile() {
         participant_name: quiz.participant_name
       }));
       
-      const formattedCompletedQuizzes = completedQuizzes.map(quiz => ({
-        id: quiz.id,
-        title: quiz.quiz_topic,
-        description: `Quiz with ${quiz.total_questions} questions`,
-        questions: quiz.quiz_data,
-        total_marks: quiz.total_questions,
-        created_at: quiz.quiz_date,
-        status: 'completed',
-        participant_name: quiz.participant_name,
-        score: quiz.score,
-        percentage: quiz.percentage,
-        quiz_answers: quiz.quiz_answers,
-        result_details: quiz.result_details
-      }));
+      // Only include completed quizzes that have actually been attempted (have answers or score > 0)
+      const formattedCompletedQuizzes = completedQuizzes
+        .filter(quiz => {
+          // Check if quiz has been actually attempted
+          const hasAnswers = quiz.quiz_answers && Object.keys(quiz.quiz_answers).length > 0;
+          const hasScore = quiz.score > 0;
+          return hasAnswers || hasScore;
+        })
+        .map(quiz => ({
+          id: quiz.id,
+          title: quiz.quiz_topic,
+          description: `Quiz with ${quiz.total_questions} questions`,
+          questions: quiz.quiz_data,
+          total_marks: quiz.total_questions,
+          created_at: quiz.quiz_date,
+          status: 'completed',
+          participant_name: quiz.participant_name,
+          score: quiz.score,
+          percentage: quiz.percentage,
+          quiz_answers: quiz.quiz_answers,
+          result_details: quiz.result_details
+        }));
       
       // Combine pending and completed quizzes
       const allQuizzes = [...formattedPendingQuizzes, ...formattedCompletedQuizzes];
@@ -754,7 +780,7 @@ function Profile() {
       // Determine user role based on formData.status
       const userRole = formData.status === 'Mentor' ? 'mentor' : 'mentee';
       
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/delete-quiz/${quizId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/delete/${quizId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -839,6 +865,106 @@ function Profile() {
     }
   };
 
+  // Fetch badges and user points on mount
+  useEffect(() => {
+    if (formData.registrationNumber) {
+      fetchBadges();
+      fetchUserBadges();
+      fetchUserPoints();
+      fetchApprovalAndStatus();
+    }
+  }, [formData.registrationNumber]);
+
+  const fetchBadges = async () => {
+    setIsLoadingBadges(true);
+    try {
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/badges/list/";
+      const response = await axios.get(url);
+      setBadges(response.data);
+    } catch (error) {
+      console.error("Error fetching badges:", error);
+    } finally {
+      setIsLoadingBadges(false);
+    }
+  };
+
+  const fetchUserBadges = async () => {
+    if (!formData.registrationNumber) return;
+    try {
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
+      const response = await axios.get(url);
+      
+      // Update to match the new API response structure
+      if (response.data && response.data.badges) {
+        setUserBadges(response.data.badges);
+        
+        // If participant info is available, update badges earned count
+        if (response.data.participant && response.data.participant.badges_earned !== undefined) {
+          // This will be useful for displaying total badges earned
+          const badgesEarned = response.data.participant.badges_earned;
+          console.log(`User has earned ${badgesEarned} badges`);
+        }
+      } else {
+        setUserBadges([]);
+      }
+    } catch (error) {
+      console.error("Error fetching user badges:", error);
+      setUserBadges([]);
+    }
+  };
+
+  const fetchUserPoints = async () => {
+    try {
+      const url = 'http://127.0.0.1:8000/api/mentor_mentee/leaderboard/';
+      const response = await axios.get(url);
+      // Find the user in the leaderboard
+      const user = response.data.find(u => u.id === formData.registrationNumber);
+      setUserPoints(user ? user.score : 0);
+    } catch (error) {
+      console.error('Error fetching user points:', error);
+    }
+  };
+
+  const fetchApprovalAndStatus = async () => {
+    try {
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/profile/${formData.registrationNumber}/`;
+      const response = await axios.get(url);
+      setApprovalStatus(response.data.approval_status || '');
+      setParticipantStatus(response.data.status || '');
+    } catch (error) {
+      console.error('Error fetching approval/status:', error);
+    }
+  };
+
+  const handleClaimBadge = async (badgeId) => {
+    setIsClaimingBadge(true);
+    try {
+      const url = 'http://127.0.0.1:8000/api/mentor_mentee/badges/claim/';
+      await axios.post(url, {
+        badge_id: badgeId,
+        participant_id: formData.registrationNumber
+      });
+      
+      // Refresh user data
+      await fetchUserBadges();
+      await fetchUserPoints();
+      
+      // Use sonner toast for a better user experience
+      toast.success("Badge Claimed Successfully!", {
+        description: "You've successfully claimed this badge.",
+      });
+    } catch (error) {
+      console.error('Error claiming badge:', error);
+      
+      // Show error toast
+      toast.error("Failed to Claim Badge", {
+        description: error.response?.data?.error || "An error occurred. Please try again.",
+      });
+    } finally {
+      setIsClaimingBadge(false);
+    }
+  };
+
   // Render profile page with loading state
   if (isInitializing || loadingProfile) {
     return (
@@ -855,558 +981,745 @@ function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-2">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 pb-12">
       <NavBar />
+      
+      <div className="container mx-auto px-4 py-8">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Profile Picture</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col items-center">
-          <Avatar className="w-32 h-32 mb-4">
-              <AvatarImage 
-                src={profilePicture || "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380"} 
-                alt="Profile" 
-              />
-              <AvatarFallback>
-                {formData.firstName && formData.lastName 
-                  ? `${formData.firstName[0]}${formData.lastName[0]}`
-                  : 'PP'}
-              </AvatarFallback>
-      </Avatar>
-            <p className="text-sm text-muted-foreground mb-4">JPG or PNG no larger than 5 MB</p>
-            
-            {/* Hidden file input */}
-            <input 
-              type="file" 
-              ref={fileInputRef}
-              className="hidden"
-              accept="image/jpeg, image/png"
-              onChange={handleFileChange}
-            />
-            
-            <Button 
-              onClick={handleUploadClick}
-              disabled={isUploading}
-              className="mb-4"
-            >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                'Upload new image'
-              )}
-            </Button>
-            
-            {profilePicture && (
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  if (formData.registrationNumber) {
-                    localStorage.removeItem(`profile_picture_${formData.registrationNumber}`);
-                  }
-                  setProfilePicture(null);
-                }}
-                className="mb-4"
-              >
-                Remove image
-              </Button>
-            )}
-            
-            <br />
-            {formData.linkedin_access_token && formData.linkedin_access_token.length > 1 ? (
-              <Button style={{ backgroundColor: 'skyblue' }}>LinkedIn connected</Button>
-            ) : (
-              <LinkedInButton />
-            )}
-          </CardContent>
-        </Card>
-
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Account Details</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="registrationNumber">Registration Number</Label>
-                  <Input
-                    id="registrationNumber"
-                    name="registrationNumber"
-                    value={formData.registrationNumber}
-                    onChange={handleInputChange}
-                    readOnly={true}
-                    disabled={true}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="firstName">First Name</Label>
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="lastName">Last Name</Label>
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="organizationName">Organization Name</Label>
-                  <Input
-                    id="organizationName"
-                    name="organizationName"
-                    value={formData.organizationName}
-                    onChange={handleInputChange}
-                    readOnly={true}
-                    disabled={true}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="status">Status</Label>
-                  <Input
-                    id="status"
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    disabled={true}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="section">Section</Label>
-                  <Input
-                    id="section"
-                    name="section"
-                    value={formData.section}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="year">Year</Label>
-                  <Input
-                    id="year"
-                    name="year"
-                    value={formData.year}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="semester">Semester</Label>
-                  <Input
-                    id="semester"
-                    name="semester"
-                    value={formData.semester}
-                    onChange={handleInputChange}
-                    disabled={!isEditing}
-                  />
-                </div>
-              </div>
-              {isEditing && (
-                <Button type="submit">
-                  Save Changes
-                </Button>
-              )}
-            </form>
-            {!isEditing && (
-              <Button 
-                type="button" 
-                onClick={() => setIsEditing(true)}
-                style={{marginTop: '1rem'}}
-              >
-                Edit Details
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-
-        {mentorMenteeData.mentor !== null && (
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Your Mentor</CardTitle>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Profile Card */}
+          <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-xl">Profile Picture</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="text-lg font-medium text-blue-700 mb-2">
-                  {mentorMenteeData.mentor?.name || "Not assigned yet"}
-                </h3>
-                {mentorMenteeData.mentor && (
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div>
-                      <p className="text-sm font-semibold">Registration No:</p>
-                      <p>{mentorMenteeData.mentor.registration_no}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">Semester:</p>
-                      <p>{mentorMenteeData.mentor.semester}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">Tech Stack:</p>
-                      <p>{mentorMenteeData.mentor.tech_stack || "Not specified"}</p>
-                    </div>
-                  </div>
+            <CardContent className="flex flex-col items-center pt-6">
+              <Avatar className="w-32 h-32 mb-4 border-4 border-white shadow-lg">
+                <AvatarImage 
+                  src={profilePicture || "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380"} 
+                  alt="Profile" 
+                />
+                <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-bold">
+                  {formData.firstName && formData.lastName 
+                    ? `${formData.firstName[0]}${formData.lastName[0]}`
+                    : 'PP'}
+                </AvatarFallback>
+              </Avatar>
+              <h2 className="text-xl font-semibold text-gray-800 mb-1">{formData.firstName} {formData.lastName}</h2>
+              <p className="text-sm text-gray-500 mb-4">{formData.registrationNumber}</p>
+              
+              <div className="flex flex-wrap gap-2 justify-center mb-6">
+                {approvalStatus && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${approvalStatus === 'approved' ? 'bg-green-100 text-green-800' : approvalStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'}`}>
+                    {approvalStatus.charAt(0).toUpperCase() + approvalStatus.slice(1)}
+                  </span>
+                )}
+                {participantStatus && (
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${participantStatus === 'active' ? 'bg-blue-100 text-blue-800' : participantStatus === 'graduated' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'}`}>
+                    {participantStatus.charAt(0).toUpperCase() + participantStatus.slice(1)}
+                  </span>
+                )}
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                  {formData.status}
+                </span>
+              </div>
+              
+              <p className="text-sm text-muted-foreground mb-4">JPG or PNG no larger than 5 MB</p>
+              
+              {/* Hidden file input */}
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/jpeg, image/png"
+                onChange={handleFileChange}
+              />
+              
+              <div className="flex flex-wrap gap-3 justify-center w-full">
+                <Button 
+                  onClick={handleUploadClick}
+                  disabled={isUploading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                  size="sm"
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : (
+                    'Upload new image'
+                  )}
+                </Button>
+                
+                {profilePicture && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      if (formData.registrationNumber) {
+                        localStorage.removeItem(`profile_picture_${formData.registrationNumber}`);
+                      }
+                      setProfilePicture(null);
+                    }}
+                    size="sm"
+                  >
+                    Remove image
+                  </Button>
+                )}
+              </div>
+              
+              <div className="mt-6 pt-6 border-t w-full flex justify-center">
+                {formData.linkedin_access_token && formData.linkedin_access_token.length > 1 ? (
+                  <Button style={{ backgroundColor: '#0077B5' }} className="w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="mr-2" viewBox="0 0 16 16">
+                      <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
+                    </svg>
+                    LinkedIn Connected
+                  </Button>
+                ) : (
+                  <LinkedInButton className="w-full" />
                 )}
               </div>
             </CardContent>
           </Card>
-        )}
 
-        {/* New section for assigned tasks (for mentees) */}
-        {formData.status === 'Mentee' && (
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Your Quizzes</CardTitle>
-              <p className="text-sm text-gray-500">Quizzes assigned by your mentor</p>
+          {/* Account Details Card */}
+          <Card className="md:col-span-2 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-xl">Account Details</CardTitle>
             </CardHeader>
-            <CardContent>
-              {/* This would typically fetch from an API */}
-              {menteeTasks[formData.registrationNumber] && menteeTasks[formData.registrationNumber].length > 0 ? (
-                <div>
-                  {/* Pending Quizzes */}
-                  <h3 className="text-lg font-semibold mb-3">Pending Quizzes</h3>
-                  <div className="space-y-4 mb-8">
-                    {menteeTasks[formData.registrationNumber]
-                      .filter(task => task.status === 'pending')
-                      .map((task, index) => (
-                        <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-lg">{task.title}</h3>
-                              <p className="text-gray-600 text-sm mt-1">{task.description}</p>
-                              <p className="text-xs text-gray-500 mt-2">Assigned on: {new Date(task.created_at).toLocaleDateString()}</p>
-                            </div>
-                            <div>
-                              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                                {task.total_marks} marks
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-4 flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}`;
-                              }}
-                            >
-                              Take Quiz
-                            </Button>
-                            {formData.status === 'Mentor' && (
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => deleteQuiz(task.id)}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    
-                    {menteeTasks[formData.registrationNumber].filter(task => task.status === 'pending').length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        <p>No pending quizzes.</p>
-                      </div>
-                    )}
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="registrationNumber" className="text-sm font-medium text-gray-700 mb-1 block">Registration Number</Label>
+                    <Input
+                      id="registrationNumber"
+                      name="registrationNumber"
+                      value={formData.registrationNumber}
+                      onChange={handleInputChange}
+                      readOnly={true}
+                      disabled={true}
+                      className="bg-gray-50"
+                    />
                   </div>
-                  
-                  {/* Completed Quizzes */}
-                  <h3 className="text-lg font-semibold mb-3">Completed Quizzes</h3>
-                  <div className="space-y-4">
-                    {menteeTasks[formData.registrationNumber]
-                      .filter(task => task.status === 'completed')
-                      .map((task, index) => (
-                        <div key={index} className="border rounded-lg p-4 hover:bg-gray-50 bg-green-50">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <h3 className="font-semibold text-lg">{task.title}</h3>
-                              <p className="text-gray-600 text-sm mt-1">{task.description}</p>
-                              <p className="text-xs text-gray-500 mt-2">Completed on: {new Date(task.created_at).toLocaleDateString()}</p>
-                              <div className="mt-2">
-                                <span className="text-sm font-medium text-green-700">
-                                  Score: {task.score} / {task.total_marks} ({task.percentage}%)
-                                </span>
-                              </div>
-                            </div>
-                            <div>
-                              <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                                Completed
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-4 flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => {
-                                window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}&view=results`;
-                              }}
-                            >
-                              View Results
-                            </Button>
-                            {formData.status === 'Mentor' && (
-                              <Button 
-                                variant="destructive" 
-                                size="sm"
-                                onClick={() => deleteQuiz(task.id)}
-                              >
-                                Delete
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    
-                    {menteeTasks[formData.registrationNumber].filter(task => task.status === 'completed').length === 0 && (
-                      <div className="text-center py-4 text-gray-500">
-                        <p>No completed quizzes.</p>
-                      </div>
-                    )}
+                  <div>
+                    <Label htmlFor="firstName" className="text-sm font-medium text-gray-700 mb-1 block">First Name</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lastName" className="text-sm font-medium text-gray-700 mb-1 block">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="organizationName" className="text-sm font-medium text-gray-700 mb-1 block">Organization Name</Label>
+                    <Input
+                      id="organizationName"
+                      name="organizationName"
+                      value={formData.organizationName}
+                      onChange={handleInputChange}
+                      readOnly={true}
+                      disabled={true}
+                      className="bg-gray-50"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="email" className="text-sm font-medium text-gray-700 mb-1 block">Email Address</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-1 block">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="section" className="text-sm font-medium text-gray-700 mb-1 block">Section</Label>
+                    <Input
+                      id="section"
+                      name="section"
+                      value={formData.section}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="year" className="text-sm font-medium text-gray-700 mb-1 block">Year</Label>
+                    <Input
+                      id="year"
+                      name="year"
+                      value={formData.year}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="semester" className="text-sm font-medium text-gray-700 mb-1 block">Semester</Label>
+                    <Input
+                      id="semester"
+                      name="semester"
+                      value={formData.semester}
+                      onChange={handleInputChange}
+                      disabled={!isEditing}
+                      className={!isEditing ? "cursor-not-allowed" : ""}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="status" className="text-sm font-medium text-gray-700 mb-1 block">Status</Label>
+                    <Input
+                      id="status"
+                      name="status"
+                      value={formData.status}
+                      onChange={handleInputChange}
+                      disabled={true}
+                      className="bg-gray-50"
+                    />
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <p>No quizzes assigned yet.</p>
+                <div className="flex items-center justify-end mt-6 pt-4 border-t">
+                  {isEditing ? (
+                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                      Save Changes
+                    </Button>
+                  ) : (
+                    <Button 
+                      type="button" 
+                      onClick={() => setIsEditing(true)}
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      Edit Details
+                    </Button>
+                  )}
                 </div>
-              )}
+              </form>
             </CardContent>
           </Card>
-        )}
 
-        {mentorMenteeData.mentees.length > 0 && formData.status === 'Mentor' && (
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>Your Mentees</CardTitle>
+          {/* Change Password Card */}
+          <Card className="md:col-span-1 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3 border-b">
+              <CardTitle className="text-xl">Change Password</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-100">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz Status</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {mentorMenteeData.mentees.map((mentee, index) => (
-                      <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mentee.name}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.branch}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 ? (
-                            <div className="space-y-1">
-                              <div>
-                                <span className="text-xs font-medium">
-                                  {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'pending').length} pending
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-xs font-medium text-green-700">
-                                  {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'completed').length} completed
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <span className="text-xs text-gray-500">No quizzes assigned</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <Button 
-                            variant="outline" 
-                            className="text-blue-600 hover:text-blue-800"
-                            onClick={() => handleMenteeSelection(mentee)}
-                          >
-                            Assign Quiz
-                          </Button>
-                          
-                          {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 && (
-                            <div className="mt-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="text-xs text-gray-500"
-                                onClick={() => openQuizDetailsDialog(mentee)}
-                              >
-                                View Quiz Details
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Quiz Assignment Dialog */}
-              <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                  <DialogHeader>
-                    <DialogTitle>Assign Quiz to {taskData.selectedMentee?.name}</DialogTitle>
-                    <DialogDescription>
-                      Create a quiz for your mentee. Enter a topic and the system will generate questions.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleTaskSubmit}>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="taskPrompt" className="col-span-4">
-                          Quiz Topic
-                        </Label>
-                        <Input
-                          id="taskPrompt"
-                          name="taskPrompt"
-                          placeholder="e.g., Operating Systems, Data Structures, AI Fundamentals"
-                          className="col-span-4"
-                          value={taskData.taskPrompt}
-                          onChange={handleTaskChange}
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="taskDescription" className="col-span-4">
-                          Description (Optional)
-                        </Label>
-                        <Textarea
-                          id="taskDescription"
-                          name="taskDescription"
-                          placeholder="Provide additional details about the quiz..."
-                          className="col-span-4"
-                          value={taskData.taskDescription}
-                          onChange={handleTaskChange}
-                          rows={4}
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="numQuestions" className="col-span-4">
-                          Number of Questions
-                        </Label>
-                        <Input
-                          id="numQuestions"
-                          name="numQuestions"
-                          type="number"
-                          min="1"
-                          max="10"
-                          className="col-span-4"
-                          value={taskData.numQuestions}
-                          onChange={handleTaskChange}
-                        />
-                        <p className="text-xs text-gray-500 col-span-4">Choose between 1-10 questions</p>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button 
-                        type="submit" 
-                        disabled={taskData.isLoading || !taskData.taskPrompt}
-                      >
-                        {taskData.isLoading ? "Generating Quiz..." : "Assign Quiz"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </CardContent>
-          </Card>
-        )}
-
-        <Card className="md:col-span-3">
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-          </CardHeader>
-          <CardContent>
-                <form onSubmit={handleSecuritySubmit} className="space-y-4">
+            <CardContent className="pt-6">
+              <form onSubmit={handleSecuritySubmit} className="mx-auto">
+                <div className="space-y-5">
                   {/* <div>
-                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <Label htmlFor="currentPassword" className="text-sm font-medium text-gray-700 mb-1 block">Current Password</Label>
                     <Input
                       id="currentPassword"
                       name="currentPassword"
                       type="password"
                       value={securityData.currentPassword}
                       onChange={handleSecurityChange}
+                      disabled={securityData.isSubmitting}
+                      className="w-full"
                     />
                   </div> */}
                   <div>
-                    <Label htmlFor="newPassword">New Password</Label>
+                    <Label htmlFor="newPassword" className="text-sm font-medium text-gray-700 mb-1 block">New Password</Label>
                     <Input
                       id="newPassword"
                       name="newPassword"
                       type="password"
                       value={securityData.newPassword}
                       onChange={handleSecurityChange}
+                      disabled={securityData.isSubmitting}
+                      className="w-full"
                     />
+                    <p className="text-xs text-gray-500 mt-1">Min 8 characters with at least 1 number</p>
                   </div>
                   <div>
-                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <Label htmlFor="confirmPassword" className="text-sm font-medium text-gray-700 mb-1 block">Confirm New Password</Label>
                     <Input
                       id="confirmPassword"
                       name="confirmPassword"
                       type="password"
                       value={securityData.confirmPassword}
                       onChange={handleSecurityChange}
+                      disabled={securityData.isSubmitting}
+                      className="w-full"
                     />
                   </div>
-              <Button type="submit" disabled={securityData.isSubmitting}>
-                {securityData.isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Updating...
-                  </>
-                ) : (
-                  "Change Password"
-                )}
-              </Button>
-              {securityData.message && (
-                <p className={`text-sm ${securityData.success ? 'text-green-600' : 'text-red-600'}`}>
-                  {securityData.message}
-                </p>
+                  
+                  {securityData.message && (
+                    <div className={`mt-4 p-3 rounded-lg ${securityData.success ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                      {securityData.message}
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end pt-2">
+                    <Button 
+                      type="submit" 
+                      disabled={securityData.isSubmitting} 
+                      className="bg-blue-600 hover:bg-blue-700"
+                    >
+                      {securityData.isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Changing...
+                        </>
+                      ) : (
+                        'Change Password'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Badges Card */}
+          <Card className="md:col-span-2 shadow-md hover:shadow-lg transition-shadow">
+            <CardHeader className="pb-3 border-b">
+              <div className="flex flex-wrap justify-between items-center">
+                <CardTitle className="text-xl">Badges & Achievements</CardTitle>
+                <div className="flex flex-wrap gap-3 mt-2 md:mt-0">
+                  <span className="px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Points: {userPoints || '--'}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {isLoadingBadges ? (
+                <div className="flex justify-center items-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <span className="ml-3 text-blue-600 font-medium">Loading badges...</span>
+                </div>
+              ) : badges.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {badges.map((badge) => {
+                    // Find user badge by matching badge.id with userBadge.badge_details.id
+                    const userBadge = userBadges.find(ub => ub.badge_details.id === badge.id);
+                    const isClaimed = userBadge && userBadge.is_claimed;
+                    const isEarned = userBadge !== undefined; // User has earned but maybe not claimed
+                    const canClaim = isEarned && !isClaimed && userPoints >= badge.points_required;
+                    
+                    return (
+                      <div key={badge.id} className={`rounded-xl shadow-lg overflow-hidden transform transition-all ${
+                        isClaimed ? 'border-2 border-green-400 bg-green-50 hover:scale-105' : 
+                        isEarned ? 'border-2 border-yellow-400 bg-yellow-50 hover:scale-105' :
+                        canClaim ? 'border-2 border-blue-400 bg-blue-50 hover:scale-105' : 
+                        'border border-gray-200 bg-white hover:shadow-xl'
+                      }`}>
+                        <div className="flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-gray-100 border-b">
+                          {badge.icon_url ? (
+                            <img src={badge.icon_url} alt={badge.name} className="w-16 h-16 object-contain" />
+                          ) : (
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-2xl font-bold">
+                              {badge.name.charAt(0)}
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-5">
+                          <h3 className="font-bold text-lg mb-2 text-center">{badge.name}</h3>
+                          <p className="text-gray-600 text-sm mb-3 text-center">{badge.description}</p>
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">{badge.badge_type}</span>
+                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">{badge.points_required} pts</span>
+                          </div>
+                          <div className="flex justify-center">
+                            {isClaimed ? (
+                              <span className="w-full text-center py-2 rounded-lg bg-green-100 text-green-800 font-semibold text-sm flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                                Already Claimed
+                              </span>
+                            ) : isEarned ? (
+                              <Button
+                                className="w-full bg-yellow-600 hover:bg-yellow-700"
+                                onClick={() => handleClaimBadge(badge.id)}
+                                disabled={isClaimingBadge}
+                              >
+                                {isClaimingBadge ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Claiming...
+                                  </>
+                                ) : (
+                                  'Claim Badge'
+                                )}
+                              </Button>
+                            ) : canClaim ? (
+                              <Button
+                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                onClick={() => handleClaimBadge(badge.id)}
+                                disabled={isClaimingBadge}
+                              >
+                                {isClaimingBadge ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Claiming...
+                                  </>
+                                ) : (
+                                  'Claim Badge'
+                                )}
+                              </Button>
+                            ) : (
+                              <div className="w-full text-center py-2 rounded-lg bg-gray-100 text-gray-500 font-medium text-sm flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Need {badge.points_required - userPoints} more points
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">No Badges Available</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">Badges will be available once you start participating in the program. Keep checking back!</p>
+                </div>
               )}
-                </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          {/* Mentor Card - Restored */}
+          {mentorMenteeData.mentor !== null && (
+            <Card className="md:col-span-3 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-xl">Your Mentor</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="bg-gray-50 p-6 rounded-md">
+                  <h3 className="text-lg font-medium text-blue-700 mb-4">
+                    {mentorMenteeData.mentor?.name || "Not assigned yet"}
+                  </h3>
+                  {mentorMenteeData.mentor && (
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-600 mb-1">Registration No:</p>
+                        <p className="text-base">{mentorMenteeData.mentor.registration_no}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-600 mb-1">Semester:</p>
+                        <p className="text-base">{mentorMenteeData.mentor.semester}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-600 mb-1">Tech Stack:</p>
+                        <p className="text-base">{mentorMenteeData.mentor.tech_stack || "Not specified"}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quizzes Card - Restored */}
+          {formData.status === 'Mentee' && (
+            <Card className="md:col-span-3 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-xl">Your Quizzes</CardTitle>
+                <p className="text-sm text-gray-500">Quizzes assigned by your mentor</p>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {/* This would typically fetch from an API */}
+                {menteeTasks[formData.registrationNumber] && menteeTasks[formData.registrationNumber].length > 0 ? (
+                  <div>
+                    {/* Pending Quizzes */}
+                    <h3 className="text-lg font-semibold mb-4">Pending Quizzes</h3>
+                    <div className="space-y-4 mb-8">
+                      {menteeTasks[formData.registrationNumber]
+                        .filter(task => task.status === 'pending')
+                        .map((task, index) => (
+                          <div key={index} className="border rounded-lg p-5 hover:bg-gray-50 transition-colors shadow-sm">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-lg">{task.title}</h3>
+                                <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                                <p className="text-xs text-gray-500 mt-2">Assigned on: {new Date(task.created_at).toLocaleDateString()}</p>
+                              </div>
+                              <div>
+                                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                  {task.total_marks} marks
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="hover:bg-blue-50"
+                                onClick={() => {
+                                  window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}`;
+                                }}
+                              >
+                                Take Quiz
+                              </Button>
+                              {formData.status === 'Mentor' && (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => deleteQuiz(task.id)}
+                                >
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      
+                      {menteeTasks[formData.registrationNumber].filter(task => task.status === 'pending').length === 0 && (
+                        <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
+                          <p>No pending quizzes.</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Completed Quizzes */}
+                    <h3 className="text-lg font-semibold mb-4">Completed Quizzes</h3>
+                    <div className="space-y-4">
+                      {menteeTasks[formData.registrationNumber]
+                        .filter(task => task.status === 'completed')
+                        .map((task, index) => (
+                          <div key={index} className="border rounded-lg p-5 hover:bg-green-50 bg-green-50 transition-colors shadow-sm">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <h3 className="font-semibold text-lg">{task.title}</h3>
+                                <p className="text-gray-600 text-sm mt-1">{task.description}</p>
+                                <p className="text-xs text-gray-500 mt-2">Completed on: {new Date(task.created_at).toLocaleDateString()}</p>
+                                <div className="mt-2">
+                                  <span className="text-sm font-medium text-green-700">
+                                    Score: {task.score} / {task.total_marks} ({task.percentage}%)
+                                  </span>
+                                </div>
+                              </div>
+                              <div>
+                                <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
+                                  Completed
+                                </span>
+                              </div>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="hover:bg-green-100"
+                                onClick={() => {
+                                  window.location.href = `/quiz?taskId=${task.id}&menteeId=${formData.registrationNumber}&view=results`;
+                                }}
+                              >
+                                View Results
+                              </Button>
+                              {formData.status === 'Mentor' && (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => deleteQuiz(task.id)}
+                                >
+                                  Delete
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      
+                      {menteeTasks[formData.registrationNumber].filter(task => task.status === 'completed').length === 0 && (
+                        <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
+                          <p>No completed quizzes.</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
+                    <p>No quizzes assigned yet.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Mentees Card - Restored */}
+          {mentorMenteeData.mentees.length > 0 && formData.status === 'Mentor' && (
+            <Card className="md:col-span-3 shadow-md hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3 border-b">
+                <CardTitle className="text-xl">Your Mentees</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quiz Status</th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {mentorMenteeData.mentees.map((mentee, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{mentee.name}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.registration_no}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.semester}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{mentee.branch}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 ? (
+                              <div className="space-y-1">
+                                <div>
+                                  <span className="text-xs font-medium">
+                                    {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'pending').length} pending
+                                  </span>
+                                </div>
+                                <div>
+                                  <span className="text-xs font-medium text-green-700">
+                                    {menteeTasks[mentee.registration_no].filter(quiz => quiz.status === 'completed').length} completed
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-500">No quizzes assigned</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <Button 
+                              variant="outline" 
+                              className="text-blue-600 hover:text-blue-800"
+                              onClick={() => handleMenteeSelection(mentee)}
+                            >
+                              Assign Quiz
+                            </Button>
+                            
+                            {menteeTasks[mentee.registration_no] && menteeTasks[mentee.registration_no].length > 0 && (
+                              <div className="mt-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-xs text-gray-500"
+                                  onClick={() => openQuizDetailsDialog(mentee)}
+                                >
+                                  View Quiz Details
+                                </Button>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Quiz Assignment Dialog */}
+                <Dialog open={isTaskDialogOpen} onOpenChange={setIsTaskDialogOpen}>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Assign Quiz to {taskData.selectedMentee?.name}</DialogTitle>
+                      <DialogDescription>
+                        Create a quiz for your mentee. Enter a topic and the system will generate questions.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleTaskSubmit}>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="taskPrompt" className="col-span-4">
+                            Quiz Topic
+                          </Label>
+                          <Input
+                            id="taskPrompt"
+                            name="taskPrompt"
+                            placeholder="e.g., Operating Systems, Data Structures, AI Fundamentals"
+                            className="col-span-4"
+                            value={taskData.taskPrompt}
+                            onChange={handleTaskChange}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="taskDescription" className="col-span-4">
+                            Description (Optional)
+                          </Label>
+                          <Textarea
+                            id="taskDescription"
+                            name="taskDescription"
+                            placeholder="Provide additional details about the quiz..."
+                            className="col-span-4"
+                            value={taskData.taskDescription}
+                            onChange={handleTaskChange}
+                            rows={4}
+                          />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="numQuestions" className="col-span-4">
+                            Number of Questions
+                          </Label>
+                          <Input
+                            id="numQuestions"
+                            name="numQuestions"
+                            type="number"
+                            min="1"
+                            max="10"
+                            className="col-span-4"
+                            value={taskData.numQuestions}
+                            onChange={handleTaskChange}
+                          />
+                          <p className="text-xs text-gray-500 col-span-4">Choose between 1-10 questions</p>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button 
+                          type="submit" 
+                          disabled={taskData.isLoading || !taskData.taskPrompt}
+                          className="bg-blue-600 hover:bg-blue-700"
+                        >
+                          {taskData.isLoading ? "Generating Quiz..." : "Assign Quiz"}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
-      {/* Quiz Details Dialog */}
+      {/* Quiz Details Dialog - Restored */}
       <Dialog open={quizDetailsDialogOpen} onOpenChange={setQuizDetailsDialogOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -1565,7 +1878,7 @@ function Profile() {
           )}
           
           <DialogFooter>
-            <Button onClick={() => setQuizDetailsDialogOpen(false)}>
+            <Button onClick={() => setQuizDetailsDialogOpen(false)} className="bg-blue-600 hover:bg-blue-700">
               Close
             </Button>
           </DialogFooter>
