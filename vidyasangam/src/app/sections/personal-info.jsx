@@ -116,19 +116,16 @@ export function PersonalInfo({ data, updateData, errors = {}, required = false }
           Branch/Department
           {required && <span className="text-red-500 ml-1">*</span>}
         </Label>
-        <Select 
-          onValueChange={(value) => handleSelectChange('branch', value)} 
-          value={data?.branch || ''}
-          disabled={false} // This field should always be editable
-        >
-          <SelectTrigger className={errors.branch ? "border-red-500" : ""}>
-            <SelectValue placeholder="Select branch" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ct">Computer Technology (CT)</SelectItem>
-            <SelectItem value="aids">Artificial Intelligence and Data Science (AIDS)</SelectItem>
-          </SelectContent>
-        </Select>
+        <Input 
+          id="branch" 
+          name="branch" 
+          value={data?.branch || ''} 
+          onChange={handleChange} 
+          required 
+          className={errors.branch ? "border-red-500" : ""}
+          disabled={hasPreFilledData}
+          readOnly={hasPreFilledData}
+        />
         {errors.branch && (
           <p className="text-sm text-red-500">{errors.branch}</p>
         )}

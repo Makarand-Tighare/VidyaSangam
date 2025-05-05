@@ -8,6 +8,26 @@ import AdminRoute from "@/components/AdminRoute";
 import { useRouter } from "next/navigation";
 import { isAdmin, isLoggedIn } from "@/app/lib/auth";
 
+// Add this helper function to get department theme color
+const getDepartmentThemeColor = (departmentCode) => {
+  if (!departmentCode) return { bg: 'blue', text: 'blue', light: 'blue-50', border: 'blue-500' };
+  
+  const deptCode = departmentCode.toLowerCase();
+  
+  switch (deptCode) {
+    case 'cse':
+      return { bg: 'blue', text: 'blue', light: 'blue-50', border: 'blue-500' };
+    case 'it':
+      return { bg: 'indigo', text: 'indigo', light: 'indigo-50', border: 'indigo-500' };
+    case 'etc':
+      return { bg: 'purple', text: 'purple', light: 'purple-50', border: 'purple-500' };
+    case 'civil':
+      return { bg: 'green', text: 'green', light: 'green-50', border: 'green-500' };
+    default:
+      return { bg: 'gray', text: 'gray', light: 'gray-50', border: 'gray-500' };
+  }
+};
+
 function AdminDashboard() {
   const [mentorMentees, setMentorMentees] = useState({});
   const [participants, setParticipants] = useState([]);
@@ -86,11 +106,35 @@ function AdminDashboard() {
 
   const router = useRouter();
   
-  // Check auth on load
+  // Add this right after the router declaration in the AdminDashboard component
+  const [departmentInfo, setDepartmentInfo] = useState(null);
+  const [isDepartmentAdmin, setIsDepartmentAdmin] = useState(false);
+
+  // Update the useEffect that checks auth and department status
   useEffect(() => {
     if (!isLoggedIn() || !isAdmin()) {
       router.push('/login');
       return;
+    }
+    
+    // Get department info if department admin
+    const isDeptAdmin = localStorage.getItem("isDepartmentAdmin") === "true";
+    setIsDepartmentAdmin(isDeptAdmin);
+    
+    if (isDeptAdmin) {
+      try {
+        const deptInfo = JSON.parse(localStorage.getItem("adminDepartment"));
+        setDepartmentInfo(deptInfo);
+        console.log("Department admin for:", deptInfo?.name, "ID:", deptInfo?.id, "Code:", deptInfo?.code);
+        
+        // Debug the auth token
+        const token = localStorage.getItem("authToken");
+        console.log("Using auth token:", token ? "Token exists" : "No token found");
+      } catch (error) {
+        console.error("Error parsing department info:", error);
+      }
+    } else {
+      console.log("Not a department admin");
     }
   }, [router]);
 
@@ -197,6 +241,19 @@ function AdminDashboard() {
     return () => clearInterval(intervalId);
   }, [statsRefreshInterval, activeTab, statusFilter]);
   
+  // Helper function to get authorization headers
+  const getAuthHeaders = () => {
+    const authToken = localStorage.getItem("authToken");
+    const tokenType = localStorage.getItem("tokenType") || "Bearer"; // Default to Bearer if not set
+    
+    if (!authToken) return {};
+    
+    return { 
+      'Authorization': `${tokenType} ${authToken}`
+    };
+  };
+  
+  // Update the fetchParticipants function with the helper
   const fetchParticipants = async () => {
     try {
       // Update to use the status-filtered endpoint if a status filter is applied
@@ -206,30 +263,46 @@ function AdminDashboard() {
       } else {
         url = "http://127.0.0.1:8000/api/mentor_mentee/participants/list/";
       }
-      const response = await axios.get(url);
+      
+      const headers = getAuthHeaders();
+      console.log("Fetching participants with auth:", headers);
+      
+      const response = await axios.get(url, { headers });
+      console.log("Participants response:", response.data);
+      
+      // Check if the response has department_filter from a department admin
+      if (response.data.department_filter) {
+        console.log("Department filter info from API:", response.data.department_filter);
+        setDepartmentInfo(response.data.department_filter);
+      }
+      
       setParticipants(response.data.participants || response.data);
       setErrorMessage("");
     } catch (error) {
       console.error("Error fetching participants:", error);
+      console.error("Error details:", error.response?.data || error.message);
       setErrorMessage("Failed to fetch participants. Please try again.");
     }
   };
 
+  // Update the fetchUnmatchedParticipants function
   const fetchUnmatchedParticipants = async () => {
     setIsLoadingUnmatched(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/unmatched";
-      const response = await axios.get(url);
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
       setUnmatchedParticipants(response.data.unmatched_participants || []);
       setErrorMessage("");
     } catch (error) {
       console.error("Error fetching unmatched participants:", error);
-      // Don't set error message here as it would override other errors
     } finally {
       setIsLoadingUnmatched(false);
     }
   };
 
+  // Update the fetchMatches function to use the auth headers
   const fetchMatches = async (forceRefresh = false) => {
     // Check if matches are already fetched to prevent redundancy
     if (!forceRefresh && matchesFetched && Object.keys(mentorMentees).length > 0 && !areMatchesStale) {
@@ -244,7 +317,10 @@ function AdminDashboard() {
     setIsLoading(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/match/";
-      const response = await axios.get(url);
+      const headers = getAuthHeaders();
+      
+      console.log("Fetching matches with auth:", headers);
+      const response = await axios.get(url, { headers });
       const data = response.data;
       
       // Log the full response data to debug
@@ -488,15 +564,24 @@ function AdminDashboard() {
     });
   }, [unmatchedParticipants, techStackFilter, mentoringPreferenceFilter]);
 
-  // Add fetchRelationships function after fetchMatches
+  // Update the fetchRelationships function
   const fetchRelationships = async (returnData = false) => {
     setIsLoadingRelationships(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/list/";
-      const response = await axios.get(url);
+      const headers = getAuthHeaders();
+      
+      const response = await axios.get(url, { headers });
       
       // The response contains an array of relationships directly
-      const relationshipsData = response.data || [];
+      const relationshipsData = response.data.relationships || response.data || [];
+      
+      // Check if the response has department_filter from a department admin
+      if (response.data.department_filter) {
+        console.log("Department filter from relationships:", response.data.department_filter);
+        setDepartmentInfo(response.data.department_filter);
+      }
+      
       setRelationships(relationshipsData);
       
       // Calculate relationship statistics
@@ -513,13 +598,6 @@ function AdminDashboard() {
       });
       
       setRelationshipStats({
-        totalRelationships: relationshipsData.length,
-        uniqueMentors: uniqueMentorIds.size,
-        uniqueMentees: uniqueMenteeIds.size
-      });
-      
-      console.log("Fetched relationships:", relationshipsData);
-      console.log("Relationship stats:", {
         totalRelationships: relationshipsData.length,
         uniqueMentors: uniqueMentorIds.size,
         uniqueMentees: uniqueMenteeIds.size
@@ -552,10 +630,12 @@ function AdminDashboard() {
     setIsAssigning(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/create/";
+      const headers = getAuthHeaders();
+      
       const response = await axios.post(url, {
         mentor_registration_no: selectedMentor.registration_no,
         mentee_registration_no: selectedMentee.registration_no
-      });
+      }, { headers });
       
       if (response.status === 201 || response.status === 200) {
         // Refresh relationships
@@ -575,7 +655,13 @@ function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error assigning mentee to mentor:", error);
-      setErrorMessage("Failed to create mentor-mentee relationship. Please try again.");
+      
+      // Add specific error message for department validation failures
+      if (error.response?.data?.error?.includes('department')) {
+        setErrorMessage("You can only create relationships within your department.");
+      } else {
+        setErrorMessage("Failed to create mentor-mentee relationship. Please try again.");
+      }
     } finally {
       setIsAssigning(false);
     }
@@ -821,10 +907,12 @@ function AdminDashboard() {
     setIsAssigning(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/relationships/create/";
+      const headers = getAuthHeaders();
+      
       const response = await axios.post(url, {
         mentor_registration_no: mentorRegInput,
         mentee_registration_no: menteeRegInput
-      });
+      }, { headers });
       
       if (response.status === 201 || response.status === 200) {
         // Refresh relationships
@@ -843,7 +931,13 @@ function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error assigning mentee to mentor:", error);
-      setErrorMessage("Failed to create mentor-mentee relationship. Please check registration numbers and try again.");
+      
+      // Add specific error message for department validation failures
+      if (error.response?.data?.error?.includes('department')) {
+        setErrorMessage("You can only create relationships within your department.");
+      } else {
+        setErrorMessage("Failed to create mentor-mentee relationship. Please check registration numbers and try again.");
+      }
     } finally {
       setIsAssigning(false);
     }
@@ -1315,6 +1409,27 @@ function AdminDashboard() {
         <h1 className="text-4xl font-bold text-gray-800">VidyaSangam Mentor-Mentee Program</h1>
         <p className="text-gray-600 mt-2">Administrative Dashboard for Program Management</p>
       </header>
+      
+      {/* Add the department info display to the header section, before the Tabs section */}
+      { departmentInfo && (
+        <div className={`mb-8 p-4 bg-${getDepartmentThemeColor(departmentInfo.code).light} border-l-4 border-${getDepartmentThemeColor(departmentInfo.code).border} rounded-md shadow-sm`}>
+          <div className="flex items-center">
+            <div className={`p-2 bg-${getDepartmentThemeColor(departmentInfo.code).light} text-${getDepartmentThemeColor(departmentInfo.code).text}-700 rounded-full mr-3`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 className={`text-lg font-semibold text-${getDepartmentThemeColor(departmentInfo.code).text}-800`}>
+                {departmentInfo.name} Department Admin
+              </h3>
+              <p className={`text-sm text-${getDepartmentThemeColor(departmentInfo.code).text}-600`}>
+                You are viewing data for the {departmentInfo.name} ({departmentInfo.code}) department only
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Tabs */}
       <div className="flex flex-wrap justify-center mb-8 gap-2 md:gap-0">

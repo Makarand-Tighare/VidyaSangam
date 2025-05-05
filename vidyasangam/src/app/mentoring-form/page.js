@@ -327,6 +327,28 @@ export default function MentoringForm() {
         if (response.ok) {
           const userData = await response.json();
           
+          console.log('Raw user data from API:', userData);
+          
+          // Branch/department code mapping
+          const departmentCodeMap = {
+            'Computer Science Engineering': 'cse',
+            'Computer Technology': 'ct', 
+            'Artificial Intelligence and Data Science': 'aids',
+            'Artificial Intelligence and Machine Learning': 'aiml',
+            'Computer Science Engineering (IoT)': 'cse-iot',
+            'Electronics and Telecommunication Engineering': 'etc',
+            'Electrical Engineering': 'ee',
+            'Mechanical Engineering': 'me',
+            'Civil Engineering': 'ce',
+            'Information Technology': 'it',
+            'Computer Science and Design': 'csd'
+          };
+          
+          // Get the department code either from the mapping or directly from the API
+          const departmentCode = userData.department_code || 
+                               departmentCodeMap[userData.department_name] || 
+                               (userData.department ? userData.department.toLowerCase() : '');
+          
           // Update form data with user profile information
           setFormData(prevData => ({
             ...prevData,
@@ -334,11 +356,13 @@ export default function MentoringForm() {
             registrationNumber: userData.reg_no,
             semester: userData.semester?.toString() || '',
             section: userData.section || '',
-            // Let branch be selected by the user
-            branch: prevData.branch || '',
+            // Store both the display name and the code
+            branch: userData.department_name || '',
+            departmentCode: departmentCode, // Store the code separately for backend submission
           }));
           
           console.log('Pre-filled form with user data:', userData);
+          console.log('Department mapping:', userData.department_name, '→', departmentCode);
         } else {
           console.error('Failed to fetch user profile data');
         }
@@ -367,6 +391,7 @@ export default function MentoringForm() {
             semester: prevData.semester || parsedData.semester,
             section: prevData.section || parsedData.section,
             branch: prevData.branch || parsedData.branch,
+            departmentCode: prevData.departmentCode || parsedData.departmentCode,
           }));
         } catch (error) {
           console.error("Error parsing saved form data:", error);
@@ -449,12 +474,34 @@ export default function MentoringForm() {
     // Create FormData object for file uploads
     const formDataForSubmit = new FormData();
     
+    // Map branch name to branch code
+    const branchMapping = {
+      'Computer Science Engineering': 'cse',
+      'Computer Technology': 'ct',
+      'Artificial Intelligence and Data Science': 'aids',
+      'Artificial Intelligence and Machine Learning': 'aiml',
+      'Computer Science Engineering (IoT)': 'cse-iot',
+      'Electronics and Telecommunication Engineering': 'etc',
+      'Electrical Engineering': 'ee',
+      'Mechanical Engineering': 'me',
+      'Civil Engineering': 'ce',
+      'Information Technology': 'it',
+      'Computer Science and Design': 'csd'
+    };
+    
+    // Get branch code from department name or use what's in formData
+    const branchCode = formData.departmentCode || 
+                        branchMapping[formData.branch] || 
+                        formData.branch.toLowerCase() || '';
+    
+    console.log("Branch mapping:", formData.branch, "→", branchCode);
+    
     // Transform data to match backend model field names
     const transformedData = {
       name: formData.name,
       registration_no: formData.registrationNumber,
       semester: formData.semester,
-      branch: formData.branch,
+      branch: branchCode, // Use the mapped branch code instead of full name
       mentoring_preferences: formData.mentoringPreference,
       previous_mentoring_experience: formData.previousExperience === 'yes' ? formData.previousExperienceText || 'Yes' : 'No',
       tech_stack: formData.techStack,

@@ -310,8 +310,8 @@ export default function Home() {
         <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-blue-100 rounded-full opacity-50 blur-3xl -z-10"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-6xl max-h-full">
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-blue-50 opacity-20 rounded-full blur-3xl"></div>
-        </div>
-        
+      </div>
+
         {/* Animated dots grid */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-2 h-2 bg-indigo-500 rounded-full"></div>
@@ -323,8 +323,8 @@ export default function Home() {
           <div className="absolute top-10 right-20 w-2 h-2 bg-indigo-500 rounded-full"></div>
           <div className="absolute top-20 right-10 w-2 h-2 bg-indigo-500 rounded-full"></div>
           <div className="absolute top-20 right-20 w-2 h-2 bg-indigo-500 rounded-full"></div>
-        </div>
-        
+      </div>
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <div className="inline-block mb-5 animate-fadeIn">
@@ -371,8 +371,8 @@ export default function Home() {
               </a>
             </div>
           </div>
-        </div>
-        
+          </div>
+
         {/* Scroll indicator */}
         <div 
           ref={scrollIndicatorRef}
@@ -453,7 +453,7 @@ export default function Home() {
               />
             </div>
           </div>
-          
+
           {/* CTA Button - Enhanced with animation */}
           <div className="text-center mt-8">
             <a
@@ -553,7 +553,7 @@ export default function Home() {
               technology and expertise to create meaningful connections.
             </p>
           </div>
-          
+
           {/* Team container with subtle reveal animation */}
           <div className="max-w-6xl mx-auto">
             {/* Team circles with staggered animation */}
@@ -572,7 +572,7 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="absolute inset-0 rounded-full border-2 border-indigo-500 scale-0 group-hover:scale-105 opacity-0 group-hover:opacity-100 transition-all duration-500"></div>
-                  </div>
+            </div>
                   
                   {/* Label */}
                   <div className="absolute top-4 right-4 bg-indigo-100 px-2 py-1 rounded text-xs font-medium text-indigo-700">Lead</div>
@@ -585,9 +585,9 @@ export default function Home() {
                   <div className="mb-5 overflow-hidden">
                     <p className="text-gray-600 text-sm text-center transform transition-transform duration-300 group-hover:-translate-y-0">
                       Guiding the team with expertise in both technical implementation and mentorship vision.
-                    </p>
-                  </div>
-                  
+            </p>
+          </div>
+
                   {/* Social link with animation */}
                   <div className="flex justify-center">
                     <a 
@@ -653,7 +653,7 @@ export default function Home() {
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"></path>
                         </svg>
                       </div>
-                    </div>
+            </div>
                     
                     {/* Info */}
                     <h3 className="text-lg font-semibold text-center text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors">{member.name}</h3>
@@ -663,9 +663,9 @@ export default function Home() {
                     <div className="mb-4 overflow-hidden h-12">
                       <p className="text-gray-500 text-xs text-center transform transition-transform duration-300 group-hover:-translate-y-0">
                         {member.description}
-                      </p>
-                    </div>
-                    
+            </p>
+          </div>
+
                     {/* Social link */}
                     <div className="flex justify-center mt-auto">
                       <a 
@@ -738,8 +738,8 @@ export default function Home() {
           <div className="absolute top-0 right-20 w-px h-full bg-indigo-300"></div>
           <div className="absolute top-1/3 left-0 w-full h-px bg-indigo-300"></div>
           <div className="absolute bottom-32 left-0 w-full h-px bg-indigo-300"></div>
-        </div>
-        
+      </div>
+
         <div className="container mx-auto px-4 relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-10 mb-10">
             <div className="md:col-span-1 lg:col-span-1">
@@ -760,9 +760,9 @@ export default function Home() {
                 </a>
                 <span>|</span>
                 <span>YCCE, Nagpur</span>
-              </div>
-            </div>
-            
+        </div>
+      </div>
+
             <div>
               <h3 className="text-lg font-semibold mb-4 text-indigo-100">Platform</h3>
               <ul className="space-y-3">
@@ -786,8 +786,8 @@ export default function Home() {
             <div>
               <h3 className="text-lg font-semibold mb-4 text-indigo-100">Connect</h3>
               <div className="flex space-x-4 mb-6">
-                <a 
-                  href="https://www.linkedin.com/school/officialycce" 
+          <a
+            href="https://www.linkedin.com/school/officialycce"
                   className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -809,12 +809,12 @@ export default function Home() {
                   rel="noopener noreferrer"
                 >
                   <Image src={Instagram} width={20} height={20} alt="Instagram" />
-                </a>
-              </div>
+          </a>
+        </div>
               <p className="text-indigo-300 text-sm">
                 Department of Computer Technology<br />
-                Yeshwantrao Chavan College of Engineering
-              </p>
+          Yeshwantrao Chavan College of Engineering
+        </p>
             </div>
           </div>
           
@@ -829,7 +829,7 @@ export default function Home() {
               </div>
             </div>
           </div>
-        </div>
+      </div>
       </footer>
     </div>
   );

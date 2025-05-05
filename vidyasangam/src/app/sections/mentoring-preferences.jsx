@@ -19,28 +19,172 @@ export function MentoringPreferences({ data, updateData, errors = {}, required =
     preference3Other: data?.preference3Other || '',
   });
 
-  // Common areas of interest options
-  const areasOfInterestOptions = [
+  // Shared options for all computer-related departments (CSE, CSD, AIDS, AIML, CSE-IOT, CT, IT)
+  const computerRelatedOptions = [
     "Web Development",
     "Mobile App Development",
     "Data Science",
     "Machine Learning",
+    "Deep Learning",
     "Artificial Intelligence",
+    "Natural Language Processing",
+    "Computer Vision",
     "Blockchain",
     "Cloud Computing",
     "DevOps",
     "Cybersecurity",
     "UI/UX Design",
+    "Frontend Development",
+    "Backend Development",
     "Game Development",
-    "Embedded Systems",
-    "Networking",
     "Database Management",
+    "Software Engineering",
+    "Computer Networks",
+    "Network Security",
     "IoT (Internet of Things)",
     "AR/VR (Augmented/Virtual Reality)",
-    "Natural Language Processing",
+    "Embedded Systems",
+    "Big Data Analytics",
+    "Statistical Analysis",
     "Competitive Programming",
+    "Human-Computer Interaction",
+    "System Administration",
+    "Cloud Infrastructure",
+    "Neural Networks",
+    "Reinforcement Learning",
+    "Robotics",
+    "Operating Systems",
+    "Information Systems",
+    "Technical Support",
+    "Algorithms & Data Structures",
+    "Design Systems",
+    "Edge Computing"
+  ];
+
+  // Department-specific interest options
+  const departmentInterestOptions = {
+    // Electronics related departments
+    ETC: [
+      "Circuit Design",
+      "Signal Processing",
+      "Embedded Systems",
+      "Microcontrollers",
+      "VLSI Design",
+      "Communication Systems",
+      "Antenna Design",
+      "RF Engineering",
+      "PCB Design",
+      "Wireless Communications",
+      "Telecommunication Networks",
+      "Machine Learning for Signal Processing",
+      "Data Science in Electronics",
+      "Image Processing",
+      "IoT Applications",
+      "Robotics for Electronics"
+    ],
+    EE: [
+      "Power Systems",
+      "Electric Drives",
+      "Control Systems",
+      "Power Electronics",
+      "Electrical Machines",
+      "High Voltage Engineering",
+      "Renewable Energy Systems",
+      "Microcontrollers",
+      "Smart Grid Technologies",
+      "Instrumentation",
+      "Energy Management"
+    ],
+    // Mechanical and Civil
+    ME: [
+      "CAD/CAM",
+      "Thermodynamics",
+      "Fluid Mechanics",
+      "Heat Transfer",
+      "Manufacturing Processes",
+      "Robotics",
+      "Mechanical Design",
+      "Automotive Engineering",
+      "HVAC Systems",
+      "Aerospace Structures",
+      "Industrial Automation"
+    ],
+    CE: [
+      "Structural Engineering",
+      "Geotechnical Engineering",
+      "Transportation Engineering",
+      "Environmental Engineering",
+      "Water Resources",
+      "Construction Management",
+      "Surveying",
+      "Building Materials",
+      "Urban Planning",
+      "Earthquake Engineering",
+      "Sustainable Construction"
+    ]
+  };
+
+  // Common options for all departments
+  const commonInterestOptions = [
+    "Project Management",
+    "Academic Research",
+    "Technical Writing",
+    "Entrepreneurship",
+    "Innovation & Product Development",
+    "Industry-Academia Collaboration",
+    "Internship Guidance",
+    "Competitive Exam Preparation",
+    "Career Planning",
+    "Higher Education Counseling",
+    "Technical Paper Writing",
+    "Presentation Skills",
     "Other"
   ];
+
+  // Get the user's department/branch
+  const userDepartment = data?.branch || '';
+  let departmentCode = '';
+  
+  // Map department name to code
+  if (userDepartment.includes('Computer Science Engineering') && !userDepartment.includes('IoT')) {
+    departmentCode = 'CSE';
+  } else if (userDepartment.includes('Computer Science and Design')) {
+    departmentCode = 'CSD';
+  } else if (userDepartment.includes('Artificial Intelligence and Data Science')) {
+    departmentCode = 'AIDS';
+  } else if (userDepartment.includes('Artificial Intelligence and Machine Learning')) {
+    departmentCode = 'AIML';
+  } else if (userDepartment.includes('Computer Science Engineering (IoT)') || userDepartment.includes('CSE-IOT')) {
+    departmentCode = 'CSE-IOT';
+  } else if (userDepartment.includes('Computer Technology')) {
+    departmentCode = 'CT';
+  } else if (userDepartment.includes('Electronics and Telecommunication')) {
+    departmentCode = 'ETC';
+  } else if (userDepartment.includes('Electrical Engineering')) {
+    departmentCode = 'EE';
+  } else if (userDepartment.includes('Mechanical Engineering')) {
+    departmentCode = 'ME';
+  } else if (userDepartment.includes('Civil Engineering')) {
+    departmentCode = 'CE';
+  } else if (userDepartment.includes('Information Technology')) {
+    departmentCode = 'IT';
+  } else {
+    // Default to CSE if no match is found
+    departmentCode = 'CSE';
+  }
+
+  // Get the appropriate options for the user's department
+  let specificOptions = [];
+  
+  // All computer-related departments share the same options
+  if (['CSE', 'CSD', 'AIDS', 'AIML', 'CSE-IOT', 'CT', 'IT'].includes(departmentCode)) {
+    specificOptions = computerRelatedOptions;
+  } else {
+    specificOptions = departmentInterestOptions[departmentCode] || computerRelatedOptions;
+  }
+  
+  // Combine specific options with common options
+  const areasOfInterestOptions = [...specificOptions, ...commonInterestOptions];
 
   const handleChange = (name, value) => {
     updateData({ [name]: value });
@@ -262,6 +406,11 @@ export function MentoringPreferences({ data, updateData, errors = {}, required =
           <p className="text-sm text-blue-700">
             You will be matched primarily based on your areas of interest, and then by tech stack. 
             Please select all three preferences for optimal matching.
+            {departmentCode && (
+              <span className="block mt-1 font-medium">
+                Showing {departmentCode} department-specific options and common options.
+              </span>
+            )}
           </p>
         </div>
         

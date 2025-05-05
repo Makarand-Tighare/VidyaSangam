@@ -15,6 +15,7 @@ import NavBar from "../components/navBar"
 
 export default function RegisterPage() {
   const router = useRouter()
+  const [departments, setDepartments] = useState([])
   const [formData, setFormData] = useState({
     email: "",
     otp: "",
@@ -24,6 +25,7 @@ export default function RegisterPage() {
     year: "",
     semester: "",
     section: "",
+    department_id: "",
     mobileNumber: "",
     password: "",
     confirmPassword: "",
@@ -34,6 +36,22 @@ export default function RegisterPage() {
   const [errors, setErrors] = useState({})
   const [passwordStrength, setPasswordStrength] = useState("")
   const [isFormValid, setIsFormValid] = useState(false)
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/user/departments-public/")
+        if (response.status === 200) {
+          setDepartments(response.data)
+          console.log("Departments fetched:", response.data)
+        }
+      } catch (error) {
+        console.error("Error fetching departments:", error)
+      }
+    }
+    
+    fetchDepartments()
+  }, [])
 
   useEffect(() => {
     if (formData.password) {
@@ -50,9 +68,10 @@ export default function RegisterPage() {
       formData.year !== "" &&
       formData.semester !== "" &&
       formData.section.trim() !== "" &&
+      formData.department_id !== "" &&
       formData.mobileNumber.trim() !== "" &&
       formData.password.trim() !== "" &&
-      Object.values(errors).some((error) => error !== "") && // Updated condition
+      Object.values(errors).some((error) => error !== "") &&
       (passwordStrength === "Strong" || passwordStrength === "Very Strong")
     setIsFormValid(isValid)
     console.log("Form validity updated:", isValid)
@@ -156,7 +175,7 @@ export default function RegisterPage() {
       if (response.status === 200) {
         setOtpVerified(true)
         setErrors((prev) => ({ ...prev, otpVerified: "" }))
-        setFormData((prev) => ({ ...prev, otp: "" })) // Clear OTP field
+        setFormData((prev) => ({ ...prev, otp: "" }))
       } else {
         setErrors((prev) => ({ ...prev, otpVerified: "Invalid OTP. Please try again." }))
       }
@@ -173,19 +192,34 @@ export default function RegisterPage() {
       return
     }
 
+    // Debug log for department value
+    console.log("Department ID before API call:", formData.department_id)
+    console.log("Complete form data:", formData)
+
     try {
-      const response = await axios.post("http://127.0.0.1:8000/api/user/register/", {
+      const requestData = {
         email: formData.email,
         first_name: formData.firstName,
         last_name: formData.lastName,
         mobile_number: formData.mobileNumber,
         reg_no: formData.registrationNumber,
         section: formData.section,
+        department_id: formData.department_id ? parseInt(formData.department_id) : null,
         year: formData.year,
         semester: formData.semester,
         password: formData.password,
         password2: formData.password,
-      })
+      }
+      
+      console.log("Request payload:", requestData)
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/user/register/",
+        requestData,
+        { withCredentials: true }
+      )
+
+      console.log("Registration response:", response)
 
       if (response.status === 201) {
         alert("Registration Successful!")
@@ -195,6 +229,7 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Registration error", error)
+      console.error("Error response:", error.response?.data)
       alert("An error occurred during registration. Please try again.")
     }
   }
@@ -302,6 +337,29 @@ export default function RegisterPage() {
                     />
                     {errors.registrationNumber && <p className="text-red-500 text-xs">{errors.registrationNumber}</p>}
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="department">Department</Label>
+                    <Select 
+                      name="department_id" 
+                      onValueChange={(value) => handleChange({ target: { name: "department_id", value } })}
+                    >
+                      <SelectTrigger id="department">
+                        <SelectValue placeholder="Select department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departments.length > 0 ? (
+                          departments.map(dept => (
+                            <SelectItem key={dept.id} value={dept.id.toString()}>
+                              {dept.name} ({dept.code})
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="loading" disabled>Loading departments...</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {errors.department_id && <p className="text-red-500 text-xs">{errors.department_id}</p>}
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="year">Year</Label>
@@ -403,7 +461,7 @@ export default function RegisterPage() {
                   <Button
                     type="submit"
                     className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                    disabled={!isFormValid} // Updated disabled attribute
+                    disabled={!isFormValid}
                   >
                     Register
                   </Button>

@@ -41,73 +41,142 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage("");
   
-   // Special case for admin login (hardcoded check)
-if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
-  try {
-    setIsLoading(true);
-    // Call admin login API using the user endpoint instead
-    const response = await fetch("http://127.0.0.1:8000/api/user/admin-login/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-    
-    const data = await response.json();
-    console.log("Admin login response:", data); // Debug log
-    
-    if (response.ok) {
-      // Store token in localStorage
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("isAdmin", "true");
-      
-      // Store the token correctly - adjust this based on your actual token structure
-      if (data.token && data.token.access) {
-        localStorage.setItem("authToken", data.token.access);
-      } else if (typeof data.token === 'string') {
-        localStorage.setItem("authToken", data.token);
-      }
-      
-      router.push("/adminDashboard");
-    } else {
-      // Show error message from API
-      if (data.errors && data.errors.non_field_errors) {
-        setError(data.errors.non_field_errors.join(", "));
-      } else if (data.error) {
-        setError(data.error);
-      } else {
-        setError("Admin login failed. Please check credentials.");
-      }
-      
-      // For development only: fallback if API doesn't work but credentials are correct
-      // In production, remove this fallback
-      if (process.env.NODE_ENV === 'development') {
-        console.warn("Using development fallback for admin login");
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("isAdmin", "true");
-        localStorage.setItem("authToken", "dev-fallback-token");
-        router.push("/adminDashboard");
-      }
-    }
-  } catch (error) {
-    console.error("Admin login API error:", error);
-    setError("Connection error. Could not reach authentication server.");
-    
-    // For development only: fallback if API doesn't work
-    // In production, remove this fallback
-    if (process.env.NODE_ENV === 'development') {
-      console.warn("Using development fallback for admin login");
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("authToken", "dev-fallback-token");
-      router.push("/adminDashboard");
-    }
-  } finally {
-    setIsLoading(false);
-  }
-  return;
-} 
+   // Handle admin login - now supports department admin emails from our created users
+   // This will detect any standard admin emails including department admins
+   if (email.endsWith("@example.com") || email === "ycce_ct_admin@gmail.com") {
+     try {
+       setIsLoading(true);
+       // Call admin login API using the user endpoint instead
+       const response = await fetch("http://127.0.0.1:8000/api/user/admin-login/", {
+         method: "POST",
+         headers: {
+           "Content-Type": "application/json",
+         },
+         body: JSON.stringify({ email, password }),
+       });
+       
+       const data = await response.json();
+       console.log("Admin login response:", data); // Debug log
+       
+       if (response.ok) {
+         // Store token in localStorage - handle different possible token formats
+         localStorage.setItem("isLoggedIn", "true");
+         localStorage.setItem("isAdmin", "true");
+         
+         // Handle different token formats in the response
+         if (data.token && data.token.access) {
+           // JWT format
+           localStorage.setItem("authToken", data.token.access);
+           localStorage.setItem("tokenType", "Bearer");
+         } else if (typeof data.token === 'string') {
+           // Simple token
+           localStorage.setItem("authToken", data.token);
+           // Default to Bearer, can be adjusted if needed
+           localStorage.setItem("tokenType", "Bearer");
+         }
+         
+         // Store department information
+         if (data.department) {
+           console.log("Department data from login:", data.department);
+           localStorage.setItem("adminDepartment", JSON.stringify({
+             id: data.department.id,
+             name: data.department.name,
+             code: data.department.code
+           }));
+           localStorage.setItem("isDepartmentAdmin", "true");
+         } else if (data.user && data.user.department) {
+           // Alternative structure
+           console.log("Department data from user object:", data.user.department);
+           localStorage.setItem("adminDepartment", JSON.stringify({
+             id: data.user.department.id,
+             name: data.user.department.name,
+             code: data.user.department.code
+           }));
+           localStorage.setItem("isDepartmentAdmin", "true");
+         } else {
+           console.log("No department data found in response");
+           localStorage.setItem("isDepartmentAdmin", "false");
+         }
+         
+         router.push("/adminDashboard");
+       } else {
+         // Show error message from API
+         if (data.errors && data.errors.non_field_errors) {
+           setErrorMessage(data.errors.non_field_errors.join(", "));
+         } else if (data.error) {
+           setErrorMessage(data.error);
+         } else {
+           setErrorMessage("Admin login failed. Please check credentials.");
+         }
+         
+         // For development only: fallback if API doesn't work but credentials are correct
+         // In production, remove this fallback
+         if (process.env.NODE_ENV === 'development') {
+           console.warn("Using development fallback for admin login");
+           localStorage.setItem("isLoggedIn", "true");
+           localStorage.setItem("isAdmin", "true");
+           localStorage.setItem("tokenType", "Bearer");
+           
+           // Provide development department data based on email
+           if (email.includes("cse")) {
+             localStorage.setItem("adminDepartment", JSON.stringify({
+               id: 1,
+               name: "Computer Science Engineering",
+               code: "CSE"
+             }));
+             localStorage.setItem("isDepartmentAdmin", "true");
+           } else if (email.includes("it")) {
+             localStorage.setItem("adminDepartment", JSON.stringify({
+               id: 11,
+               name: "Information Technology",
+               code: "IT"
+             }));
+             localStorage.setItem("isDepartmentAdmin", "true");
+           } else if (email.includes("etc")) {
+             localStorage.setItem("adminDepartment", JSON.stringify({
+               id: 7,
+               name: "Electronics and Telecommunication Engineering",
+               code: "ETC"
+             }));
+             localStorage.setItem("isDepartmentAdmin", "true");
+           } else {
+             localStorage.setItem("isDepartmentAdmin", "false");
+           }
+           
+           localStorage.setItem("authToken", "dev-fallback-token");
+           router.push("/adminDashboard");
+         }
+       }
+     } catch (error) {
+       console.error("Admin login API error:", error);
+       setErrorMessage("Connection error. Could not reach authentication server.");
+       
+       // For development only: fallback if API doesn't work
+       // In production, remove this fallback
+       if (process.env.NODE_ENV === 'development') {
+         console.warn("Using development fallback for admin login");
+         localStorage.setItem("isLoggedIn", "true");
+         localStorage.setItem("isAdmin", "true");
+         localStorage.setItem("tokenType", "Bearer");
+         
+         // For ETC email
+         if (email.includes("etc")) {
+           localStorage.setItem("adminDepartment", JSON.stringify({
+             id: 7,
+             name: "Electronics and Telecommunication Engineering",
+             code: "ETC"
+           }));
+           localStorage.setItem("isDepartmentAdmin", "true");
+         }
+         
+         localStorage.setItem("authToken", "dev-fallback-token");
+         router.push("/adminDashboard");
+       }
+     } finally {
+       setIsLoading(false);
+     }
+     return;
+   } 
   
     try {
       const result = await login(email, password);
@@ -115,6 +184,7 @@ if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
       if (result.success) {
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("isAdmin", "false"); // Explicitly set as non-admin
+        localStorage.setItem("isDepartmentAdmin", "false");
         router.push("/"); // Navigate to the homepage for regular users
       } else {
         setErrorMessage(result.message || "Login failed. Please check your credentials.");
@@ -128,7 +198,7 @@ if (email === "ycce_ct_admin@gmail.com" && password === "admin@ctycce") {
   };  
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#e6f3ff] via-[#f0f8ff] to-[#f5faff] flex flex-col p-2">
+    <div className="bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 min-h-screen flex-col p-2">
       <NavBar />
       <div className="flex-grow flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
