@@ -55,6 +55,10 @@ export function AcademicPerformance({ data, updateData, updateFiles, errors = {}
         )}
       </div>
 
+      {/* Admin verification info for academic proofs */}
+      <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
+        Proofs are verified and approved by the admin. Please upload all Marksheets or Results in a single PDF and submit.
+      </div>
       <FileUpload 
         label="Proof of Academic Performance"
         name="academicProof"

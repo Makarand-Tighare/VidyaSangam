@@ -29,6 +29,10 @@ export function AcademicAchievements({ data, updateData, updateFiles, errors = {
   const isResearchUploadRequired = data?.researchPapers && data.researchPapers !== 'None' && paperCount && parseInt(paperCount) > 0;
   const isHackathonUploadRequired = data?.hackathonParticipation && data.hackathonParticipation !== 'None' && hackathonParticipations && parseInt(hackathonParticipations) > 0;
 
+  // Helper for matching count and files
+  const researchProofCountMismatch = isResearchUploadRequired && data?.researchProof && data.researchProof.length !== parseInt(paperCount);
+  const hackathonProofCountMismatch = isHackathonUploadRequired && data?.hackathonProof && data.hackathonProof.length !== parseInt(hackathonParticipations);
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -79,6 +83,13 @@ export function AcademicAchievements({ data, updateData, updateFiles, errors = {
             )}
           </div>
 
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
+            Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.<br />
+            The number of papers and certificates submitted should match.
+          </div>
+          {researchProofCountMismatch && (
+            <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of papers.</div>
+          )}
           <FileUpload 
             label="Proof of Research Publications"
             name="researchProof"
@@ -186,6 +197,15 @@ export function AcademicAchievements({ data, updateData, updateFiles, errors = {
             )}
           </div>
 
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
+            Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.<br />
+            The number of participations and certificates submitted should match.<br />
+            Your certificate of participation and certificate of winning will be verified separately.<br />
+            Team Lead Certificate will be verified separately.
+          </div>
+          {hackathonProofCountMismatch && (
+            <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of participations.</div>
+          )}
           <FileUpload 
             label="Proof of Hackathon Participation/Wins"
             name="hackathonProof"

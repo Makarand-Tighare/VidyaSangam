@@ -25,6 +25,9 @@ export function CodingCompetitions({ data, updateData, updateFiles, errors = {},
   // Determine if file upload is required based on other conditions
   const isFileUploadRequired = data?.codingCompetitions === 'yes' && competitionsCount && parseInt(competitionsCount) > 0;
 
+  // Helper for matching count and files
+  const codingProofCountMismatch = isFileUploadRequired && data?.codingCompetitionsProof && data.codingCompetitionsProof.length !== parseInt(competitionsCount);
+
   return (
     <Card className="w-full">
       <CardContent className="space-y-6 pt-6">
@@ -96,6 +99,14 @@ export function CodingCompetitions({ data, updateData, updateFiles, errors = {},
               )}
             </div>
 
+            {/* Admin verification info for coding competitions proofs */}
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
+              Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.<br />
+              The number of competitions and certificates submitted should match.
+            </div>
+            {codingProofCountMismatch && (
+              <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of competitions.</div>
+            )}
             <FileUpload 
               label="Proof of Coding Competitions"
               name="codingCompetitionsProof"
