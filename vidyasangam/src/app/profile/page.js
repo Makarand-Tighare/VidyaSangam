@@ -63,6 +63,7 @@ function Profile() {
     taskDescription: '',
     numQuestions: 5, // Default value for number of questions
     isLoading: false,
+    fileContent: null, // Add this line to track file content
   })
   
   // State to store tasks for mentees
@@ -739,6 +740,7 @@ function Profile() {
       taskDescription: "",
       numQuestions: 5,
       isLoading: false,
+      fileContent: null, // Reset file content too
     }));
   };
 
@@ -963,6 +965,49 @@ function Profile() {
     } finally {
       setIsClaimingBadge(false);
     }
+  };
+
+  // Add this function to handle file uploads
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Check file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size exceeds 5MB limit');
+      return;
+    }
+    
+    // Only allow text and doc files
+    if (!file.type.match('text/plain') && !file.type.match('application/msword') && 
+        !file.type.match('application/vnd.openxmlformats-officedocument.wordprocessingml.document')) {
+      alert('Only TXT and DOC/DOCX files are allowed');
+      return;
+    }
+    
+    try {
+      const fileContent = await readFileContent(file);
+      setTaskData(prev => ({
+        ...prev,
+        taskDescription: "GENERATE QUESTIONS BASED ONLY ON THIS CONTENT AND USE OPTIONS PROVIDED IN THE DOCUMENT ONLY:\n\n" + fileContent,
+        fileContent: fileContent
+      }));
+      
+      alert('File content loaded successfully!');
+    } catch (error) {
+      console.error('Error reading file:', error);
+      alert('Error reading file. Please try again.');
+    }
+  };
+
+  // Helper function to read file content as text
+  const readFileContent = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => resolve(event.target.result);
+      reader.onerror = reject;
+      reader.readAsText(file);
+    });
   };
 
   // Render profile page with loading state
@@ -1683,6 +1728,23 @@ function Profile() {
                             onChange={handleTaskChange}
                             rows={4}
                           />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label htmlFor="fileUpload" className="col-span-4">
+                            Upload Content File (TXT or DOC)
+                          </Label>
+                          <div className="col-span-4">
+                            <Input
+                              id="fileUpload"
+                              type="file"
+                              accept=".txt,.doc,.docx"
+                              onChange={handleFileUpload}
+                              className="col-span-4"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Upload a file with quiz content. The content will be used to generate questions.
+                            </p>
+                          </div>
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
                           <Label htmlFor="numQuestions" className="col-span-4">
