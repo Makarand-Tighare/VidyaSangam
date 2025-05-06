@@ -35,7 +35,7 @@ export default function Leaderboard() {
       (async () => {
         try {
           setIsRecalculating(true);
-          const recalculateResponse = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/calculate/', {
+          const recalculateResponse = await fetch('http://54.166.190.24:8000/api/mentor_mentee/leaderboard/calculate/', {
             headers: {
               'Authorization': `Bearer ${authToken}`
             }
@@ -78,7 +78,7 @@ export default function Leaderboard() {
       const authToken = localStorage.getItem("authToken");
       
       // Use the new GET leaderboard API endpoint with role filter
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/leaderboard/?role=${activeTab.slice(0, -1)}&search=${debouncedSearchQuery}`, {
+      const response = await fetch(`http://54.166.190.24:8000/api/mentor_mentee/leaderboard/?role=${activeTab.slice(0, -1)}&search=${debouncedSearchQuery}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -128,7 +128,7 @@ export default function Leaderboard() {
       setIsRecalculating(true);
       const authToken = localStorage.getItem("authToken");
       
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/calculate/', {
+      const response = await fetch('http://54.166.190.24:8000/api/mentor_mentee/leaderboard/calculate/', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -173,7 +173,7 @@ export default function Leaderboard() {
       setIsSyncing(true);
       const authToken = localStorage.getItem("authToken");
       
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/leaderboard/sync/', {
+      const response = await fetch('http://54.166.190.24:8000/api/mentor_mentee/leaderboard/sync/', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${authToken}`,
