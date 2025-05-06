@@ -168,7 +168,7 @@ export default function RegisterPage() {
   const handleVerifyOTP = async () => {
     try {
       const response = await axios.post(
-        "http://127.0:8000/api/user/verify-otp/",
+        "http://127.0.0.1:8000/api/user/verify-otp/",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       )
