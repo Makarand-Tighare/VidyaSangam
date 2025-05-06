@@ -1,8 +1,36 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FileUpload } from '../file-upload';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 
 export function AcademicPerformance({ data, updateData, updateFiles, errors = {}, required = false }) {
+  const [currentSemester, setCurrentSemester] = useState(data?.semester || '');
+
+  useEffect(() => {
+    // Check if semester is already available in data, if so use it
+    if (data?.semester) {
+      setCurrentSemester(data.semester);
+    } 
+    // If not available, fetch it from the API using registration number
+    else if (data?.registration_no) {
+      const fetchSemester = async () => {
+        try {
+          const response = await axios.get(`http://54.166.190.24:8000/api/mentor_mentee/profile/${data.registration_no}`);
+          if (response.data && response.data.semester) {
+            setCurrentSemester(response.data.semester);
+            // Update the parent component with the semester info
+            updateData({ semester: response.data.semester });
+          }
+        } catch (error) {
+          console.error('Error fetching semester:', error);
+        }
+      };
+      
+      fetchSemester();
+    }
+  }, [data?.registration_no, data?.semester]);
+
   const handleChange = (name, value) => {
     updateData({ [name]: value });
   };
@@ -15,6 +43,8 @@ export function AcademicPerformance({ data, updateData, updateFiles, errors = {}
 
   return (
     <div className="space-y-6">
+      
+
       <div className="space-y-2">
         <Label htmlFor="cgpa" className="flex items-center">
           CGPA
@@ -57,7 +87,10 @@ export function AcademicPerformance({ data, updateData, updateFiles, errors = {}
 
       {/* Admin verification info for academic proofs */}
       <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
-        Proofs are verified and approved by the admin. Please upload all Marksheets or Results in a single PDF and submit.
+        Proofs are verified and approved by the admin. 
+        {currentSemester && parseInt(currentSemester) > 1 ? 
+          `Please upload marksheets for all ${parseInt(currentSemester) - 1} previous semesters in a single collated PDF file.` : 
+          'Please upload all Marksheets or Results in a single PDF and submit.'}
       </div>
       <FileUpload 
         label="Proof of Academic Performance"

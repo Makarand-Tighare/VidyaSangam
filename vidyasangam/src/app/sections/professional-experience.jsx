@@ -97,11 +97,11 @@ export function ProfessionalExperience({ data, updateData, updateFiles, errors =
             {/* Admin verification info for internship proofs */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
               Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.<br />
-              The number of internships and certificates submitted should match.
+              {internshipCount && parseInt(internshipCount) > 0 ? 
+                `Please upload certificates for all ${internshipCount} internships in a single PDF file.` : 
+                'The number of internships and certificates submitted should match.'}
             </div>
-            {internshipProofCountMismatch && (
-              <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of internships.</div>
-            )}
+            
             <FileUpload 
               label="Proof of Internships"
               name="internshipProof"

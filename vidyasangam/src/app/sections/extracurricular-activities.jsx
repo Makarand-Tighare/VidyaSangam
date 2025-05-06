@@ -79,7 +79,7 @@ export function ExtracurricularActivities({ data, updateData, updateFiles, error
 
             {/* Admin verification info for extracurricular proofs */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
-              Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.
+              Proofs are verified and approved by the admin. Please upload all certificates related to your extracurricular activities in a single PDF file.
             </div>
             <FileUpload 
               label="Proof of Extracurricular Activities"

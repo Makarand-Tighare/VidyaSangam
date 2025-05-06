@@ -2811,7 +2811,7 @@ function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Internship Experience</span>
-                        <span className="block text-base">{selectedParticipant.internship_experience === "Yes" ? "Yes" : "No"}</span>
+                        <span className="block text-base">{selectedParticipant.internship_experience && (selectedParticipant.internship_experience.toLowerCase() === "yes" || selectedParticipant.internship_experience === true) ? "Yes" : "No"}</span>
                       </div>
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Number of Internships</span>
@@ -2825,7 +2825,7 @@ function AdminDashboard() {
                       )}
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Seminars/Workshops</span>
-                        <span className="block text-base">{selectedParticipant.seminars_or_workshops_attended === "Yes" ? "Yes" : "No"}</span>
+                        <span className="block text-base">{selectedParticipant.seminars_or_workshops_attended && (selectedParticipant.seminars_or_workshops_attended.toLowerCase() === "yes" || selectedParticipant.seminars_or_workshops_attended === true) ? "Yes" : "No"}</span>
                       </div>
                       {selectedParticipant.describe_seminars_or_workshops && selectedParticipant.describe_seminars_or_workshops !== "nan" && (
                         <div className="md:col-span-2">
@@ -2858,11 +2858,15 @@ function AdminDashboard() {
                       </div>
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Coding Competitions</span>
-                        <span className="block text-base">{selectedParticipant.coding_competitions_participate === "Yes" ? "Yes" : "No"}</span>
+                        <span className="block text-base">{selectedParticipant.coding_competitions_participate && (selectedParticipant.coding_competitions_participate.toLowerCase() === "yes" || selectedParticipant.coding_competitions_participate === true) ? "Yes" : "No"}</span>
                       </div>
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Competition Level</span>
                         <span className="block text-base">{selectedParticipant.level_of_competition || "N/A"}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Number of Competitions</span>
+                        <span className="block text-base">{selectedParticipant.number_of_coding_competitions || "0"}</span>
                       </div>
                     </div>
                   </div>

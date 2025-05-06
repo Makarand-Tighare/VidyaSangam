@@ -102,11 +102,11 @@ export function CodingCompetitions({ data, updateData, updateFiles, errors = {},
             {/* Admin verification info for coding competitions proofs */}
             <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-blue-900 text-sm mb-2">
               Proofs are verified and approved by the admin. Please upload all certificates in a single PDF and submit.<br />
-              The number of competitions and certificates submitted should match.
+              {competitionsCount && parseInt(competitionsCount) > 0 ? 
+                `Please upload certificates for all ${competitionsCount} competitions in a single PDF file.` : 
+                'The number of competitions and certificates submitted should match.'}
             </div>
-            {codingProofCountMismatch && (
-              <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of competitions.</div>
-            )}
+            
             <FileUpload 
               label="Proof of Coding Competitions"
               name="codingCompetitionsProof"
