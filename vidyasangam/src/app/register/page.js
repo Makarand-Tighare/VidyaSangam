@@ -40,7 +40,7 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://54.166.190.24:8000/api/user/departments-public/")
+        const response = await axios.get("https://df33-54-166-190-24.ngrok-free.app/api/user/departments-public/")
         if (response.status === 200) {
           setDepartments(response.data)
           console.log("Departments fetched:", response.data)
@@ -147,7 +147,7 @@ export default function RegisterPage() {
     setLoading(true)
     try {
       const response = await axios.post(
-        "http://54.166.190.24:8000/api/user/send-otp/",
+        "https://df33-54-166-190-24.ngrok-free.app/api/user/send-otp/",
         { email: formData.email },
         { withCredentials: true }
       )
@@ -168,7 +168,7 @@ export default function RegisterPage() {
   const handleVerifyOTP = async () => {
     try {
       const response = await axios.post(
-        "http://54.166.190.24:8000/api/user/verify-otp/",
+        "https://df33-54-166-190-24.ngrok-free.app/api/user/verify-otp/",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       )
@@ -214,7 +214,7 @@ export default function RegisterPage() {
       console.log("Request payload:", requestData)
 
       const response = await axios.post(
-        "http://54.166.190.24:8000/api/user/register/",
+        "https://df33-54-166-190-24.ngrok-free.app/api/user/register/",
         requestData,
         { withCredentials: true }
       )

@@ -6,7 +6,7 @@ from itertools import cycle
 app = Flask(__name__)
 
 # API URL for fetching student data
-LIST_PARTICIPANTS_API = 'http://54.166.190.24:8000/api/mentor_mentee/list_participants/'
+LIST_PARTICIPANTS_API = 'https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/list_participants/'
 
 def get_students_data():
     """Fetch student data from the external API."""

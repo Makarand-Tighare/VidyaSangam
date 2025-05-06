@@ -120,7 +120,7 @@ export default function SessionManagement() {
       console.log("Starting to fetch mentees...");
       
       // First fetch the user's registration number from the profile API
-      const profileResponse = await fetch("http://54.166.190.24:8000/api/user/profile/", {
+      const profileResponse = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/user/profile/", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -148,9 +148,9 @@ export default function SessionManagement() {
       console.log("Fetched registration number:", registrationNo);
       
       // Now fetch mentee data using the registration number
-      console.log(`Fetching mentees from: http://54.166.190.24:8000/api/mentor_mentee/profile/${registrationNo}/`);
+      console.log(`Fetching mentees from: https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/profile/${registrationNo}/`);
       
-      const response = await fetch(`http://54.166.190.24:8000/api/mentor_mentee/profile/${registrationNo}/`, {
+      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/profile/${registrationNo}/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -200,7 +200,7 @@ export default function SessionManagement() {
       setIsLoading(true);
       
       // Get registration number from profile
-      const profileResponse = await fetch("http://54.166.190.24:8000/api/user/profile/", {
+      const profileResponse = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/user/profile/", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
           "Content-Type": "application/json"
@@ -219,7 +219,7 @@ export default function SessionManagement() {
       }
       
       // Fetch sessions for this user (works for both mentors and mentees)
-      const response = await fetch(`http://54.166.190.24:8000/api/mentor_mentee/sessions/user/${registrationNo}/`, {
+      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/sessions/user/${registrationNo}/`, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
           "Content-Type": "application/json"
@@ -299,7 +299,7 @@ export default function SessionManagement() {
     
     try {
       // Get current user's registration number
-      const profileResponse = await fetch("http://54.166.190.24:8000/api/user/profile/", {
+      const profileResponse = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/user/profile/", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
           "Content-Type": "application/json"
@@ -332,13 +332,13 @@ export default function SessionManagement() {
         const isAuthorized = localStorage.getItem("isAuthorized");
         
         if (!isAuthorized) {
-          window.open("http://54.166.190.24:8000/api/utility/authorize", "_blank");
+          window.open("https://df33-54-166-190-24.ngrok-free.app/api/utility/authorize", "_blank");
           localStorage.setItem("isAuthorized", "true");
           setIsLoading(false);
           return;
         }
         
-        const meetResponse = await fetch("http://54.166.190.24:8000/api/utility/create-meet", {
+        const meetResponse = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/utility/create-meet", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -377,7 +377,7 @@ export default function SessionManagement() {
         participants: participantRegNos
       };
       
-      const response = await fetch("http://54.166.190.24:8000/api/mentor_mentee/sessions/create/", {
+      const response = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/sessions/create/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -423,7 +423,7 @@ export default function SessionManagement() {
     
     try {
       // Get current user's registration number
-      const profileResponse = await fetch("http://54.166.190.24:8000/api/user/profile/", {
+      const profileResponse = await fetch("https://df33-54-166-190-24.ngrok-free.app/api/user/profile/", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("authToken")}`,
           "Content-Type": "application/json"
@@ -440,7 +440,7 @@ export default function SessionManagement() {
       const sessionId = sessionToDelete.id;
       
       // Delete the session - remove debugging log and use only the primary endpoint
-      const response = await fetch(`http://54.166.190.24:8000/api/mentor_mentee/sessions/delete/${sessionId}/`, {
+      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/sessions/delete/${sessionId}/`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

@@ -16,7 +16,7 @@ export function AcademicPerformance({ data, updateData, updateFiles, errors = {}
     else if (data?.registration_no) {
       const fetchSemester = async () => {
         try {
-          const response = await axios.get(`http://54.166.190.24:8000/api/mentor_mentee/profile/${data.registration_no}`);
+          const response = await axios.get(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/profile/${data.registration_no}`);
           if (response.data && response.data.semester) {
             setCurrentSemester(response.data.semester);
             // Update the parent component with the semester info

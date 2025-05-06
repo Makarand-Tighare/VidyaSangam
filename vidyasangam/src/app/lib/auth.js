@@ -59,7 +59,7 @@ export const isAdmin = () => {
  */
 export const login = async (email, password) => {
   try {
-    const response = await fetch('http://54.166.190.24:8000/api/user/login/', {
+    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/user/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -102,7 +102,7 @@ export const login = async (email, password) => {
  */
 export const adminLogin = async (email, password) => {
   try {
-    const response = await fetch('http://54.166.190.24:8000/api/admin/login/', {
+    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/admin/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ export const refreshAccessToken = async () => {
       return localStorage.getItem('authToken'); // Return current token if no refresh token
     }
     
-    const response = await fetch('http://54.166.190.24:8000/api/user/token/refresh/', {
+    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/user/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

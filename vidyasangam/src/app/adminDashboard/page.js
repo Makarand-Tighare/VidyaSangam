@@ -204,7 +204,7 @@ function AdminDashboard() {
         proofTypes.map(async (type) => {
           try {
             // Try to fetch as PDF first
-            const url = `http://54.166.190.24:8000/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=pdf`;
+            const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=pdf`;
             const response = await axios.get(url, { headers, responseType: 'blob' });
             if (response.status === 200 && response.data) {
               proofs[type] = {
@@ -215,7 +215,7 @@ function AdminDashboard() {
           } catch (err) {
             // If not found as PDF, try as image (jpg)
             try {
-              const imgUrl = `http://54.166.190.24:8000/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=jpg`;
+              const imgUrl = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=jpg`;
               const imgResponse = await axios.get(imgUrl, { headers, responseType: 'blob' });
               if (imgResponse.status === 200 && imgResponse.data) {
                 proofs[type] = {
@@ -267,7 +267,10 @@ function AdminDashboard() {
 
   // Stats counters
   const stats = useMemo(() => {
-    if (!participants.length) return { total: 0, mentors: 0, mentees: 0 };
+    // Check if participants is an array and has items
+    if (!participants || !Array.isArray(participants) || participants.length === 0) {
+      return { total: 0, mentors: 0, mentees: 0 };
+    }
     
     const mentors = participants.filter(p => 
       p.mentoring_preferences && 
@@ -386,9 +389,9 @@ function AdminDashboard() {
       // Update to use the status-filtered endpoint if a status filter is applied
       let url;
       if (statusFilter !== 'all') {
-        url = `http://54.166.190.24:8000/api/mentor_mentee/participants/status/list/${statusFilter}/`;
+        url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participants/status/list/${statusFilter}/`;
       } else {
-        url = "http://54.166.190.24:8000/api/mentor_mentee/participants/list/";
+        url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participants/list/";
       }
       
       const headers = getAuthHeaders();
@@ -403,12 +406,17 @@ function AdminDashboard() {
         setDepartmentInfo(response.data.department_filter);
       }
       
-      setParticipants(response.data.participants || response.data);
+      // Ensure we're always setting an array of participants
+      const participantsData = response.data.participants || response.data;
+      setParticipants(Array.isArray(participantsData) ? participantsData : []);
+      
       setErrorMessage("");
     } catch (error) {
       console.error("Error fetching participants:", error);
       console.error("Error details:", error.response?.data || error.message);
       setErrorMessage("Failed to fetch participants. Please try again.");
+      // Set empty array on error
+      setParticipants([]);
     }
   };
 
@@ -416,7 +424,7 @@ function AdminDashboard() {
   const fetchUnmatchedParticipants = async () => {
     setIsLoadingUnmatched(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/unmatched";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/unmatched";
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
@@ -443,7 +451,7 @@ function AdminDashboard() {
     
     setIsLoading(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/match/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/match/";
       const headers = getAuthHeaders();
       
       console.log("Fetching matches with auth:", headers);
@@ -737,13 +745,19 @@ function AdminDashboard() {
   const fetchRelationships = async (returnData = false) => {
     setIsLoadingRelationships(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/relationships/list/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/list/";
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
       
       // The response contains an array of relationships directly
-      const relationshipsData = response.data.relationships || response.data || [];
+      let relationshipsData = response.data.relationships || response.data || [];
+      
+      // Ensure relationshipsData is an array
+      if (!Array.isArray(relationshipsData)) {
+        console.warn("relationshipsData is not an array:", relationshipsData);
+        relationshipsData = [];
+      }
       
       // Check if the response has department_filter from a department admin
       if (response.data.department_filter) {
@@ -783,6 +797,9 @@ function AdminDashboard() {
     } catch (error) {
       console.error("Error fetching relationships:", error);
       setErrorMessage("Failed to fetch mentor-mentee relationships. Please try again.");
+      
+      // Set empty array on error
+      setRelationships([]);
       return [];
     } finally {
       setIsLoadingRelationships(false);
@@ -798,7 +815,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/relationships/create/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/create/";
       const headers = getAuthHeaders();
       
       const response = await axios.post(url, {
@@ -910,7 +927,7 @@ function AdminDashboard() {
             mentee_registration_no: batchAssignmentParticipant.registration_no
           };
         
-        return axios.post("http://54.166.190.24:8000/api/mentor_mentee/relationships/create/", payload);
+        return axios.post("https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/create/", payload);
       });
       
       const results = await Promise.allSettled(promises);
@@ -1002,7 +1019,7 @@ function AdminDashboard() {
             onClick={async () => {
               if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
                 try {
-                  const response = await axios.delete(`http://54.166.190.24:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
+                  const response = await axios.delete(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/delete/${relationship.id}/`);
                   if (response.status === 200 || response.status === 204) {
                     await fetchRelationships();
                     await fetchUnmatchedParticipants();
@@ -1075,7 +1092,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/relationships/create/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/create/";
       const headers = getAuthHeaders();
       
       const response = await axios.post(url, {
@@ -1174,7 +1191,7 @@ function AdminDashboard() {
     
     setIsAssigning(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/relationships/create/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/create/";
       
       // Determine who is mentor and who is mentee
       let mentorRegNo, menteeRegNo;
@@ -1269,7 +1286,7 @@ function AdminDashboard() {
   const fetchPendingApprovals = async () => {
     setIsLoadingApprovals(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/admin/approvals/pending/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/admin/approvals/pending/";
       const response = await axios.get(url);
       setPendingApprovals(response.data.participants || []);
       setErrorMessage("");
@@ -1285,7 +1302,7 @@ function AdminDashboard() {
   const handleApprovalUpdate = async (registrationNo, approvalStatus, reason = '') => {
     setIsProcessingApproval(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/admin/approvals/update/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/admin/approvals/update/";
       const payload = {
         registration_no: registrationNo,
         approval_status: approvalStatus
@@ -1344,7 +1361,7 @@ function AdminDashboard() {
   const updateParticipantStatus = async (registrationNo, newStatus, reason = '') => {
     setIsUpdatingStatus(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/participants/status/update/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participants/status/update/";
       const payload = {
         registration_no: registrationNo,
         status: newStatus
@@ -1403,7 +1420,7 @@ function AdminDashboard() {
   const fetchBadges = async () => {
     setIsLoadingBadges(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/badges/list/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/list/";
       const response = await axios.get(url);
       setBadges(response.data);
       setErrorMessage("");
@@ -1421,7 +1438,7 @@ function AdminDashboard() {
     
     setIsLoadingParticipantBadges(true);
     try {
-      const url = `http://54.166.190.24:8000/api/mentor_mentee/participants/badges/${registrationNo}/`;
+      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participants/badges/${registrationNo}/`;
       const response = await axios.get(url);
       setParticipantBadges(response.data.badges);
       setErrorMessage("");
@@ -1436,7 +1453,7 @@ function AdminDashboard() {
   // Create a new badge
   const createBadge = async () => {
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/badges/create/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/create/";
       const response = await axios.post(url, badgeFormData);
       
       if (response.status === 201) {
@@ -1464,7 +1481,7 @@ function AdminDashboard() {
   // Award badge to participant
   const awardBadge = async (badgeId, participantId) => {
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/badges/award/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/award/";
       const response = await axios.post(url, {
         badge_id: badgeId,
         participant_id: participantId
@@ -1516,7 +1533,7 @@ function AdminDashboard() {
     setDeleteError(null);
     
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/badges/delete/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/delete/";
       const response = await axios.delete(url, {
         data: {
           participant_id: participantForBadge.registration_no,
@@ -1558,7 +1575,7 @@ function AdminDashboard() {
     setDeleteError(null);
     
     try {
-      const url = `http://54.166.190.24:8000/api/mentor_mentee/badges/delete-type/${badgeToDelete.id}/`;
+      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/delete-type/${badgeToDelete.id}/`;
       const response = await axios.delete(url);
       
       // Refresh badges list
@@ -1598,7 +1615,7 @@ function AdminDashboard() {
   const fetchFeedbackSettings = async () => {
     setIsLoadingFeedbackSettings(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/feedback/settings/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/settings/";
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
@@ -1615,7 +1632,7 @@ function AdminDashboard() {
   const updateFeedbackSettings = async () => {
     setIsSavingFeedbackSettings(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/feedback/settings/update/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/settings/update/";
       const headers = getAuthHeaders();
       
       const payload = {
@@ -1644,7 +1661,7 @@ function AdminDashboard() {
     try {
       setIsLoadingFeedbackSettings(true);
       const response = await axios.post(
-        `http://54.166.190.24:8000/api/mentor_mentee/feedback/send-reminders/`,
+        `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/send-reminders/`,
         { feedback_type: feedbackType },
         { headers: getAuthHeaders() }
       );
@@ -1668,7 +1685,7 @@ function AdminDashboard() {
   const fetchMentorFeedback = async (mentorId) => {
     setIsLoadingMentorFeedback(true);
     try {
-      const url = `http://54.166.190.24:8000/api/mentor_mentee/feedback/mentor/${mentorId}/`;
+      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/mentor/${mentorId}/`;
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
@@ -1686,7 +1703,7 @@ function AdminDashboard() {
   const fetchAppFeedbackSummary = async () => {
     setIsLoadingAppFeedback(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/feedback/app/summary/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/app/summary/";
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
@@ -1722,7 +1739,7 @@ function AdminDashboard() {
   // Delete feedback item
   const deleteFeedback = async (feedbackType, feedbackId) => {
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/feedback/delete/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/delete/";
       const headers = getAuthHeaders();
       
       const payload = {
@@ -1766,7 +1783,7 @@ function AdminDashboard() {
   const fetchUserEligibility = async (registrationNo) => {
     setIsLoadingUserEligibility(true);
     try {
-      const url = `http://54.166.190.24:8000/api/mentor_mentee/feedback/eligibility/${registrationNo}/`;
+      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/eligibility/${registrationNo}/`;
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
@@ -1794,7 +1811,7 @@ function AdminDashboard() {
   const updateUserEligibility = async () => {
     setIsUpdatingUserEligibility(true);
     try {
-      const url = "http://54.166.190.24:8000/api/mentor_mentee/feedback/eligibility/update/";
+      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/eligibility/update/";
       const headers = getAuthHeaders();
       
       const payload = {
@@ -2637,7 +2654,7 @@ function AdminDashboard() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {relationships
+                      {Array.isArray(relationships) ? relationships
                         .filter(rel => {
                           if (!relationshipSearchTerm) return true;
                           
@@ -2670,7 +2687,7 @@ function AdminDashboard() {
                                 onClick={async () => {
                                   if (confirm(`Are you sure you want to remove the relationship between mentor ${relationship.mentor.name} and mentee ${relationship.mentee.name}?`)) {
                                     try {
-                                      const response = await axios.delete(`http://54.166.190.24:8000/api/mentor_mentee/relationships/delete/${relationship.id}/`);
+                                      const response = await axios.delete(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/relationships/delete/${relationship.id}/`);
                                       if (response.status === 200 || response.status === 204) {
                                         await fetchRelationships();
                                         await fetchUnmatchedParticipants();
@@ -2692,7 +2709,13 @@ function AdminDashboard() {
                               </button>
                             </td>
                           </tr>
-                        ))}
+                        )) : (
+                          <tr>
+                            <td colSpan="8" className="px-4 py-3 text-center text-gray-500">
+                              No relationships data available
+                            </td>
+                          </tr>
+                        )}
                     </tbody>
                   </table>
                 </div>
