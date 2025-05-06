@@ -9,12 +9,12 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://54.166.190.24:3000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://127.0.0.1:3000"}})
 
 # Replace with your client secret JSON file path
 CLIENT_SECRETS_FILE = "client_secret.json"
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
-REDIRECT_URI = "http://54.166.190.24:5000/callback"
+REDIRECT_URI = "http://127.0.0.1:5000/callback"
 
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 

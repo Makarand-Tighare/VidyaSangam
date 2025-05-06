@@ -317,7 +317,7 @@ export default function MentoringForm() {
     // Fetch user profile data to pre-fill the form
     const fetchUserData = async () => {
       try {
-        const response = await fetch('http://54.166.190.24:8000/api/user/profile/', {
+        const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -606,7 +606,7 @@ export default function MentoringForm() {
       console.log('Transformed Data:', JSON.stringify(transformedData));
       
       // Use formDataForSubmit for actual submission with files
-      const response = await axios.post('http://54.166.190.24:8000/api/mentor_mentee/participants/create/', formDataForSubmit, {
+      const response = await axios.post('http://127.0.0.1:8000/api/mentor_mentee/participants/create/', formDataForSubmit, {
         headers: {
           'Content-Type': 'multipart/form-data',
         }
