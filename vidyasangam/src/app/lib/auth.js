@@ -59,7 +59,7 @@ export const isAdmin = () => {
  */
 export const login = async (email, password) => {
   try {
-    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/user/login/', {
+    const response = await fetch('http://127.0.0.1:8000/api/user/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -102,7 +102,7 @@ export const login = async (email, password) => {
  */
 export const adminLogin = async (email, password) => {
   try {
-    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/admin/login/', {
+    const response = await fetch('http://127.0.0.1:8000/api/admin/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -156,7 +156,7 @@ export const refreshAccessToken = async () => {
       return localStorage.getItem('authToken'); // Return current token if no refresh token
     }
     
-    const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/user/token/refresh/', {
+    const response = await fetch('http://127.0.0.1:8000/api/user/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -236,6 +236,15 @@ export const authenticatedFetch = async (url, options = {}) => {
         clearTokens();
         throw new Error('Authentication failed. Please log in again.');
       }
+    }
+    
+    // New code to check content type and handle HTML responses
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Received HTML response instead of JSON:', url);
+      const htmlText = await response.text();
+      console.error('HTML response preview:', htmlText.substring(0, 200));
+      throw new Error('Received HTML instead of JSON. API endpoint may be down or returning an error page.');
     }
     
     return response;

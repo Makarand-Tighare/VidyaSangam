@@ -132,6 +132,18 @@ function Profile() {
     isSubmitting: false
   });
   
+  // Add LinkedIn sharing state
+  const [linkedInShareData, setLinkedInShareData] = useState({
+    isOpen: false,
+    isLoading: false,
+    previewContent: '',
+    badgeName: '',
+    badgeDescription: '',
+    achievementDetails: '',
+    isGeneratingPreview: false,
+    badgeId: null
+  });
+  
   // Check auth first before making any API calls
   useEffect(() => {
     const checkAuth = async () => {
@@ -156,7 +168,8 @@ function Profile() {
   const fetchUserData = async () => {
     setLoadingProfile(true);
     try {
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/user/profile/');
+      console.log('Fetching user profile data...');
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -300,7 +313,7 @@ function Profile() {
 
   const fetchMentorMenteeStatus = async (registrationNo) => {
     try {
-      const response = await authenticatedFetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/profile/${registrationNo}/`);
+      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`);
       
       if (!response.ok) throw new Error('Failed to fetch mentor/mentee data')
       
@@ -371,7 +384,7 @@ function Profile() {
     setTaskData(prev => ({ ...prev, isLoading: true }));
   
     try {
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/generate/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/generate/', {
         method: 'POST',
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
@@ -439,7 +452,7 @@ function Profile() {
         semester: formData.semester
       }
       
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/user/update-profile/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/update-profile/', {
         method: 'PATCH',
         body: JSON.stringify(updateData)
       })
@@ -495,7 +508,7 @@ function Profile() {
     setSecurityData(prev => ({ ...prev, isSubmitting: true, message: '' }))
     
     try {
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/user/changepassword/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/changepassword/', {
         method: 'POST',
         body: JSON.stringify({
           // current_password: securityData.currentPassword,
@@ -570,7 +583,7 @@ function Profile() {
   // Submit completed quiz to the server
   const submitQuiz = async (registrationNo, quizId, userAnswers) => {
     try {
-      const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/submit/', {
+      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/submit/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -599,7 +612,7 @@ function Profile() {
   const fetchMenteeQuizHistory = async (menteeId) => {
     try {
       // Fetch both pending and completed quizzes
-      const pendingResponse = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/pending/${menteeId}/`, {
+      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -611,7 +624,7 @@ function Profile() {
       
       const pendingQuizzes = await pendingResponse.json();
       
-      const completedResponse = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -677,7 +690,7 @@ function Profile() {
   // Get quiz history for a user
   const getQuizHistory = async (registrationNo) => {
     try {
-      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/results/${registrationNo}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${registrationNo}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -698,7 +711,7 @@ function Profile() {
   // Fetch pending quizzes for a mentee
   const fetchPendingQuizzes = async (menteeId) => {
     try {
-      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/pending/${menteeId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -711,7 +724,7 @@ function Profile() {
       const pendingQuizzes = await response.json();
       
       // Fetch completed quizzes
-      const completedResponse = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/results/${menteeId}/`, {
+      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -823,7 +836,7 @@ function Profile() {
       // Determine user role based on formData.status
       const userRole = formData.status === 'Mentor' ? 'mentor' : 'mentee';
       
-      const response = await fetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/quiz/delete/${quizId}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/delete/${quizId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -921,7 +934,7 @@ function Profile() {
   const fetchBadges = async () => {
     setIsLoadingBadges(true);
     try {
-      const url = "https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/list/";
+      const url = "http://127.0.0.1:8000/api/mentor_mentee/badges/list/";
       const response = await axios.get(url);
       setBadges(response.data);
     } catch (error) {
@@ -934,7 +947,7 @@ function Profile() {
   const fetchUserBadges = async () => {
     if (!formData.registrationNumber) return;
     try {
-      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
       const response = await axios.get(url);
       
       // Update to match the new API response structure
@@ -958,7 +971,7 @@ function Profile() {
 
   const fetchUserPoints = async () => {
     try {
-      const url = 'https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/leaderboard/';
+      const url = 'http://127.0.0.1:8000/api/mentor_mentee/leaderboard/';
       const response = await axios.get(url);
       // Find the user in the leaderboard
       const user = response.data.find(u => u.id === formData.registrationNumber);
@@ -970,7 +983,7 @@ function Profile() {
 
   const fetchApprovalAndStatus = async () => {
     try {
-      const url = `https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/profile/${formData.registrationNumber}/`;
+      const url = `http://127.0.0.1:8000/api/mentor_mentee/profile/${formData.registrationNumber}/`;
       const response = await axios.get(url);
       setApprovalStatus(response.data.approval_status || '');
       setParticipantStatus(response.data.status || '');
@@ -982,7 +995,7 @@ function Profile() {
   const handleClaimBadge = async (badgeId) => {
     setIsClaimingBadge(true);
     try {
-      const url = 'https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/badges/claim/';
+      const url = 'http://127.0.0.1:8000/api/mentor_mentee/badges/claim/';
       await axios.post(url, {
         badge_id: badgeId,
         participant_id: formData.registrationNumber
@@ -1061,7 +1074,7 @@ function Profile() {
   // Check if user is eligible to submit feedback
   const checkFeedbackEligibility = async () => {
     try {
-      const response = await authenticatedFetch(`https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/eligibility/${formData.registrationNumber}/`);
+      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/feedback/eligibility/${formData.registrationNumber}/`);
       
       if (!response.ok) {
         throw new Error('Failed to check feedback eligibility');
@@ -1155,7 +1168,7 @@ function Profile() {
         anonymous: mentorFeedback.anonymous
       };
       
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/mentor/submit/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/mentor/submit/', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -1217,7 +1230,7 @@ function Profile() {
         anonymous: appFeedback.anonymous
       };
       
-      const response = await authenticatedFetch('https://df33-54-166-190-24.ngrok-free.app/api/mentor_mentee/feedback/app/submit/', {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/app/submit/', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -1303,6 +1316,165 @@ function Profile() {
       </div>
     </div>
   );
+
+  const handleShareToLinkedIn = async (badge) => {
+    // Check if badge has already been shared
+    const userBadge = userBadges.find(ub => ub.badge_details.id === badge.id);
+    if (userBadge?.is_shared) {
+      toast.info("Already Shared", {
+        description: "This badge has already been shared on LinkedIn."
+      });
+      return;
+    }
+    
+    // Check if user has LinkedIn access token
+    if (!formData.linkedin_access_token) {
+      toast.error("Please connect your LinkedIn account first", {
+        description: "Connect your LinkedIn account in your profile to share badges."
+      });
+      return;
+    }
+    
+    // Default achievement details (user can modify this)
+    const achievementDetails = `Earned the ${badge.name} badge in the VidyaSangam mentoring program at YCCE.`;
+    
+    setLinkedInShareData({
+      isOpen: true,
+      isLoading: false,
+      previewContent: '',
+      badgeName: badge.name,
+      badgeDescription: badge.description,
+      achievementDetails: achievementDetails,
+      isGeneratingPreview: false,
+      badgeId: badge.id
+    });
+  };
+
+  const generateLinkedInPreview = async () => {
+    if (!linkedInShareData.achievementDetails) {
+      toast.error("Please provide achievement details");
+      return;
+    }
+    
+    setLinkedInShareData(prev => ({ 
+      ...prev, 
+      isGeneratingPreview: true,
+      isLoading: true 
+    }));
+    
+    try {
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/preview/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          badgeName: linkedInShareData.badgeName,
+          achievementDetails: linkedInShareData.achievementDetails
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate LinkedIn preview');
+      }
+      
+      const data = await response.json();
+      
+      setLinkedInShareData(prev => ({
+        ...prev,
+        isLoading: false,
+        isGeneratingPreview: false,
+        previewContent: data.preview_content || 
+          `I'm excited to share that I've earned the ${linkedInShareData.badgeName} badge through the VidyaSangam mentoring program at YCCE! ${linkedInShareData.badgeDescription}`
+      }));
+      
+    } catch (error) {
+      console.error('Error generating LinkedIn preview:', error);
+      
+      setLinkedInShareData(prev => ({
+        ...prev,
+        isLoading: false,
+        isGeneratingPreview: false,
+        previewContent: `I'm excited to share that I've earned the ${linkedInShareData.badgeName} badge through the VidyaSangam mentoring program at YCCE! ${linkedInShareData.badgeDescription}`
+      }));
+      
+      toast.error("Error generating LinkedIn preview", {
+        description: error.message || "An error occurred. We've set a default message for you."
+      });
+    }
+  };
+
+  const handlePostToLinkedIn = async () => {
+    setLinkedInShareData(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      // Fetch latest profile data to get the current access token
+      const profileResponse = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+      if (!profileResponse.ok) {
+        throw new Error('Failed to fetch profile data');
+      }
+      const profileData = await profileResponse.json();
+      
+      const payload = {
+        accessToken: profileData.linkedin_access_token,
+        badgeName: linkedInShareData.badgeName,
+        achievementDetails: linkedInShareData.achievementDetails
+      };
+      
+      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/post/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to post to LinkedIn');
+      }
+      
+      const data = await response.json();
+      
+      // Update the user badges to mark this badge as shared
+      setUserBadges(prev => prev.map(badge => {
+        if (badge.badge_details.id === linkedInShareData.badgeId) {
+          return { ...badge, is_shared: true };
+        }
+        return badge;
+      }));
+      
+      toast.success("Successfully shared to LinkedIn!", {
+        description: "Your achievement has been posted to your LinkedIn profile."
+      });
+      
+      // Close the dialog
+      setLinkedInShareData(prev => ({ 
+        ...prev, 
+        isOpen: false, 
+        isLoading: false 
+      }));
+      
+    } catch (error) {
+      toast.error("Error posting to LinkedIn", {
+        description: error.message || "An error occurred. Please try again later."
+      });
+      
+      setLinkedInShareData(prev => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const closeLinkedInShare = () => {
+    setLinkedInShareData({
+      isOpen: false,
+      isLoading: false,
+      previewContent: '',
+      badgeName: '',
+      badgeDescription: '',
+      achievementDetails: '',
+      isGeneratingPreview: false,
+      badgeId: null
+    });
+  };
 
   // Render profile page with loading state
   if (isInitializing || loadingProfile) {
@@ -1692,12 +1864,35 @@ function Profile() {
                           </div>
                           <div className="flex justify-center">
                             {isClaimed ? (
-                              <span className="w-full text-center py-2 rounded-lg bg-green-100 text-green-800 font-semibold text-sm flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                                Already Claimed
-                              </span>
+                              <div className="flex flex-col gap-2">
+                                <span className="w-full text-center py-2 rounded-lg bg-green-100 text-green-800 font-semibold text-sm flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                  Already Claimed
+                                </span>
+                                <Button
+                                  className="w-full bg-blue-700 hover:bg-blue-800 flex items-center justify-center gap-2"
+                                  onClick={() => handleShareToLinkedIn(badge)}
+                                  disabled={!formData.linkedin_access_token || userBadge?.is_shared}
+                                >
+                                  {userBadge?.is_shared ? (
+                                    <>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
+                                      </svg>
+                                      Already Shared
+                                    </>
+                                  ) : (
+                                    <>
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
+                                      </svg>
+                                      Share on LinkedIn
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
                             ) : isEarned ? (
                               <Button
                                 className="w-full bg-yellow-600 hover:bg-yellow-700"
@@ -2594,6 +2789,179 @@ function Profile() {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add LinkedIn Share Dialog */}
+      <Dialog open={linkedInShareData.isOpen} onOpenChange={closeLinkedInShare}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Share Badge Achievement on LinkedIn</DialogTitle>
+            <DialogDescription>
+              Share your achievement details and we'll create an engaging LinkedIn post for you.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Badge Info */}
+            <div className="bg-blue-50 p-4 rounded-lg flex items-start gap-3">
+              <div className="flex-shrink-0 bg-blue-100 rounded-full p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div>
+                <h4 className="font-medium text-blue-800">{linkedInShareData.badgeName}</h4>
+                <p className="text-sm text-blue-600">{linkedInShareData.badgeDescription}</p>
+              </div>
+            </div>
+            
+            {/* Step 1: Enter Achievement Details */}
+            <div className={`space-y-3 ${linkedInShareData.previewContent ? 'opacity-50' : ''}`}>
+              <div className="flex items-center gap-2">
+                <div className="flex-shrink-0 bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium text-gray-700">1</div>
+                <h3 className="font-medium">Describe Your Achievement</h3>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="achievement-details" className="text-sm font-medium text-gray-700">
+                  What did you do to earn this badge? (Be specific)
+                </Label>
+                <Textarea
+                  id="achievement-details"
+                  className="min-h-[100px] text-sm"
+                  value={linkedInShareData.achievementDetails}
+                  onChange={(e) => setLinkedInShareData(prev => ({
+                    ...prev,
+                    achievementDetails: e.target.value
+                  }))}
+                  placeholder="Example: Successfully completed 10 coding challenges, helped 5 peers with technical issues, participated in 3 group projects..."
+                  disabled={linkedInShareData.previewContent || linkedInShareData.isLoading}
+                />
+                <p className="text-xs text-gray-500">
+                  The more details you provide, the better we can craft your LinkedIn post.
+                </p>
+              </div>
+              
+              <div className="flex justify-end">
+                <Button 
+                  onClick={generateLinkedInPreview}
+                  disabled={!linkedInShareData.achievementDetails || linkedInShareData.isGeneratingPreview || linkedInShareData.previewContent}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {linkedInShareData.isGeneratingPreview ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Preview...
+                    </>
+                  ) : (
+                    'Generate LinkedIn Post'
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            {/* Step 2: Preview & Edit Generated Content */}
+            {(linkedInShareData.isLoading && !linkedInShareData.isGeneratingPreview) ? (
+              <div className="flex justify-center items-center py-6">
+                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                <span className="ml-3 text-blue-600 font-medium">Loading preview...</span>
+              </div>
+            ) : linkedInShareData.previewContent ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex-shrink-0 bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium text-gray-700">2</div>
+                  <h3 className="font-medium">Review & Edit Your Post</h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin-preview" className="text-sm font-medium text-gray-700">
+                    Edit your post (if needed)
+                  </Label>
+                  <Textarea
+                    id="linkedin-preview"
+                    className="min-h-[150px] text-sm"
+                    value={linkedInShareData.previewContent}
+                    onChange={(e) => setLinkedInShareData(prev => ({
+                      ...prev,
+                      previewContent: e.target.value
+                    }))}
+                    placeholder="Loading preview content..."
+                  />
+                </div>
+                
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="text-sm font-semibold text-blue-800 flex items-center mb-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Preview
+                  </h4>
+                  <div className="bg-white p-3 rounded border border-blue-100 text-sm text-gray-700">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage 
+                          src={profilePicture || "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380"} 
+                        />
+                        <AvatarFallback>
+                          {formData.firstName && formData.lastName 
+                            ? `${formData.firstName[0]}${formData.lastName[0]}`
+                            : 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-sm">{formData.firstName} {formData.lastName}</p>
+                        <p className="text-xs text-gray-500">Just now · 🌎</p>
+                      </div>
+                    </div>
+                    <p className="whitespace-pre-line">{linkedInShareData.previewContent}</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end gap-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setLinkedInShareData(prev => ({ 
+                      ...prev, 
+                      previewContent: '',
+                      isGeneratingPreview: false
+                    }))}
+                    disabled={linkedInShareData.isLoading}
+                  >
+                    Start Over
+                  </Button>
+                  <Button 
+                    className="bg-blue-700 hover:bg-blue-800 flex items-center gap-2"
+                    onClick={handlePostToLinkedIn}
+                    disabled={linkedInShareData.isLoading || !linkedInShareData.previewContent}
+                  >
+                    {linkedInShareData.isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Posting...
+                      </>
+                    ) : (
+                      <>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                          <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
+                        </svg>
+                        Post to LinkedIn
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={closeLinkedInShare}
+              disabled={linkedInShareData.isLoading}
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

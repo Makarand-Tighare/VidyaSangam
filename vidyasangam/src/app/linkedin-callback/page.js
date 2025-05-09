@@ -22,7 +22,7 @@ function LinkedInCallback() {
       const token = localStorage.getItem('authToken');
       if (!token) throw new Error('No auth token found');
 
-      const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/user/profile/', {
+      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -41,7 +41,8 @@ function LinkedInCallback() {
 
   useEffect(() => {
     const exchangeAuthorizationCode = async () => {
-      if (code && state) {
+      if (code && state && !hasFetched.current) {
+        hasFetched.current = true; // Set flag to prevent duplicate requests
         try {
           // Fetch the user's email before sending the LinkedIn authorization request
           const email = await fetchUserData();
@@ -51,7 +52,7 @@ function LinkedInCallback() {
             return;
           }
 
-          const response = await fetch('https://df33-54-166-190-24.ngrok-free.app/api/utility/linkedin-auth/', {
+          const response = await fetch('http://127.0.0.1:8000/api/utility/linkedin-auth/', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ function LinkedInCallback() {
             body: JSON.stringify({
               authorization_code: code,
               state: state,
-              email: email, // Include the email in the request body
+              email: email,
             }),
           });
 
@@ -68,12 +69,16 @@ function LinkedInCallback() {
           if (response.status === 200) {
             setLoading(false);
             setSuccess(true);
-            router.push('/profile'); // Navigate to the homepage
+            // Add a small delay before redirecting to ensure the token is saved
+            setTimeout(() => {
+              router.push('/profile');
+            }, 1000);
           } else {
-            setError(data.error || 'An error occurred while processing your request.');
+            setError(data.error || data.details || 'An error occurred while processing your request.');
           }
         } catch (err) {
-          setError('Failed to connect to the server.');
+          console.error('LinkedIn auth error:', err);
+          setError('Failed to connect to the server. Please try again.');
         } finally {
           setLoading(false);
         }
