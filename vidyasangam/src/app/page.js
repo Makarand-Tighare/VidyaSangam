@@ -8,7 +8,7 @@ import testimonialData from "./data/testimonial.data";
 import Linkedin from "./images/linkedin.png";
 import Twitter from "./images/x.png";
 import Instagram from "./images/insta.png";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import MentorMentee from "./images/mentorMentee.png";
 import Leaderboard from "./images/leaderboard.jpg";
@@ -267,7 +267,7 @@ const AnimatedCounter = ({ end, duration = 2000, label, icon }) => {
       </div>
       <h3 className="text-4xl font-bold text-indigo-900 mb-1">
         <span ref={counterRef}>0</span>
-        {end === 4.8 && <span>+</span>}
+        {typeof end === 'number' && end.toString().includes('.') && <span>+</span>}
       </h3>
       <p className="text-gray-600">{label}</p>
     </div>
@@ -277,6 +277,13 @@ const AnimatedCounter = ({ end, duration = 2000, label, icon }) => {
 export default function Home() {
   // Ref for scroll indicator
   const scrollIndicatorRef = useRef(null);
+  // State for statistics
+  const [stats, setStats] = useState({
+    active_mentors: 50,
+    active_students: 200,
+    sessions_completed: 120,
+    average_rating: 4.8
+  });
   
   useEffect(() => {
     const handleScroll = () => {
@@ -290,6 +297,23 @@ export default function Home() {
     };
     
     window.addEventListener('scroll', handleScroll);
+    
+    // Fetch statistics from API
+    const fetchStats = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/user/public-stats/');
+        if (response.ok) {
+          const data = await response.json();
+          setStats(data);
+        }
+      } catch (error) {
+        console.log("Failed to fetch statistics, using mock data instead");
+        // Keep using the mock data from initial state
+      }
+    };
+    
+    fetchStats();
+    
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -413,7 +437,7 @@ export default function Home() {
             
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12 relative z-10">
               <AnimatedCounter 
-                end={50} 
+                end={stats.active_mentors} 
                 label="Active Mentors"
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
@@ -423,7 +447,7 @@ export default function Home() {
               />
               
               <AnimatedCounter 
-                end={200} 
+                end={stats.active_students} 
                 label="Active Students"
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
@@ -433,7 +457,7 @@ export default function Home() {
               />
               
               <AnimatedCounter 
-                end={120} 
+                end={stats.sessions_completed} 
                 label="Sessions Completed"
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
@@ -443,7 +467,7 @@ export default function Home() {
               />
 
               <AnimatedCounter 
-                end={4.8} 
+                end={stats.average_rating} 
                 label="Average Rating"
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-600" viewBox="0 0 20 20" fill="currentColor">
