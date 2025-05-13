@@ -9,9 +9,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2 } from "lucide-react"
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import axios from "axios"
 import NavBar from "../components/navBar"
+import { toast } from "sonner"
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -33,6 +34,8 @@ export default function RegisterPage() {
   const [otpSent, setOtpSent] = useState(false)
   const [otpVerified, setOtpVerified] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [registering, setRegistering] = useState(false)
   const [errors, setErrors] = useState({})
   const [passwordStrength, setPasswordStrength] = useState("")
   const [isFormValid, setIsFormValid] = useState(false)
@@ -71,7 +74,7 @@ export default function RegisterPage() {
       formData.department_id !== "" &&
       formData.mobileNumber.trim() !== "" &&
       formData.password.trim() !== "" &&
-      Object.values(errors).some((error) => error !== "") &&
+      !Object.values(errors).some((error) => error !== "") &&
       (passwordStrength === "Strong" || passwordStrength === "Very Strong")
     setIsFormValid(isValid)
     console.log("Form validity updated:", isValid)
@@ -153,19 +156,20 @@ export default function RegisterPage() {
       )
       if (response.status === 200) {
         setOtpSent(true)
-        setErrors((prev) => ({ ...prev, otpSent: "OTP sent to your email. Check Spam Folder." }))
+        toast.success("OTP sent successfully. Check your email (including spam folder).")
       } else {
-        setErrors((prev) => ({ ...prev, otpSent: "Failed to send OTP" }))
+        toast.error("Failed to send OTP. Please try again.")
       }
     } catch (error) {
       console.error("Error sending OTP", error)
-      setErrors((prev) => ({ ...prev, otpSent: "Error sending OTP" }))
+      toast.error(error.response?.data?.message || "Error sending OTP. Please try again later.")
     } finally {
       setLoading(false)
     }
   }
 
   const handleVerifyOTP = async () => {
+    setVerifyingOtp(true)
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/verify-otp/",
@@ -174,24 +178,27 @@ export default function RegisterPage() {
       )
       if (response.status === 200) {
         setOtpVerified(true)
-        setErrors((prev) => ({ ...prev, otpVerified: "" }))
+        toast.success("Email verified successfully")
         setFormData((prev) => ({ ...prev, otp: "" }))
       } else {
-        setErrors((prev) => ({ ...prev, otpVerified: "Invalid OTP. Please try again." }))
+        toast.error("Invalid OTP. Please try again.")
       }
     } catch (error) {
       console.error("Error verifying OTP:", error)
-      setErrors((prev) => ({ ...prev, otpVerified: "Error verifying OTP" }))
+      toast.error(error.response?.data?.message || "Error verifying OTP. Please try again.")
+    } finally {
+      setVerifyingOtp(false)
     }
   }
 
   const handleRegister = async (e) => {
     e.preventDefault()
     if (!isFormValid) {
-      alert("Please fill all fields correctly and ensure a strong password before submitting.")
+      toast.error("Please fill all fields correctly and ensure a strong password before submitting.")
       return
     }
 
+    setRegistering(true)
     // Debug log for department value
     console.log("Department ID before API call:", formData.department_id)
     console.log("Complete form data:", formData)
@@ -222,15 +229,19 @@ export default function RegisterPage() {
       console.log("Registration response:", response)
 
       if (response.status === 201) {
-        alert("Registration Successful!")
-        router.push("/login")
+        toast.success("Registration successful! Redirecting to login...")
+        setTimeout(() => {
+          router.push("/login")
+        }, 1500)
       } else {
-        alert(response.data.message || "Registration failed")
+        toast.error(response.data.message || "Registration failed. Please try again.")
       }
     } catch (error) {
       console.error("Registration error", error)
       console.error("Error response:", error.response?.data)
-      alert("An error occurred during registration. Please try again.")
+      toast.error(error.response?.data?.message || "An error occurred during registration. Please try again.")
+    } finally {
+      setRegistering(false)
     }
   }
 
@@ -261,7 +272,12 @@ export default function RegisterPage() {
                     disabled={otpSent || loading || errors.email}
                     className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
                   >
-                    {loading ? "Sending..." : otpSent ? "OTP Sent" : "Send OTP"}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : otpSent ? "OTP Sent" : "Send OTP"}
                   </Button>
                 </div>
                 {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
@@ -281,8 +297,16 @@ export default function RegisterPage() {
                     type="button"
                     onClick={handleVerifyOTP}
                     className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                    disabled={verifyingOtp}
                   >
-                    Verify OTP
+                    {verifyingOtp ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      "Verify OTP"
+                    )}
                   </Button>
                   {errors.otpVerified && (
                     <Alert variant="destructive">
@@ -461,9 +485,16 @@ export default function RegisterPage() {
                   <Button
                     type="submit"
                     className="w-full bg-[#4f83f8] hover:bg-[#357ae8] text-white"
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || registering}
                   >
-                    Register
+                    {registering ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Registering...
+                      </>
+                    ) : (
+                      "Register"
+                    )}
                   </Button>
                 </>
               )}

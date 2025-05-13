@@ -1507,7 +1507,7 @@ function Profile() {
             <CardContent className="flex flex-col items-center pt-6">
               <Avatar className="w-32 h-32 mb-4 border-4 border-white shadow-lg">
                 <AvatarImage 
-                  src={profilePicture || "https://img.freepik.com/free-vector/blue-circle-with-white-user_78370-4707.jpg?t=st=1730071119~exp=1730074719~hmac=37544826c51ddd25b4d265c9336deff7b884deb1771c551bcf5b23bbfa75a336&w=1380"} 
+                  src={profilePicture} 
                   alt="Profile" 
                 />
                 <AvatarFallback className="bg-blue-100 text-blue-600 text-2xl font-bold">

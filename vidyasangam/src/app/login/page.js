@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import NavBar from "../components/navBar";
 import { login, isLoggedIn } from "../lib/auth";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -99,24 +101,28 @@ export default function LoginPage() {
            localStorage.setItem("isDepartmentAdmin", "false");
          }
          
+         toast.success("Admin login successful!");
          router.push("/adminDashboard");
        } else {
          // Show error message from API
          if (data.errors && data.errors.non_field_errors) {
-           setErrorMessage(data.errors.non_field_errors.join(", "));
+           const errorMsg = data.errors.non_field_errors.join(", ");
+           setErrorMessage(errorMsg);
+           toast.error(errorMsg);
          } else if (data.error) {
            setErrorMessage(data.error);
+           toast.error(data.error);
          } else {
-           setErrorMessage("Admin login failed. Please check credentials.");
+           const errorMsg = "Admin login failed. Please check credentials.";
+           setErrorMessage(errorMsg);
+           toast.error(errorMsg);
          }
-         
-         // Remove the development fallback completely - this was causing login with wrong credentials
        }
      } catch (error) {
        console.error("Admin login API error:", error);
-       setErrorMessage("Connection error. Could not reach authentication server.");
-       
-       // Remove the development fallback completely
+       const errorMsg = "Connection error. Could not reach authentication server.";
+       setErrorMessage(errorMsg);
+       toast.error(errorMsg);
      } finally {
        setIsLoading(false);
      }
@@ -130,13 +136,18 @@ export default function LoginPage() {
         localStorage.setItem("isLoggedIn", "true");
         localStorage.setItem("isAdmin", "false"); // Explicitly set as non-admin
         localStorage.setItem("isDepartmentAdmin", "false");
+        toast.success("Login successful!");
         router.push("/"); // Navigate to the homepage for regular users
       } else {
-        setErrorMessage(result.message || "Login failed. Please check your credentials.");
+        const errorMsg = result.message || "Login failed. Please check your credentials.";
+        setErrorMessage(errorMsg);
+        toast.error(errorMsg);
       }
     } catch (error) {
       console.error("Login error", error);
-      setErrorMessage("An unexpected error occurred. Please try again.");
+      const errorMsg = "An unexpected error occurred. Please try again.";
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setIsLoading(false);
     }
@@ -191,7 +202,14 @@ export default function LoginPage() {
                 )}
               </div>
               <Button type="submit" className="w-full mt-4" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Logging in...
+                  </>
+                ) : (
+                  "Login"
+                )}
               </Button>
             </form>
           </CardContent>
