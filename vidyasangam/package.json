@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@headlessui/react": "^2.1.9",
     "@radix-ui/react-alert-dialog": "^1.1.11",
     "@radix-ui/react-avatar": "^1.1.1",
@@ -43,6 +44,7 @@
     "openai": "^4.67.3",
     "react": "^18",
     "react-dom": "^18",
+    "react-fontawesome": "^1.7.1",
     "react-markdown": "^9.0.1",
     "shadcn-ui": "^0.9.2",
     "sharp": "^0.34.1",

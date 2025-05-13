@@ -141,7 +141,8 @@ function Profile() {
     badgeDescription: '',
     achievementDetails: '',
     isGeneratingPreview: false,
-    badgeId: null
+    badgeId: null,
+    userBadgeId: null
   });
   
   // Check auth first before making any API calls
@@ -921,51 +922,45 @@ function Profile() {
     }
   };
 
-  // Fetch badges and user points on mount
+  // Remove the fetchBadges function and modify the useEffect to only call fetchUserBadges
   useEffect(() => {
     if (formData.registrationNumber) {
-      fetchBadges();
       fetchUserBadges();
       fetchUserPoints();
       fetchApprovalAndStatus();
     }
   }, [formData.registrationNumber]);
 
-  const fetchBadges = async () => {
-    setIsLoadingBadges(true);
-    try {
-      const url = "http://127.0.0.1:8000/api/mentor_mentee/badges/list/";
-      const response = await axios.get(url);
-      setBadges(response.data);
-    } catch (error) {
-      console.error("Error fetching badges:", error);
-    } finally {
-      setIsLoadingBadges(false);
-    }
-  };
-
+  // Update the fetchUserBadges function to work with the actual API response format
   const fetchUserBadges = async () => {
     if (!formData.registrationNumber) return;
+    setIsLoadingBadges(true);
     try {
       const url = `http://127.0.0.1:8000/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
       const response = await axios.get(url);
       
-      // Update to match the new API response structure
-      if (response.data && response.data.badges) {
-        setUserBadges(response.data.badges);
+      // Store the response data
+      if (response.data) {
+        // Set the badges array from the badges details in the response
+        const badgesData = response.data.badges || [];
+        setUserBadges(badgesData);
+        setBadges(badgesData.map(userBadge => userBadge.badge_details));
         
-        // If participant info is available, update badges earned count
-        if (response.data.participant && response.data.participant.badges_earned !== undefined) {
-          // This will be useful for displaying total badges earned
+        // Store participant info if available
+        if (response.data.participant) {
           const badgesEarned = response.data.participant.badges_earned;
           console.log(`User has earned ${badgesEarned} badges`);
         }
       } else {
         setUserBadges([]);
+        setBadges([]);
       }
     } catch (error) {
       console.error("Error fetching user badges:", error);
       setUserBadges([]);
+      setBadges([]);
+    } finally {
+      setIsLoadingBadges(false);
     }
   };
 
@@ -1317,10 +1312,9 @@ function Profile() {
     </div>
   );
 
-  const handleShareToLinkedIn = async (badge) => {
+  const handleShareToLinkedIn = async (userBadge) => {
     // Check if badge has already been shared
-    const userBadge = userBadges.find(ub => ub.badge_details.id === badge.id);
-    if (userBadge?.is_shared) {
+    if (userBadge.linkedin_shared) {
       toast.info("Already Shared", {
         description: "This badge has already been shared on LinkedIn."
       });
@@ -1335,6 +1329,9 @@ function Profile() {
       return;
     }
     
+    // Get badge details
+    const badge = userBadge.badge_details;
+    
     // Default achievement details (user can modify this)
     const achievementDetails = `Earned the ${badge.name} badge in the VidyaSangam mentoring program at YCCE.`;
     
@@ -1346,7 +1343,8 @@ function Profile() {
       badgeDescription: badge.description,
       achievementDetails: achievementDetails,
       isGeneratingPreview: false,
-      badgeId: badge.id
+      badgeId: badge.id,
+      userBadgeId: userBadge.id
     });
   };
 
@@ -1363,15 +1361,20 @@ function Profile() {
     }));
     
     try {
+      // Create the payload according to the specified format
+      const payload = {
+        badgeName: linkedInShareData.badgeName,
+        achievementDetails: linkedInShareData.achievementDetails,
+        participant_id: formData.registrationNumber,
+        badge_id: linkedInShareData.badgeId
+      };
+      
       const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/preview/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          badgeName: linkedInShareData.badgeName,
-          achievementDetails: linkedInShareData.achievementDetails
-        })
+        body: JSON.stringify(payload)
       });
       
       if (!response.ok) {
@@ -1379,28 +1382,39 @@ function Profile() {
       }
       
       const data = await response.json();
+      console.log('LinkedIn preview response:', data);
+      
+      // Check if the API returned preview_content property
+      if (!data.preview_content) {
+        throw new Error('No preview content received from server');
+      }
+      
+      // Also update these values if available in the response
+      const badge_id = data.badge_id || linkedInShareData.badgeId;
+      const participant_id = data.participant_id || formData.registrationNumber;
       
       setLinkedInShareData(prev => ({
         ...prev,
         isLoading: false,
         isGeneratingPreview: false,
-        previewContent: data.preview_content || 
-          `I'm excited to share that I've earned the ${linkedInShareData.badgeName} badge through the VidyaSangam mentoring program at YCCE! ${linkedInShareData.badgeDescription}`
+        previewContent: data.preview_content,
+        badgeId: badge_id,
+        // Store additional data returned from the API if needed
+        apiResponseData: data
       }));
       
     } catch (error) {
       console.error('Error generating LinkedIn preview:', error);
       
+      toast.error("Error generating LinkedIn preview", {
+        description: error.message || "An error occurred. Please try again."
+      });
+      
       setLinkedInShareData(prev => ({
         ...prev,
         isLoading: false,
-        isGeneratingPreview: false,
-        previewContent: `I'm excited to share that I've earned the ${linkedInShareData.badgeName} badge through the VidyaSangam mentoring program at YCCE! ${linkedInShareData.badgeDescription}`
+        isGeneratingPreview: false
       }));
-      
-      toast.error("Error generating LinkedIn preview", {
-        description: error.message || "An error occurred. We've set a default message for you."
-      });
     }
   };
 
@@ -1415,11 +1429,16 @@ function Profile() {
       }
       const profileData = await profileResponse.json();
       
+      // Create the payload in the exact format specified
       const payload = {
         accessToken: profileData.linkedin_access_token,
-        badgeName: linkedInShareData.badgeName,
-        achievementDetails: linkedInShareData.achievementDetails
+        content: linkedInShareData.previewContent,
+        participant_id: formData.registrationNumber,
+        badge_id: linkedInShareData.badgeId,
+        user_badge_id: linkedInShareData.userBadgeId
       };
+      
+      console.log('LinkedIn post payload:', payload);
       
       const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/post/', {
         method: 'POST',
@@ -1434,11 +1453,12 @@ function Profile() {
       }
       
       const data = await response.json();
+      console.log('LinkedIn post response:', data);
       
       // Update the user badges to mark this badge as shared
       setUserBadges(prev => prev.map(badge => {
-        if (badge.badge_details.id === linkedInShareData.badgeId) {
-          return { ...badge, is_shared: true };
+        if (badge.id === linkedInShareData.userBadgeId) {
+          return { ...badge, linkedin_shared: true };
         }
         return badge;
       }));
@@ -1455,6 +1475,8 @@ function Profile() {
       }));
       
     } catch (error) {
+      console.error('Error posting to LinkedIn:', error);
+      
       toast.error("Error posting to LinkedIn", {
         description: error.message || "An error occurred. Please try again later."
       });
@@ -1472,7 +1494,8 @@ function Profile() {
       badgeDescription: '',
       achievementDetails: '',
       isGeneratingPreview: false,
-      badgeId: null
+      badgeId: null,
+      userBadgeId: null
     });
   };
 
@@ -1830,25 +1853,21 @@ function Profile() {
                   <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
                   <span className="ml-3 text-blue-600 font-medium">Loading badges...</span>
                 </div>
-              ) : badges.length > 0 ? (
+              ) : userBadges.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {badges.map((badge) => {
-                    // Find user badge by matching badge.id with userBadge.badge_details.id
-                    const userBadge = userBadges.find(ub => ub.badge_details.id === badge.id);
-                    const isClaimed = userBadge && userBadge.is_claimed;
-                    const isEarned = userBadge !== undefined; // User has earned but maybe not claimed
-                    const canClaim = isEarned && !isClaimed && userPoints >= badge.points_required;
+                  {userBadges.map((userBadge) => {
+                    const badge = userBadge.badge_details;
+                    const isClaimed = userBadge.is_claimed;
+                    const isShared = userBadge.linkedin_shared;
                     
                     return (
-                      <div key={badge.id} className={`rounded-xl shadow-lg overflow-hidden transform transition-all ${
+                      <div key={userBadge.id} className={`rounded-xl shadow-lg overflow-hidden transform transition-all ${
                         isClaimed ? 'border-2 border-green-400 bg-green-50 hover:scale-105' : 
-                        isEarned ? 'border-2 border-yellow-400 bg-yellow-50 hover:scale-105' :
-                        canClaim ? 'border-2 border-blue-400 bg-blue-50 hover:scale-105' : 
-                        'border border-gray-200 bg-white hover:shadow-xl'
+                        'border-2 border-yellow-400 bg-yellow-50 hover:scale-105'
                       }`}>
                         <div className="flex items-center justify-center p-4 bg-gradient-to-b from-gray-50 to-gray-100 border-b">
-                          {badge.icon_url ? (
-                            <img src={badge.icon_url} alt={badge.name} className="w-16 h-16 object-contain" />
+                          {badge.image_url ? (
+                            <img src={badge.image_url} alt={badge.name} className="w-16 h-16 object-contain" />
                           ) : (
                             <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-2xl font-bold">
                               {badge.name.charAt(0)}
@@ -1859,8 +1878,11 @@ function Profile() {
                           <h3 className="font-bold text-lg mb-2 text-center">{badge.name}</h3>
                           <p className="text-gray-600 text-sm mb-3 text-center">{badge.description}</p>
                           <div className="flex items-center justify-center gap-2 mb-4">
-                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 font-medium">{badge.badge_type}</span>
-                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">{badge.points_required} pts</span>
+                            
+                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
+                              {badge.points_required} pts
+                            </span>
+                            
                           </div>
                           <div className="flex justify-center">
                             {isClaimed ? (
@@ -1869,14 +1891,14 @@ function Profile() {
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                   </svg>
-                                  Already Claimed
+                                  Claimed on {new Date(userBadge.claimed_date).toLocaleDateString()}
                                 </span>
                                 <Button
                                   className="w-full bg-blue-700 hover:bg-blue-800 flex items-center justify-center gap-2"
-                                  onClick={() => handleShareToLinkedIn(badge)}
-                                  disabled={!formData.linkedin_access_token || userBadge?.is_shared}
+                                  onClick={() => handleShareToLinkedIn(userBadge)}
+                                  disabled={!formData.linkedin_access_token || isShared}
                                 >
-                                  {userBadge?.is_shared ? (
+                                  {isShared ? (
                                     <>
                                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                         <path d="M0 1.146C0 .513.526 0 1.175 0h13.65C15.474 0 16 .513 16 1.146v13.708c0 .633-.526 1.146-1.175 1.146H1.175C.526 16 0 15.487 0 14.854V1.146zm4.943 12.248V6.169H2.542v7.225h2.401zm-1.2-8.212c.837 0 1.358-.554 1.358-1.248-.015-.709-.52-1.248-1.342-1.248-.822 0-1.359.54-1.359 1.248 0 .694.521 1.248 1.327 1.248h.016zm4.908 8.212V9.359c0-.216.016-.432.08-.586.173-.431.568-.878 1.232-.878.869 0 1.216.662 1.216 1.634v3.865h2.401V9.25c0-2.22-1.184-3.252-2.764-3.252-1.274 0-1.845.7-2.165 1.193v.025h-.016a5.54 5.54 0 0 1 .016-.025V6.169h-2.4c.03.678 0 7.225 0 7.225h2.4z"/>
@@ -1893,7 +1915,7 @@ function Profile() {
                                   )}
                                 </Button>
                               </div>
-                            ) : isEarned ? (
+                            ) : (
                               <Button
                                 className="w-full bg-yellow-600 hover:bg-yellow-700"
                                 onClick={() => handleClaimBadge(badge.id)}
@@ -1908,28 +1930,6 @@ function Profile() {
                                   'Claim Badge'
                                 )}
                               </Button>
-                            ) : canClaim ? (
-                              <Button
-                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                onClick={() => handleClaimBadge(badge.id)}
-                                disabled={isClaimingBadge}
-                              >
-                                {isClaimingBadge ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Claiming...
-                                  </>
-                                ) : (
-                                  'Claim Badge'
-                                )}
-                              </Button>
-                            ) : (
-                              <div className="w-full text-center py-2 rounded-lg bg-gray-100 text-gray-500 font-medium text-sm flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                                Need {badge.points_required - userPoints} more points
-                              </div>
                             )}
                           </div>
                         </div>
@@ -1945,7 +1945,7 @@ function Profile() {
                     </svg>
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No Badges Available</h3>
-                  <p className="text-gray-500 max-w-md mx-auto">Badges will be available once you start participating in the program. Keep checking back!</p>
+                  <p className="text-gray-500 max-w-md mx-auto">You haven&apos;t earned any badges yet. Keep participating in the program to earn badges!</p>
                 </div>
               )}
             </CardContent>
@@ -2798,7 +2798,7 @@ function Profile() {
           <DialogHeader>
             <DialogTitle>Share Badge Achievement on LinkedIn</DialogTitle>
             <DialogDescription>
-              Share your achievement details and we'll create an engaging LinkedIn post for you.
+              Share your achievement details and we&apos;ll create an engaging LinkedIn post for you.
             </DialogDescription>
           </DialogHeader>
           

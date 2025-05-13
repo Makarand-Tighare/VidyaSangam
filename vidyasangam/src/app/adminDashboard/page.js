@@ -3,6 +3,19 @@
 import React, { useState, useMemo, useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle 
+} from "@/components/ui/alert-dialog";
 import { Info } from 'lucide-react';
 import AdminRoute from "@/components/AdminRoute";
 import { useRouter } from "next/navigation";
@@ -94,7 +107,8 @@ function AdminDashboard() {
     description: '',
     points_required: 0,
     icon_url: '',
-    badge_type: 'achievement'
+    badge_type: 'achievement',
+    is_public: true
   });
   const [participantBadges, setParticipantBadges] = useState([]);
   const [isLoadingParticipantBadges, setIsLoadingParticipantBadges] = useState(false);
@@ -1311,14 +1325,20 @@ function AdminDashboard() {
       // Add reason if rejecting
       if (approvalStatus === 'rejected') {
         if (!reason.trim()) {
-          alert('Please provide a reason for rejection');
+          toast.error('Please provide a reason for rejection');
           setIsProcessingApproval(false);
           return;
         }
         payload.reason = reason;
       }
       
+      // Show toast while waiting for the API
+      const loadingToastId = toast.loading(`${approvalStatus === 'approved' ? 'Approving' : 'Rejecting'} participant...`);
+      
       const response = await axios.post(url, payload);
+      
+      // Dismiss the loading toast
+      toast.dismiss(loadingToastId);
       
       if (response.status === 200) {
         // Refresh pending approvals
@@ -1330,14 +1350,60 @@ function AdminDashboard() {
         setShowApprovalDetailModal(false);
         setSelectedApprovalParticipant(null);
         
-        alert(`Participant ${approvalStatus === 'approved' ? 'approved' : 'rejected'} successfully!`);
+        toast.success(`Participant ${approvalStatus === 'approved' ? 'approved' : 'rejected'} successfully!`);
       }
     } catch (error) {
       console.error(`Error ${approvalStatus === 'approved' ? 'approving' : 'rejecting'} participant:`, error);
-      alert(`Failed to ${approvalStatus === 'approved' ? 'approve' : 'reject'} participant. Please try again.`);
+      toast.error(`Failed to ${approvalStatus === 'approved' ? 'approve' : 'reject'} participant. Please try again.`);
     } finally {
       setIsProcessingApproval(false);
+      // Reset confirmation dialog states
+      setConfirmApprovalDialog(false);
+      setConfirmRejectionDialog(false);
+      setPendingApprovalAction(null);
     }
+  };
+
+  // Add confirmation functions for approve/reject actions
+  const confirmApproval = (participant) => {
+    setPendingApprovalAction({
+      registrationNo: participant.registration_no,
+      status: 'approved'
+    });
+    setConfirmApprovalDialog(true);
+  };
+  
+  // Update the confirmRejection function to just open the dialog without requiring a reason
+  const confirmRejection = (participant) => {
+    // Just set the participant info and open the dialog
+    setPendingApprovalAction({
+      registrationNo: participant.registration_no,
+      status: 'rejected',
+      reason: '' // Start with empty reason
+    });
+    
+    // Open the dialog to let user enter reason
+    setConfirmRejectionDialog(true);
+  };
+  
+  // Update the executePendingApprovalAction function to check for a reason if rejecting
+  const executePendingApprovalAction = () => {
+    if (!pendingApprovalAction) return;
+    
+    // If rejecting, make sure we have a reason
+    if (pendingApprovalAction.status === 'rejected' && !pendingApprovalAction.reason.trim()) {
+      toast.error("Please provide a reason for rejection");
+      return;
+    }
+    
+    // Set loading state before making API call
+    setIsProcessingApproval(true);
+    
+    handleApprovalUpdate(
+      pendingApprovalAction.registrationNo,
+      pendingApprovalAction.status,
+      pendingApprovalAction.reason || ''
+    );
   };
 
   // Add viewApprovalDetails function to view participant details
@@ -1422,6 +1488,13 @@ function AdminDashboard() {
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/badges/list/";
       const response = await axios.get(url);
+      console.log("Fetched badges:", response.data); // Debug log
+      
+      // Log the structure of the first badge if available
+      if (response.data.length > 0) {
+        console.log("First badge structure:", JSON.stringify(response.data[0], null, 2));
+      }
+      
       setBadges(response.data);
       setErrorMessage("");
     } catch (error) {
@@ -1454,9 +1527,20 @@ function AdminDashboard() {
   const createBadge = async () => {
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/badges/create/";
-      const response = await axios.post(url, badgeFormData);
+      
+      // If no icon URL is provided, use the default one for the badge type
+      const payload = {
+        ...badgeFormData,
+        image_url: badgeFormData.icon_url || badgeIcons[badgeFormData.badge_type]
+      };
+      
+      console.log("Creating badge with payload:", payload); // Debug log
+      
+      const response = await axios.post(url, payload);
       
       if (response.status === 201) {
+        console.log("Badge created successfully:", response.data); // Debug log
+        
         // Refresh badges list
         await fetchBadges();
         
@@ -1466,15 +1550,17 @@ function AdminDashboard() {
           description: '',
           points_required: 0,
           icon_url: '',
-          badge_type: 'achievement'
+          badge_type: 'achievement',
+          is_public: true
         });
         setShowBadgeCreateModal(false);
         
-        alert("Badge created successfully!");
+        toast.success("Badge created successfully!");
       }
     } catch (error) {
       console.error("Error creating badge:", error);
-      alert("Failed to create badge. Please try again.");
+      console.error("Error response:", error.response?.data); // Debug log
+      toast.error("Failed to create badge. Please try again.");
     }
   };
   
@@ -1510,7 +1596,28 @@ function AdminDashboard() {
   
   // Handle badge form input changes
   const handleBadgeFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    
+    // For checkboxes
+    if (type === 'checkbox') {
+      setBadgeFormData(prev => ({
+        ...prev,
+        [name]: checked
+      }));
+      return;
+    }
+    
+    // For select dropdown
+    if (name === 'badge_type') {
+      setBadgeFormData(prev => ({
+        ...prev,
+        badge_type: value,
+        icon_url: badgeIcons[value] || prev.icon_url // Set icon URL based on badge type
+      }));
+      return;
+    }
+    
+    // For other inputs
     setBadgeFormData(prev => ({
       ...prev,
       [name]: name === 'points_required' ? parseInt(value) || 0 : value
@@ -1519,8 +1626,16 @@ function AdminDashboard() {
   
   // Open badge award modal for a participant
   const openBadgeAwardModal = (participant) => {
-    setParticipantForBadge(participant);
-    fetchParticipantBadges(participant.registration_no);
+    if (participant) {
+      // If a participant is provided, fetch their badges and open the modal
+      setParticipantForBadge(participant);
+      fetchParticipantBadges(participant.registration_no);
+    } else {
+      // If no participant is provided, this means we're opening from a badge
+      // The selectedBadge should already be set before calling this function
+      setParticipantForBadge(null);
+    }
+    
     fetchBadges();
     setShowBadgeAwardModal(true);
   };
@@ -1855,6 +1970,74 @@ function AdminDashboard() {
     const code = departmentInfo?.code || "global";
     return `${suffix}_${code}`;
   }
+
+  // Confirmation dialog states
+  const [confirmApprovalDialog, setConfirmApprovalDialog] = useState(false);
+  const [confirmRejectionDialog, setConfirmRejectionDialog] = useState(false);
+  const [pendingApprovalAction, setPendingApprovalAction] = useState(null);
+
+  // Badge Icons default mapping - updated to better match badge types
+  const badgeIcons = {
+    achievement: "https://cdn-icons-png.flaticon.com/512/3113/3113009.png",
+    skill: "https://cdn-icons-png.flaticon.com/512/8068/8068126.png",
+    participation: "https://cdn-icons-png.flaticon.com/512/1534/1534938.png",
+    leadership: "https://cdn-icons-png.flaticon.com/512/4185/4185148.png",
+    milestone: "https://cdn-icons-png.flaticon.com/512/9851/9851616.png",
+    supermentor: "https://cdn-icons-png.flaticon.com/512/4086/4086679.png"
+  };
+  
+  // Predefined badge templates with MUCH higher point values
+  const badgeTemplates = [
+    {
+      name: "Rising Star",
+      description: "Recognizes outstanding progress and enthusiasm in the VidyaSangam program",
+      badge_type: "achievement",
+      points_required: 500,
+      is_public: true
+    },
+    {
+      name: "Tech Expert",
+      description: "Awarded for demonstrating exceptional technical knowledge and skills",
+      badge_type: "skill",
+      points_required: 1000,
+      is_public: true
+    },
+    {
+      name: "Community Contributor",
+      description: "Recognizes active participation and valuable contributions to the community",
+      badge_type: "participation",
+      points_required: 750,
+      is_public: true
+    },
+    {
+      name: "Knowledge Sharer",
+      description: "Awarded for sharing valuable insights and helping others learn",
+      badge_type: "leadership",
+      points_required: 1500,
+      is_public: true
+    },
+    {
+      name: "Project Achiever",
+      description: "Recognizes successful completion of significant projects within the program",
+      badge_type: "milestone",
+      points_required: 1200,
+      is_public: true
+    },
+    {
+      name: "Innovation Champion",
+      description: "Awarded for creative problem-solving and innovative approaches",
+      badge_type: "skill",
+      points_required: 1000,
+      is_public: true
+    },
+    {
+      name: "VidyaSangam Star",
+      description: "Highest recognition for exemplary contribution to the VidyaSangam community",
+      badge_type: "supermentor",
+      points_required: 2000,
+      is_public: true
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -2244,22 +2427,14 @@ function AdminDashboard() {
                                 {participant.approval_status === 'pending' && (
                                   <>
                                     <button
-                                      onClick={() => handleApprovalUpdate(participant.registration_no, 'approved')}
+                                      onClick={() => confirmApproval(participant)}
                                       className="px-2 py-1 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-xs"
                                       disabled={isProcessingApproval}
                                     >
                                       Approve
                                     </button>
                                     <button
-                                      onClick={() => {
-                                        setSelectedApprovalParticipant(participant);
-                                        setShowApprovalDetailModal(true);
-                                        // Set focus to rejection reason textarea when modal opens
-                                        setTimeout(() => {
-                                          const textarea = document.getElementById('rejection-reason');
-                                          if (textarea) textarea.focus();
-                                        }, 100);
-                                      }}
+                                      onClick={() => confirmRejection(participant)}
                                       className="px-2 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-xs"
                                       disabled={isProcessingApproval}
                                     >
@@ -2911,7 +3086,7 @@ function AdminDashboard() {
                       {/* Rejection reason field */}
                       <div className="mb-4">
                         <label htmlFor="modal-rejection-reason" className="block text-sm font-medium text-gray-700 mb-2">
-                          Rejection Reason (required if rejecting)
+                          Rejection Reason <span className="text-red-600 font-semibold">*</span>
                         </label>
                         <textarea
                           id="modal-rejection-reason"
@@ -2920,22 +3095,25 @@ function AdminDashboard() {
                           placeholder="Please provide a reason for rejecting this application..."
                           className="w-full p-3 border border-amber-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white h-24"
                         ></textarea>
+                        <p className="text-xs text-gray-500 mt-1">
+                          <span className="text-red-600 font-semibold">*</span> A rejection reason is required.
+                        </p>
                       </div>
                       
                       <div className="flex justify-end space-x-3">
                         <button
-                          onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'approved')}
+                          onClick={() => confirmApproval(selectedParticipant)}
+                          className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full"
                           disabled={isProcessingApproval}
-                          className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
                         >
-                          {isProcessingApproval ? "Processing..." : "Approve Application"}
+                          {isProcessingApproval ? "Processing..." : "Approve"}
                         </button>
                         <button
-                          onClick={() => handleApprovalUpdate(selectedParticipant.registration_no, 'rejected', rejectionReason)}
-                          disabled={isProcessingApproval || !rejectionReason.trim()}
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
+                          onClick={() => confirmRejection(selectedParticipant)}
+                          className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors w-full"
+                          disabled={isProcessingApproval}
                         >
-                          {isProcessingApproval ? "Processing..." : "Reject Application"}
+                          {isProcessingApproval ? "Processing..." : "Reject"}
                         </button>
                       </div>
                     </div>
@@ -3549,16 +3727,16 @@ function AdminDashboard() {
                     Cancel
                   </button>
                   <button
-                    onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'approved')}
+                    onClick={() => confirmApproval(selectedApprovalParticipant)}
+                    className="px-3 py-1 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors w-full"
                     disabled={isProcessingApproval}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:bg-green-300"
                   >
                     {isProcessingApproval ? "Processing..." : "Approve"}
                   </button>
                   <button
-                    onClick={() => handleApprovalUpdate(selectedApprovalParticipant.registration_no, 'rejected', rejectionReason)}
-                    disabled={isProcessingApproval || !rejectionReason.trim()}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:bg-red-300"
+                    onClick={() => confirmRejection(selectedApprovalParticipant)}
+                    className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors w-full"
+                    disabled={isProcessingApproval}
                   >
                     {isProcessingApproval ? "Processing..." : "Reject"}
                   </button>
@@ -3688,48 +3866,58 @@ function AdminDashboard() {
                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-indigo-500"></div>
                   </div>
                 ) : badges.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 p-6">
                     {badges.map((badge, index) => (
-                      <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-3">
-                          {badge.icon_url ? (
-                            <img src={badge.icon_url} alt={badge.name} className="w-10 h-10 object-contain" />
-                          ) : (
-                            <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-full flex items-center justify-center">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                              </svg>
-                            </div>
-                          )}
-                          <div className="flex-grow">
-                            <h3 className="font-semibold text-lg">{badge.name}</h3>
-                            <p className="text-sm text-gray-500">{badge.badge_type}</p>
+                      <div key={index} className="bg-white p-4 rounded-lg shadow flex flex-col space-y-3 hover:shadow-md transition-shadow">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex-shrink-0">
+                            {badge.image_url ? (
+                              <img 
+                                src={badge.image_url} 
+                                alt={badge.name} 
+                                className="w-14 h-14 object-contain" 
+                                onError={(e) => {
+                                  console.log("Error loading badge icon:", badge.image_url);
+                                  e.target.src = badgeIcons[badge.badge_type] || badgeIcons['achievement'];
+                                }}
+                              />
+                            ) : (
+                              <img 
+                                src={badgeIcons[badge.badge_type] || badgeIcons['achievement']} 
+                                alt={badge.name} 
+                                className="w-14 h-14 object-contain" 
+                              />
+                            )}
                           </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-sm font-medium text-gray-900 truncate">{badge.name}</h3>
+                            <p className="text-xs text-gray-500">{badge.badge_type}</p>
+                            <p className="text-xs text-gray-500">{badge.is_public ? "Public" : "Private"}</p>
+                            <div className="mt-1 bg-indigo-100 px-2 py-1 rounded-full inline-flex items-center">
+                              <span className="text-indigo-700 font-bold text-sm">{badge.points_required} Points</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex justify-end space-x-2 pt-2 border-t">
+                          <button
+                            onClick={() => {
+                              // Open badge award modal to select a participant
+                              setSelectedBadge(badge);
+                              openBadgeAwardModal();
+                            }}
+                            className="px-2 py-1 text-xs text-indigo-600 hover:text-indigo-800"
+                          >
+                            Award
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Open delete confirmation dialog
                               setBadgeToDelete(badge);
                               setIsDeleteDefinitionDialogOpen(true);
                             }}
-                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full"
-                            title="Delete badge definition"
+                            className="px-2 py-1 text-xs text-red-600 hover:text-red-800"
                           >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                        <p className="text-gray-700 mb-3">{badge.description}</p>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-500">Points: {badge.points_required}</span>
-                          <button
-                            onClick={() => {
-                              setSelectedBadge(badge);
-                              setShowBadgeAwardModal(true);
-                            }}
-                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                          >
-                            Award to Participant
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -4417,12 +4605,10 @@ function AdminDashboard() {
 
       {/* Badge Create Modal */}
       {showBadgeCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md">
-            <div className="p-6 border-b flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-800">
-                Create New Badge
-              </h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-hidden">
+          <div className="bg-white rounded-lg w-full max-w-xl max-h-[90vh] flex flex-col">
+            <div className="sticky top-0 z-10 bg-white p-6 border-b flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-800">Create New Badge</h2>
               <button 
                 onClick={() => setShowBadgeCreateModal(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -4433,89 +4619,131 @@ function AdminDashboard() {
               </button>
             </div>
             
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="badge-name" className="block text-sm font-medium text-gray-700">
-                  Badge Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  id="badge-name"
-                  type="text"
-                  name="name"
-                  value={badgeFormData.name}
-                  onChange={handleBadgeFormChange}
-                  placeholder="e.g. Outstanding Mentor"
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  required
-                />
+            <div className="p-6 space-y-4 overflow-y-auto flex-grow">
+              <div className="mb-6">
+                <h3 className="text-lg font-medium mb-2">Select a Template (Optional)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
+                  {badgeTemplates.map((template, index) => (
+                    <button
+                      key={index}
+                      className="flex items-center p-2 border rounded-lg hover:bg-indigo-50 text-left"
+                      onClick={() => setBadgeFormData(template)}
+                    >
+                      <img 
+                        src={badgeIcons[template.badge_type]} 
+                        alt={template.name} 
+                        className="w-10 h-10 mr-3" 
+                      />
+                      <div>
+                        <p className="font-medium text-sm">{template.name}</p>
+                        <p className="text-xs text-gray-500">{template.badge_type}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+                <div className="border-t pt-4 text-sm text-gray-500">
+                  Select a template or customize your own badge below
+                </div>
               </div>
               
-              <div className="space-y-2">
-                <label htmlFor="badge-description" className="block text-sm font-medium text-gray-700">
-                  Description <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="badge-description"
-                  name="description"
-                  value={badgeFormData.description}
-                  onChange={handleBadgeFormChange}
-                  placeholder="Describe what this badge represents"
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24"
-                  required
-                ></textarea>
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="badge-points" className="block text-sm font-medium text-gray-700">
-                  Points Required
-                </label>
-                <input
-                  id="badge-points"
-                  type="number"
-                  name="points_required"
-                  value={badgeFormData.points_required}
-                  onChange={handleBadgeFormChange}
-                  min="0"
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="badge-icon" className="block text-sm font-medium text-gray-700">
-                  Icon URL
-                </label>
-                <input
-                  id="badge-icon"
-                  type="text"
-                  name="icon_url"
-                  value={badgeFormData.icon_url}
-                  onChange={handleBadgeFormChange}
-                  placeholder="https://example.com/badge-icon.png"
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="badge-type" className="block text-sm font-medium text-gray-700">
-                  Badge Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  id="badge-type"
-                  name="badge_type"
-                  value={badgeFormData.badge_type}
-                  onChange={handleBadgeFormChange}
-                  className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  required
-                >
-                  <option value="achievement">Achievement</option>
-                  <option value="participation">Participation</option>
-                  <option value="skill">Skill</option>
-                  <option value="milestone">Milestone</option>
-                </select>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Badge Details</h3>
+                <div className="space-y-2">
+                  <label htmlFor="badge-name" className="block text-sm font-medium text-gray-700">
+                    Badge Name*
+                  </label>
+                  <input
+                    id="badge-name"
+                    type="text"
+                    name="name"
+                    value={badgeFormData.name}
+                    onChange={handleBadgeFormChange}
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="e.g., Super Mentor, Achievement Star"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="badge-desc" className="block text-sm font-medium text-gray-700">
+                    Badge Description*
+                  </label>
+                  <textarea
+                    id="badge-desc"
+                    name="description"
+                    value={badgeFormData.description}
+                    onChange={handleBadgeFormChange}
+                    rows="3"
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Describe what this badge is awarded for"
+                  ></textarea>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="badge-type" className="block text-sm font-medium text-gray-700">
+                    Badge Type
+                  </label>
+                  <select
+                    id="badge-type"
+                    name="badge_type"
+                    value={badgeFormData.badge_type}
+                    onChange={handleBadgeFormChange}
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    <option value="achievement">Achievement</option>
+                    <option value="skill">Skill</option>
+                    <option value="participation">Participation</option>
+                    <option value="leadership">Leadership</option>
+                    <option value="milestone">Milestone</option>
+                    <option value="supermentor">Super Mentor</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="badge-points" className="block text-sm font-medium text-gray-700">
+                    Points Required
+                  </label>
+                  <input
+                    id="badge-points"
+                    type="number"
+                    name="points_required"
+                    value={badgeFormData.points_required}
+                    onChange={handleBadgeFormChange}
+                    min="0"
+                    className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="badge-icon-preview" className="block text-sm font-medium text-gray-700">
+                    Badge Icon Preview
+                  </label>
+                  <div id="badge-icon-preview" className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <img 
+                      src={badgeIcons[badgeFormData.badge_type]} 
+                      alt="Badge Preview" 
+                      className="w-16 h-16 object-contain"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    id="badge-public"
+                    type="checkbox"
+                    name="is_public"
+                    checked={badgeFormData.is_public}
+                    onChange={handleBadgeFormChange}
+                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                  />
+                  <label htmlFor="badge-public" className="ml-2 text-sm text-gray-700">
+                    Visible to all users
+                  </label>
+                </div>
+                <p className="text-xs text-gray-500">When checked, this badge will be visible on recipient profiles to all users</p>
               </div>
             </div>
             
-            <div className="border-t p-4 flex justify-end space-x-3">
+            <div className="sticky bottom-0 z-10 bg-white border-t p-4 flex justify-end space-x-3">
               <button
                 onClick={() => setShowBadgeCreateModal(false)}
                 className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
@@ -4536,9 +4764,9 @@ function AdminDashboard() {
 
       {/* Award Badge Modal */}
       {showBadgeAwardModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white p-6 border-b flex justify-between items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-hidden">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="sticky top-0 z-10 bg-white p-6 border-b flex justify-between items-center">
               <h2 className="text-xl font-bold text-gray-800">
                 {participantForBadge ? `Badges for ${participantForBadge.name}` : 'Award Badge to Participant'}
               </h2>
@@ -4556,7 +4784,7 @@ function AdminDashboard() {
               </button>
             </div>
             
-            <div className="p-6 space-y-6">
+            <div className="p-6 space-y-6 overflow-y-auto flex-grow">
               {/* Select Participant section, shown if no participant is selected yet */}
               {!participantForBadge && (
                 <div className="space-y-4">
@@ -4683,35 +4911,64 @@ function AdminDashboard() {
                       <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-indigo-500"></div>
                     </div>
                   ) : badges.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {badges.map((badge, index) => {
-                        const alreadyAwarded = participantBadges.some(pb => pb.badge.id === badge.id);
-                        return (
-                          <div 
-                            key={index} 
-                            className={`border rounded-lg p-3 ${alreadyAwarded ? 'opacity-50' : 'hover:bg-indigo-50 cursor-pointer'}`}
-                            onClick={() => !alreadyAwarded && setSelectedBadge(badge)}
-                          >
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="p-2 bg-indigo-100 text-indigo-700 rounded-full">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                </svg>
-                              </div>
-                              <div>
-                                <h4 className="font-medium">{badge.name}</h4>
-                                <p className="text-xs text-gray-500">{badge.badge_type}</p>
-                              </div>
-                              {alreadyAwarded && (
-                                <span className="ml-auto px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs">
-                                  Already Awarded
-                                </span>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 p-6">
+                      {badges.map((badge, index) => (
+                        <div key={index} className="bg-white p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100">
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex-shrink-0">
+                              {badge.image_url ? (
+                                <img src={badge.image_url} alt={badge.name} className="w-12 h-12 object-contain" />
+                              ) : (
+                                <img src={badgeIcons[badge.badge_type] || badgeIcons['achievement']} alt={badge.name} className="w-12 h-12 object-contain" />
                               )}
                             </div>
-                            <p className="text-sm text-gray-700">{badge.description}</p>
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-sm font-medium text-gray-900 truncate">{badge.name}</h3>
+                              <div className="flex items-center gap-1 mt-1">
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-800">
+                                  {badge.badge_type}
+                                </span>
+                                {badge.is_public ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                    Public
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                    Private
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setBadgeToDelete(badge);
+                                setIsDeleteDefinitionDialogOpen(true);
+                              }}
+                              className="p-1.5 text-red-500 hover:bg-red-50 rounded-full"
+                              title="Delete badge definition"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
                           </div>
-                        );
-                      })}
+                          
+                          <p className="text-sm text-gray-700 line-clamp-2 mb-3">{badge.description}</p>
+                          
+                          <div className="flex justify-between items-center mt-2">
+                            <div className="bg-indigo-100 px-2 py-1 rounded-full">
+                              <span className="text-indigo-700 font-bold text-sm">{badge.points_required} Points</span>
+                            </div>
+                            <button
+                              onClick={() => setSelectedBadge(badge)}
+                              className="text-xs px-2 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors"
+                            >
+                              Award
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 p-4 bg-gray-50 rounded-lg">
@@ -4764,7 +5021,7 @@ function AdminDashboard() {
               )}
             </div>
             
-            <div className="border-t p-4 flex justify-between">
+            <div className="sticky bottom-0 z-10 bg-white border-t p-4 flex justify-between">
               <button
                 onClick={() => {
                   if (selectedBadge) {
@@ -4929,9 +5186,93 @@ function AdminDashboard() {
           </div>
         </div>
       )}
+
+      {/* Add Confirmation Dialogs */}
+      <AlertDialog open={confirmApprovalDialog} onOpenChange={(open) => {
+        // Only allow closing if not processing
+        if (!isProcessingApproval) {
+          setConfirmApprovalDialog(open);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Approval</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to approve this participant? 
+              This will give them access to the platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessingApproval}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executePendingApprovalAction}
+              disabled={isProcessingApproval}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isProcessingApproval ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </div>
+              ) : "Yes, Approve"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmRejectionDialog} onOpenChange={(open) => {
+        // Only allow closing if not processing
+        if (!isProcessingApproval) {
+          setConfirmRejectionDialog(open);
+        }
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm Rejection</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to reject this participant&apos;s application?
+              <div className="mt-4">
+                <label htmlFor="rejection-reason-dialog" className="block text-sm font-medium text-gray-700 mb-2">
+                  Rejection Reason <span className="text-red-600 font-semibold">*</span>
+                </label>
+                <textarea
+                  id="rejection-reason-dialog"
+                  value={pendingApprovalAction?.reason || ''}
+                  onChange={(e) => setPendingApprovalAction({
+                    ...pendingApprovalAction,
+                    reason: e.target.value
+                  })}
+                  placeholder="Please provide a reason for rejecting this application..."
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white h-24"
+                  disabled={isProcessingApproval}
+                ></textarea>
+                <p className="text-xs text-gray-500 mt-1">
+                  <span className="text-red-600 font-semibold">*</span> A rejection reason is required.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessingApproval}>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={executePendingApprovalAction}
+              disabled={isProcessingApproval}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isProcessingApproval ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </div>
+              ) : "Yes, Reject"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
-</div>
-  )}
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   return (

@@ -1542,7 +1542,7 @@ export default function CareerPage() {
                     <h3 className="font-medium text-blue-800 mb-2">How This Works</h3>
                     <p className="text-gray-700 text-sm">
                       Our AI-powered Career Path Planner helps you map your journey from your current academic status to your career goals.
-                      Simply provide your current status (e.g., "3rd Year Computer Science Student"), your career goal (e.g., "Machine Learning Engineer"), 
+                      Simply provide your current status (e.g., &quot;3rd Year Computer Science Student&quot;), your career goal (e.g., &quot;Machine Learning Engineer&quot;), 
                       and your current skills. The system will generate a personalized roadmap with milestones, recommended skills to develop, 
                       and projects to build that will help you achieve your goals.
                     </p>
@@ -1883,7 +1883,7 @@ export default function CareerPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Confirm Status Update</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to mark the milestone <span className="font-medium">"{statusUpdateInfo.title}"</span> as <span className="font-medium">{statusUpdateInfo.statusText}</span>?
+                          Are you sure you want to mark the milestone <span className="font-medium">&quot;{statusUpdateInfo.title}&quot;</span> as <span className="font-medium">{statusUpdateInfo.statusText}</span>?
                           <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded flex items-start gap-2">
                             <AlertTriangle className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                             <div className="text-sm text-yellow-800">
