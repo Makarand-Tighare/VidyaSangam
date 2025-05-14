@@ -2951,6 +2951,10 @@ function AdminDashboard() {
                         <span className="block text-base">{selectedParticipant.registration_no}</span>
                       </div>
                       <div>
+                        <span className="block text-sm font-medium text-gray-500">Phone Number</span>
+                        <span className="block text-base">{selectedParticipant.mobile_number || "Not provided"}</span>
+                      </div>
+                      <div>
                         <span className="block text-sm font-medium text-gray-500">Semester</span>
                         <span className="block text-base">{selectedParticipant.semester}</span>
                       </div>
@@ -3211,6 +3215,10 @@ function AdminDashboard() {
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Registration No</span>
                         <span className="block text-base">{selectedUnmatchedParticipant.registration_no}</span>
+                      </div>
+                      <div>
+                        <span className="block text-sm font-medium text-gray-500">Phone Number</span>
+                        <span className="block text-base">{selectedUnmatchedParticipant.mobile_number || "Not provided"}</span>
                       </div>
                       <div>
                         <span className="block text-sm font-medium text-gray-500">Semester</span>
