@@ -22,6 +22,65 @@ export const getTokens = () => {
 };
 
 /**
+ * Decode a JWT token to get its payload
+ * @param {string} token - JWT token to decode
+ * @returns {Object|null} Decoded token payload or null if invalid
+ */
+export const decodeToken = (token) => {
+  if (!token) return null;
+  
+  try {
+    // JWT tokens are in format: header.payload.signature
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if a token is expired
+ * @param {string} token - JWT token to check
+ * @returns {boolean} True if token is expired or invalid
+ */
+export const isTokenExpired = (token) => {
+  const decoded = decodeToken(token);
+  
+  if (!decoded || !decoded.exp) {
+    return true; // If we can't decode or no exp claim, consider it expired
+  }
+  
+  // exp is in seconds, Date.now() is in milliseconds
+  const currentTime = Date.now() / 1000;
+  return decoded.exp < currentTime;
+};
+
+/**
+ * Get token expiration time in milliseconds
+ * @param {string} token - JWT token to check
+ * @returns {number|null} Milliseconds until expiration or null if invalid
+ */
+export const getTokenExpirationTime = (token) => {
+  const decoded = decodeToken(token);
+  
+  if (!decoded || !decoded.exp) {
+    return null;
+  }
+  
+  // Convert to milliseconds and get difference
+  return (decoded.exp * 1000) - Date.now();
+};
+
+/**
  * Clear all authentication tokens from localStorage
  */
 export const clearTokens = () => {
@@ -32,15 +91,27 @@ export const clearTokens = () => {
 };
 
 /**
- * Check if the user is logged in (has an access token)
- * @returns {boolean} True if the user has an access token
+ * Check if the user is logged in (has a valid access token)
+ * @returns {boolean} True if the user has a valid access token
  */
 export const isLoggedIn = () => {
   const authToken = localStorage.getItem('authToken');
   const isLoggedInFlag = localStorage.getItem('isLoggedIn');
   
-  // Check both the auth token and the isLoggedIn flag
-  return !!authToken && isLoggedInFlag === 'true';
+  // First check if we have a token and the isLoggedIn flag
+  if (!authToken || isLoggedInFlag !== 'true') {
+    return false;
+  }
+  
+  // Then check if the token is expired
+  if (isTokenExpired(authToken)) {
+    // Token is expired, but we might be able to refresh it
+    // We'll return true and let the refresh mechanism handle it
+    return true;
+  }
+  
+  // Token exists, flag is set, and token is not expired
+  return true;
 };
 
 /**
@@ -149,12 +220,26 @@ export const logout = () => {
 export const refreshAccessToken = async () => {
   try {
     const refreshToken = localStorage.getItem('refreshToken');
+    const currentToken = localStorage.getItem('authToken');
     
     if (!refreshToken) {
       console.warn('No refresh token available');
-      // Don't throw error, but return that no refresh was possible
-      return localStorage.getItem('authToken'); // Return current token if no refresh token
+      return currentToken; // Return current token if no refresh token
     }
+    
+    // Check if current token is still valid and not close to expiration
+    if (currentToken && !isTokenExpired(currentToken)) {
+      const expirationTime = getTokenExpirationTime(currentToken);
+      
+      // If token is valid for more than 10 minutes, don't refresh yet
+      if (expirationTime && expirationTime > 10 * 60 * 1000) {
+        console.log('Token still valid, no need to refresh yet');
+        return currentToken;
+      }
+    }
+    
+    // If we're here, we need to refresh the token
+    console.log('Refreshing access token');
     
     const response = await fetch('http://127.0.0.1:8000/api/user/token/refresh/', {
       method: 'POST',

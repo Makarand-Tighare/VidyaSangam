@@ -7,6 +7,10 @@ import { login as loginApi, logout as logoutApi, isLoggedIn, refreshAccessToken 
 // Create auth context
 const AuthContext = createContext(null);
 
+// Token refresh interval (50 minutes in milliseconds)
+// We refresh 10 minutes before the 60-minute expiration
+const TOKEN_REFRESH_INTERVAL = 50 * 60 * 1000;
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -51,6 +55,28 @@ export const AuthProvider = ({ children }) => {
 
     checkAuth();
   }, []);
+
+  // Set up periodic token refresh
+  useEffect(() => {
+    // Only set up refresh interval if user is logged in
+    if (!user?.isLoggedIn) return;
+
+    // Function to refresh the token
+    const refreshToken = async () => {
+      console.log('Attempting periodic token refresh');
+      try {
+        await refreshAccessToken();
+      } catch (error) {
+        console.error('Periodic token refresh failed:', error);
+      }
+    };
+
+    // Set up interval to refresh token
+    const intervalId = setInterval(refreshToken, TOKEN_REFRESH_INTERVAL);
+
+    // Clean up interval on unmount or when user logs out
+    return () => clearInterval(intervalId);
+  }, [user?.isLoggedIn]);
 
   // Login function
   const login = async (email, password) => {

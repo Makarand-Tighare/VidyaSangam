@@ -2,6 +2,7 @@ import { Comfortaa, Poppins, Roboto } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "./lib/useAuth";
+import { AutoLogoutProvider } from "./lib/autoLogout";
 import { Toaster } from "sonner";
 
 // Load the Google Fonts with specific weights and subsets
@@ -113,7 +114,9 @@ export default function RootLayout({ children }) {
           `}
         </Script>
         <AuthProvider>
-          {children}
+          <AutoLogoutProvider>
+            {children}
+          </AutoLogoutProvider>
         </AuthProvider>
       </body>
     </html>

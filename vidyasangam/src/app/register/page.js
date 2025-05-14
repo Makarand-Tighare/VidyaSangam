@@ -28,15 +28,21 @@ export default function RegisterPage() {
     section: "",
     department_id: "",
     mobileNumber: "",
+    mobileOtp: "",
     password: "",
     confirmPassword: "",
   })
   const [otpSent, setOtpSent] = useState(false)
   const [otpVerified, setOtpVerified] = useState(false)
+  const [mobileOtpSent, setMobileOtpSent] = useState(false)
+  const [mobileOtpVerified, setMobileOtpVerified] = useState(false)
   const [loading, setLoading] = useState(false)
   const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [sendingMobileOtp, setSendingMobileOtp] = useState(false)
+  const [verifyingMobileOtp, setVerifyingMobileOtp] = useState(false)
   const [registering, setRegistering] = useState(false)
   const [errors, setErrors] = useState({})
+  const [apiErrors, setApiErrors] = useState([])
   const [passwordStrength, setPasswordStrength] = useState("")
   const [isFormValid, setIsFormValid] = useState(false)
 
@@ -65,6 +71,7 @@ export default function RegisterPage() {
   useEffect(() => {
     const isValid =
       otpVerified &&
+      // mobileOtpVerified &&
       formData.firstName.trim() !== "" &&
       formData.lastName.trim() !== "" &&
       formData.registrationNumber.trim() !== "" &&
@@ -78,11 +85,11 @@ export default function RegisterPage() {
       (passwordStrength === "Strong" || passwordStrength === "Very Strong")
     setIsFormValid(isValid)
     console.log("Form validity updated:", isValid)
-  }, [formData, errors, otpVerified, passwordStrength])
+  }, [formData, errors, otpVerified, mobileOtpVerified, passwordStrength])
 
   useEffect(() => {
-    console.log("Form State:", { formData, errors, otpVerified, passwordStrength, isFormValid })
-  }, [formData, errors, otpVerified, passwordStrength, isFormValid])
+    console.log("Form State:", { formData, errors, otpVerified, mobileOtpVerified, passwordStrength, isFormValid })
+  }, [formData, errors, otpVerified, mobileOtpVerified, passwordStrength, isFormValid])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -107,7 +114,9 @@ export default function RegisterPage() {
         }
         break
       case "mobileNumber":
-        error = !/^\d{10}$/.test(value) ? "Invalid mobile number" : ""
+        if (!/^\+91\d{10}$/.test(value) && !/^\d{10}$/.test(value)) {
+          error = "Invalid mobile number. Use format: +91XXXXXXXXXX or XXXXXXXXXX"
+        }
         break
       default:
         error = value.trim() === "" ? "This field is required" : ""
@@ -148,6 +157,7 @@ export default function RegisterPage() {
   const handleSendOTP = async () => {
     if (errors.email) return
     setLoading(true)
+    setApiErrors([])
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/send-otp/",
@@ -162,7 +172,27 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Error sending OTP", error)
-      toast.error(error.response?.data?.message || "Error sending OTP. Please try again later.")
+      if (error.response?.data?.errors) {
+        const errorMessages = []
+        const errorData = error.response.data.errors
+        
+        // Handle non-field errors
+        if (errorData.non_field_errors) {
+          errorMessages.push(...errorData.non_field_errors)
+        }
+        
+        // Handle field-specific errors
+        Object.keys(errorData).forEach(key => {
+          if (key !== 'non_field_errors') {
+            errorMessages.push(`${key}: ${errorData[key].join(', ')}`)
+          }
+        })
+        
+        setApiErrors(errorMessages)
+        errorMessages.forEach(msg => toast.error(msg))
+      } else {
+        toast.error(error.response?.data?.message || "Error sending OTP. Please try again later.")
+      }
     } finally {
       setLoading(false)
     }
@@ -170,6 +200,7 @@ export default function RegisterPage() {
 
   const handleVerifyOTP = async () => {
     setVerifyingOtp(true)
+    setApiErrors([])
     try {
       const response = await axios.post(
         "http://127.0.0.1:8000/api/user/verify-otp/",
@@ -185,9 +216,129 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error("Error verifying OTP:", error)
-      toast.error(error.response?.data?.message || "Error verifying OTP. Please try again.")
+      if (error.response?.data?.errors) {
+        const errorMessages = []
+        const errorData = error.response.data.errors
+        
+        // Handle non-field errors
+        if (errorData.non_field_errors) {
+          errorMessages.push(...errorData.non_field_errors)
+        }
+        
+        // Handle field-specific errors
+        Object.keys(errorData).forEach(key => {
+          if (key !== 'non_field_errors') {
+            errorMessages.push(`${key}: ${errorData[key].join(', ')}`)
+          }
+        })
+        
+        setApiErrors(errorMessages)
+        errorMessages.forEach(msg => toast.error(msg))
+      } else {
+        toast.error(error.response?.data?.message || "Error verifying OTP. Please try again.")
+      }
     } finally {
       setVerifyingOtp(false)
+    }
+  }
+
+  const handleSendMobileOTP = async () => {
+    if (!formData.mobileNumber || errors.mobileNumber) return
+    setSendingMobileOtp(true)
+    setApiErrors([])
+    
+    let formattedMobileNumber = formData.mobileNumber
+    if (!formattedMobileNumber.startsWith('+91')) {
+      formattedMobileNumber = '+91' + formattedMobileNumber
+    }
+    
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/user/send-mobile-otp/",
+        { mobile_number: formattedMobileNumber },
+        { withCredentials: true }
+      )
+      if (response.status === 200) {
+        setMobileOtpSent(true)
+        toast.success("OTP sent successfully to your mobile number.")
+      } else {
+        toast.error("Failed to send mobile OTP. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error sending mobile OTP", error)
+      if (error.response?.data?.errors) {
+        const errorMessages = []
+        const errorData = error.response.data.errors
+        
+        // Handle non-field errors
+        if (errorData.non_field_errors) {
+          errorMessages.push(...errorData.non_field_errors)
+        }
+        
+        // Handle field-specific errors
+        Object.keys(errorData).forEach(key => {
+          if (key !== 'non_field_errors') {
+            errorMessages.push(`${key}: ${errorData[key].join(', ')}`)
+          }
+        })
+        
+        setApiErrors(errorMessages)
+        errorMessages.forEach(msg => toast.error(msg))
+      } else {
+        toast.error(error.response?.data?.message || "Error sending mobile OTP. Please try again later.")
+      }
+    } finally {
+      setSendingMobileOtp(false)
+    }
+  }
+
+  const handleVerifyMobileOTP = async () => {
+    setVerifyingMobileOtp(true)
+    setApiErrors([])
+    
+    let formattedMobileNumber = formData.mobileNumber
+    if (!formattedMobileNumber.startsWith('+91')) {
+      formattedMobileNumber = '+91' + formattedMobileNumber
+    }
+    
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/api/user/verify-mobile-otp/",
+        { mobile_number: formattedMobileNumber, otp: formData.mobileOtp },
+        { withCredentials: true }
+      )
+      if (response.status === 200) {
+        setMobileOtpVerified(true)
+        toast.success("Mobile number verified successfully")
+        setFormData((prev) => ({ ...prev, mobileOtp: "" }))
+      } else {
+        toast.error("Invalid mobile OTP. Please try again.")
+      }
+    } catch (error) {
+      console.error("Error verifying mobile OTP:", error)
+      if (error.response?.data?.errors) {
+        const errorMessages = []
+        const errorData = error.response.data.errors
+        
+        // Handle non-field errors
+        if (errorData.non_field_errors) {
+          errorMessages.push(...errorData.non_field_errors)
+        }
+        
+        // Handle field-specific errors
+        Object.keys(errorData).forEach(key => {
+          if (key !== 'non_field_errors') {
+            errorMessages.push(`${key}: ${errorData[key].join(', ')}`)
+          }
+        })
+        
+        setApiErrors(errorMessages)
+        errorMessages.forEach(msg => toast.error(msg))
+      } else {
+        toast.error(error.response?.data?.message || "Error verifying mobile OTP. Please try again.")
+      }
+    } finally {
+      setVerifyingMobileOtp(false)
     }
   }
 
@@ -199,16 +350,22 @@ export default function RegisterPage() {
     }
 
     setRegistering(true)
+    setApiErrors([])
     // Debug log for department value
     console.log("Department ID before API call:", formData.department_id)
     console.log("Complete form data:", formData)
+    
+    let formattedMobileNumber = formData.mobileNumber
+    if (!formattedMobileNumber.startsWith('+91')) {
+      formattedMobileNumber = '+91' + formattedMobileNumber
+    }
 
     try {
       const requestData = {
         email: formData.email,
         first_name: formData.firstName,
         last_name: formData.lastName,
-        mobile_number: formData.mobileNumber,
+        mobile_number: formattedMobileNumber,
         reg_no: formData.registrationNumber,
         section: formData.section,
         department_id: formData.department_id ? parseInt(formData.department_id) : null,
@@ -239,7 +396,28 @@ export default function RegisterPage() {
     } catch (error) {
       console.error("Registration error", error)
       console.error("Error response:", error.response?.data)
-      toast.error(error.response?.data?.message || "An error occurred during registration. Please try again.")
+      
+      if (error.response?.data?.errors) {
+        const errorMessages = []
+        const errorData = error.response.data.errors
+        
+        // Handle non-field errors
+        if (errorData.non_field_errors) {
+          errorMessages.push(...errorData.non_field_errors)
+        }
+        
+        // Handle field-specific errors
+        Object.keys(errorData).forEach(key => {
+          if (key !== 'non_field_errors') {
+            errorMessages.push(`${key}: ${errorData[key].join(', ')}`)
+          }
+        })
+        
+        setApiErrors(errorMessages)
+        errorMessages.forEach(msg => toast.error(msg))
+      } else {
+        toast.error(error.response?.data?.message || "An error occurred during registration. Please try again.")
+      }
     } finally {
       setRegistering(false)
     }
@@ -254,6 +432,19 @@ export default function RegisterPage() {
             <CardTitle className="text-2xl font-bold text-center text-[#3a3a3a]">Register</CardTitle>
           </CardHeader>
           <CardContent>
+            {apiErrors.length > 0 && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Registration Error</AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc pl-4">
+                    {apiErrors.map((error, index) => (
+                      <li key={index}>{error}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -449,16 +640,77 @@ export default function RegisterPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="mobile">Mobile Number</Label>
-                    <Input
-                      id="mobile"
-                      name="mobileNumber"
-                      type="tel"
-                      required
-                      value={formData.mobileNumber}
-                      onChange={handleChange}
-                    />
+                    <div className="flex space-x-2">
+                      <Input
+                        id="mobile"
+                        name="mobileNumber"
+                        type="tel"
+                        required
+                        value={formData.mobileNumber}
+                        onChange={handleChange}
+                        placeholder="+91XXXXXXXXXX or XXXXXXXXXX"
+                      />
+                      {/* Mobile OTP functionality temporarily disabled
+                      <Button
+                        type="button"
+                        onClick={handleSendMobileOTP}
+                        disabled={mobileOtpSent || sendingMobileOtp || errors.mobileNumber}
+                        className={`bg-[#4f83f8] hover:bg-[#357ae8] text-white`}
+                      >
+                        {sendingMobileOtp ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Sending...
+                          </>
+                        ) : mobileOtpSent ? "OTP Sent" : "Send OTP"}
+                      </Button>
+                      */}
+                    </div>
                     {errors.mobileNumber && <p className="text-red-500 text-xs">{errors.mobileNumber}</p>}
+                    <p className="text-xs text-gray-500">Enter with or without +91 prefix</p>
                   </div>
+                  
+                  {/* Mobile OTP verification temporarily disabled
+                  {mobileOtpSent && !mobileOtpVerified && (
+                    <div className="space-y-2">
+                      <Label htmlFor="mobileOtp">Mobile OTP</Label>
+                      <div className="flex space-x-2">
+                        <Input
+                          id="mobileOtp"
+                          name="mobileOtp"
+                          type="text"
+                          value={formData.mobileOtp}
+                          onChange={handleChange}
+                          required
+                        />
+                        <Button
+                          type="button"
+                          onClick={handleVerifyMobileOTP}
+                          className="bg-[#4f83f8] hover:bg-[#357ae8] text-white"
+                          disabled={verifyingMobileOtp}
+                        >
+                          {verifyingMobileOtp ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Verifying...
+                            </>
+                          ) : (
+                            "Verify OTP"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {mobileOtpVerified && (
+                    <Alert variant="success">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <AlertTitle>Mobile OTP Verified</AlertTitle>
+                      <AlertDescription>Your mobile number has been successfully verified.</AlertDescription>
+                    </Alert>
+                  )}
+                  */}
+
                   <div className="space-y-2">
                     <Label htmlFor="password">Password</Label>
                     <Input
