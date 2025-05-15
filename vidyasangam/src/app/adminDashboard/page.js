@@ -321,12 +321,40 @@ function AdminDashboard() {
     fetchUnmatchedParticipants();
     fetchRelationships();
     
+    // Load saved tab state from localStorage
+    const savedTab = localStorage.getItem('adminDashboardActiveTab');
+    const savedFilter = localStorage.getItem('adminDashboardActiveFilter');
+    
+    if (savedTab) {
+      setActiveTab(savedTab);
+      
+      if (savedFilter && savedTab === 'participants') {
+        setActiveFilter(savedFilter);
+      }
+    }
+    
     if (activeTab === "approvals") {
       fetchPendingApprovals();
     }
     
-    if (activeTab === "badges") {
+    if (activeTab === "badges" || savedTab === "badges") {
       fetchBadges();
+    }
+    
+    // If the tab is matching, make sure to show the matches
+    if (activeTab === "matching" || savedTab === "matching") {
+      // Check if we have stored matches data
+      const storedMatches = localStorage.getItem(getDepartmentStorageKey('mentorMenteesData'));
+      if (storedMatches) {
+        try {
+          const parsedMatches = JSON.parse(storedMatches);
+          if (Object.keys(parsedMatches).length > 0) {
+            setMatchesFetched(true);
+          }
+        } catch (error) {
+          console.error("Error parsing stored matches:", error);
+        }
+      }
     }
     
     // Load persistent state from localStorage
@@ -369,6 +397,12 @@ function AdminDashboard() {
           }
           
           setCsvData(csvContent);
+          
+          // If we're on the matching tab after a refresh, make sure to show matches
+          const savedTab = localStorage.getItem('adminDashboardActiveTab');
+          if (savedTab === 'matching') {
+            setActiveTab('matching');
+          }
         } else {
           console.log("Stored matches data is empty, not using it.");
         }
@@ -464,6 +498,9 @@ function AdminDashboard() {
       }
     }
     
+    // Save current tab state before refreshing
+    localStorage.setItem('adminDashboardActiveTab', 'matching');
+    
     setIsLoading(true);
     try {
       const url = "http://127.0.0.1:8000/api/mentor_mentee/match/";
@@ -536,6 +573,11 @@ function AdminDashboard() {
         setCsvData(csvContent);
         setErrorMessage(`${data.message}. Showing current mentor-mentee relationships.`);
         setIsLoading(false);
+        
+        // Refresh the page after showing the message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
         return;
       }
 
@@ -544,6 +586,11 @@ function AdminDashboard() {
         console.error("Invalid response format: Expected data.matches to be an array", data);
         setErrorMessage("Received an invalid response format from the server. Please try again.");
         setIsLoading(false);
+        
+        // Refresh the page after showing the error
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
         return;
       }
 
@@ -596,6 +643,11 @@ function AdminDashboard() {
       setCsvData(csvContent);
       setErrorMessage("");
       
+      // Refresh the page after successful matching
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
     } catch (error) {
       console.error("Error fetching matches:", error);
       
@@ -615,6 +667,9 @@ function AdminDashboard() {
           if (errorData.pending_count > 0) {
             setActiveTab("participants");
             setActiveFilter("pending");
+            // Save this tab state before refreshing
+            localStorage.setItem('adminDashboardActiveTab', 'participants');
+            localStorage.setItem('adminDashboardActiveFilter', 'pending');
           }
         } else if (errorData.error === "Not enough participants") {
           // Handle case where there aren't enough participants
@@ -642,6 +697,11 @@ function AdminDashboard() {
         // Default error message if no structured response
         setErrorMessage(`Failed to fetch matches: ${error.message || "Unknown error"}`);
       }
+      
+      // Refresh the page even after error, after a short delay to show the error message
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } finally {
       setIsLoading(false);
     }
@@ -852,7 +912,7 @@ function AdminDashboard() {
         setSelectedMentor(null);
         setSelectedMentee(null);
         
-        alert("Mentor-mentee relationship created successfully!");
+        toast.success("Mentor-mentee relationship created successfully!");
       }
     } catch (error) {
       console.error("Error assigning mentee to mentor:", error);
@@ -906,7 +966,7 @@ function AdminDashboard() {
   // Function to handle batch assignment
   const handleBatchAssignment = async () => {
     if (!batchAssignmentParticipant || selectedBatchParticipants.length === 0) {
-      alert("Please select at least one participant to assign.");
+      toast.error("Please select at least one participant to assign.");
       return;
     }
     
@@ -914,7 +974,7 @@ function AdminDashboard() {
     
     try {
       const isMentor = batchAssignmentParticipant.mentoring_preferences?.toLowerCase() === "mentor" || 
-                       (parseInt(batchAssignmentParticipant.semester) >= 5);
+                     (parseInt(batchAssignmentParticipant.semester) >= 5);
       
       // Filter out any participants that have the same registration number as the batch assignment participant
       const validParticipants = selectedBatchParticipants.filter(
@@ -922,11 +982,11 @@ function AdminDashboard() {
       );
       
       if (validParticipants.length < selectedBatchParticipants.length) {
-        alert("Warning: Removed participant(s) that had the same registration number as the mentor/mentee.");
+        toast.warning("Removed participant(s) that had the same registration number as the mentor/mentee.");
       }
       
       if (validParticipants.length === 0) {
-        alert("No valid participants to assign. Cannot assign someone to themselves.");
+        toast.error("No valid participants to assign. Cannot assign someone to themselves.");
         setIsBatchAssigning(false);
         return;
       }
@@ -956,14 +1016,14 @@ function AdminDashboard() {
       // Update modification time
       updateRelationshipModificationTime();
       
-      alert(`Assignment complete!\n${successful} relationships created successfully.\n${failed} relationships failed to create.`);
+      toast.success(`Assignment complete! ${successful} relationships created successfully. ${failed} relationships failed to create.`);
       
       setShowBatchAssignmentModal(false);
       setBatchAssignmentParticipant(null);
       setSelectedBatchParticipants([]);
     } catch (error) {
       console.error("Error in batch assignment:", error);
-      alert("Error performing batch assignment. Please try again.");
+      toast.error("Error performing batch assignment. Please try again.");
     } finally {
       setIsBatchAssigning(false);
     }
@@ -1042,11 +1102,11 @@ function AdminDashboard() {
                     // Update modification time
                     updateRelationshipModificationTime();
                     
-                    alert("Relationship deleted successfully!");
+                    toast.success("Relationship deleted successfully!");
                   }
                 } catch (error) {
                   console.error("Error deleting relationship:", error);
-                  alert("Failed to delete relationship. Please try again.");
+                  toast.error("Failed to delete relationship. Please try again.");
                 }
               }
             }}
@@ -1128,7 +1188,7 @@ function AdminDashboard() {
         setMentorRegInput('');
         setMenteeRegInput('');
         
-        alert("Mentor-mentee relationship created successfully!");
+        toast.success("Mentor-mentee relationship created successfully!");
       }
     } catch (error) {
       console.error("Error assigning mentee to mentor:", error);
@@ -1191,7 +1251,7 @@ function AdminDashboard() {
       setShowTechStackMatchModal(true);
     } catch (error) {
       console.error("Error finding mentors:", error);
-      alert("Error finding matching mentors");
+      toast.error("Error finding matching mentors");
     } finally {
       setIsLoadingMentors(false);
     }
@@ -1200,7 +1260,7 @@ function AdminDashboard() {
   // Function to assign directly to selected mentor
   const assignToMentor = async (mentor) => {
     if (!currentUnmatchedParticipant || !mentor) {
-      alert("Missing mentor or mentee information");
+      toast.error("Missing mentor or mentee information");
       return;
     }
     
@@ -1239,11 +1299,11 @@ function AdminDashboard() {
         setCurrentUnmatchedParticipant(null);
         setPotentialMentors([]);
         
-        alert("Mentor-mentee relationship created successfully!");
+        toast.success("Mentor-mentee relationship created successfully!");
       }
     } catch (error) {
       console.error("Error assigning to mentor:", error);
-      alert("Failed to create mentor-mentee relationship. Please try again.");
+      toast.error("Failed to create mentor-mentee relationship. Please try again.");
     } finally {
       setIsAssigning(false);
     }
@@ -1437,7 +1497,7 @@ function AdminDashboard() {
       // Add reason if deactivating
       if (newStatus === 'deactivated') {
         if (!reason.trim()) {
-          alert('Please provide a reason for deactivation');
+          toast.error('Please provide a reason for deactivation');
           setIsUpdatingStatus(false);
           return;
         }
@@ -1456,14 +1516,14 @@ function AdminDashboard() {
         
         // Check if any mentee relationships were affected
         if (response.data.note && response.data.note.includes('mentee relationships')) {
-          alert(`Status updated successfully. ${response.data.note}`);
+          toast.success(`Status updated successfully. ${response.data.note}`);
         } else {
-          alert(`Participant status successfully updated to ${newStatus}`);
+          toast.success(`Participant status successfully updated to ${newStatus}`);
         }
       }
     } catch (error) {
       console.error(`Error updating participant status:`, error);
-      alert(`Failed to update participant status. Please try again.`);
+      toast.error(`Failed to update participant status. Please try again.`);
     } finally {
       setIsUpdatingStatus(false);
     }
@@ -1583,14 +1643,14 @@ function AdminDashboard() {
         setShowBadgeAwardModal(false);
         setSelectedBadge(null);
         
-        alert("Badge awarded successfully!");
+        toast.success("Badge awarded successfully!");
       }
     } catch (error) {
       console.error("Error awarding badge:", error);
       if (error.response && error.response.data && error.response.data.error) {
-        alert(error.response.data.error);
+        toast.error(error.response.data.error);
       } else {
-        alert("Failed to award badge. Please try again.");
+        toast.error("Failed to award badge. Please try again.");
       }
     }
   };
@@ -1666,7 +1726,7 @@ function AdminDashboard() {
       setIsForceDeleteDialogOpen(false);
       setBadgeToDelete(null);
       
-      alert("Badge deleted successfully!");
+      toast.success("Badge deleted successfully!");
     } catch (error) {
       console.error("Error deleting badge:", error);
       
@@ -1701,7 +1761,7 @@ function AdminDashboard() {
       setIsDeleteDefinitionDialogOpen(false);
       setBadgeToDelete(null);
       
-      alert("Badge definition deleted successfully!");
+      toast.success("Badge definition deleted successfully!");
     } catch (error) {
       console.error("Error deleting badge definition:", error);
       
@@ -1738,7 +1798,7 @@ function AdminDashboard() {
       setFeedbackSettings(response.data);
     } catch (error) {
       console.error("Error fetching feedback settings:", error);
-      alert("Failed to fetch feedback settings. Please try again.");
+      toast.error("Failed to fetch feedback settings. Please try again.");
     } finally {
       setIsLoadingFeedbackSettings(false);
     }
@@ -1763,11 +1823,11 @@ function AdminDashboard() {
       
       if (response.status === 200) {
         setFeedbackSettings(response.data.settings);
-        alert("Feedback settings updated successfully!");
+        toast.success("Feedback settings updated successfully!");
       }
     } catch (error) {
       console.error("Error updating feedback settings:", error);
-      alert("Failed to update feedback settings. Please try again.");
+      toast.error("Failed to update feedback settings. Please try again.");
     } finally {
       setIsSavingFeedbackSettings(false);
     }
@@ -1809,7 +1869,7 @@ function AdminDashboard() {
       setFeedbackSelectedMentor(response.data.mentor);
     } catch (error) {
       console.error("Error fetching mentor feedback:", error);
-      alert("Failed to fetch mentor feedback. Please try again.");
+      toast.error("Failed to fetch mentor feedback. Please try again.");
     } finally {
       setIsLoadingMentorFeedback(false);
     }
@@ -1846,7 +1906,7 @@ function AdminDashboard() {
       setAppFeedbackStats(stats);
     } catch (error) {
       console.error("Error fetching application feedback:", error);
-      alert("Failed to fetch application feedback. Please try again.");
+      toast.error("Failed to fetch application feedback. Please try again.");
     } finally {
       setIsLoadingAppFeedback(false);
     }
@@ -1869,7 +1929,7 @@ function AdminDashboard() {
       });
       
       if (response.status === 200) {
-        alert(response.data.message || "Feedback deleted successfully!");
+        toast.success(response.data.message || "Feedback deleted successfully!");
         
         // Refresh the appropriate feedback list
         if (feedbackType === 'mentor') {
@@ -1882,7 +1942,7 @@ function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error deleting feedback:", error);
-      alert("Failed to delete feedback. Please try again.");
+      toast.error("Failed to delete feedback. Please try again.");
     }
   };
   
@@ -1903,21 +1963,21 @@ function AdminDashboard() {
       const headers = getAuthHeaders();
       
       const response = await axios.get(url, { headers });
-      setSelectedUser({
-        registration_no: registrationNo,
-        ...response.data
-      });
       
-      // Initialize override values with current values
-      setUserEligibilityOverrides({
-        mentor_feedback_eligible: response.data.mentor_feedback_eligible,
-        app_feedback_eligible: response.data.app_feedback_eligible,
-        override_until: response.data.override_until || ''
-      });
-      
+      if (response.status === 200) {
+        setUserFeedbackEligibility(response.data);
+        setSelectedUser(response.data.participant);
+        
+        // Set override values to current values
+        setUserEligibilityOverrides({
+          mentor_feedback_eligible: response.data.mentor_feedback_eligible,
+          app_feedback_eligible: response.data.app_feedback_eligible,
+          override_until: response.data.override_until || ''
+        });
+      }
     } catch (error) {
       console.error("Error fetching user eligibility:", error);
-      alert("Failed to fetch user eligibility. Please try again.");
+      toast.error("Failed to fetch user eligibility. Please try again.");
     } finally {
       setIsLoadingUserEligibility(false);
     }
@@ -1942,11 +2002,11 @@ function AdminDashboard() {
       if (response.status === 200) {
         // Refresh the user's eligibility status
         await fetchUserEligibility(selectedUser.registration_no);
-        alert("User feedback eligibility updated successfully!");
+        toast.success("User feedback eligibility updated successfully!");
       }
     } catch (error) {
       console.error("Error updating user eligibility:", error);
-      alert("Failed to update user eligibility. Please try again.");
+      toast.error("Failed to update user eligibility. Please try again.");
     } finally {
       setIsUpdatingUserEligibility(false);
     }
@@ -2112,7 +2172,10 @@ function AdminDashboard() {
           <div className="flex justify-center w-full min-w-max border-b-2 border-indigo-100">
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "participants" ? "border-blue-600 text-blue-700 bg-blue-50" : "border-transparent text-gray-500 hover:text-blue-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("participants")}
+              onClick={() => {
+                setActiveTab("participants");
+                localStorage.setItem('adminDashboardActiveTab', 'participants');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2128,7 +2191,10 @@ function AdminDashboard() {
             </button>
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "unmatched" ? "border-purple-600 text-purple-700 bg-purple-50" : "border-transparent text-gray-500 hover:text-purple-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("unmatched")}
+              onClick={() => {
+                setActiveTab("unmatched");
+                localStorage.setItem('adminDashboardActiveTab', 'unmatched');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2139,7 +2205,10 @@ function AdminDashboard() {
             </button>
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "relationships" ? "border-teal-600 text-teal-700 bg-teal-50" : "border-transparent text-gray-500 hover:text-teal-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("relationships")}
+              onClick={() => {
+                setActiveTab("relationships");
+                localStorage.setItem('adminDashboardActiveTab', 'relationships');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2150,7 +2219,10 @@ function AdminDashboard() {
             </button>
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "matching" ? "border-green-600 text-green-700 bg-green-50" : "border-transparent text-gray-500 hover:text-green-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("matching")}
+              onClick={() => {
+                setActiveTab("matching");
+                localStorage.setItem('adminDashboardActiveTab', 'matching');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2161,7 +2233,10 @@ function AdminDashboard() {
             </button>
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "badges" ? "border-indigo-600 text-indigo-700 bg-indigo-50" : "border-transparent text-gray-500 hover:text-indigo-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("badges")}
+              onClick={() => {
+                setActiveTab("badges");
+                localStorage.setItem('adminDashboardActiveTab', 'badges');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2172,7 +2247,10 @@ function AdminDashboard() {
             </button>
             <button
               className={`px-6 py-4 mx-1 whitespace-nowrap font-medium text-sm border-b-2 transition-colors duration-200 ${activeTab === "feedback" ? "border-amber-600 text-amber-700 bg-amber-50" : "border-transparent text-gray-500 hover:text-amber-700 hover:bg-gray-50"}`}
-              onClick={() => setActiveTab("feedback")}
+              onClick={() => {
+                setActiveTab("feedback");
+                localStorage.setItem('adminDashboardActiveTab', 'feedback');
+              }}
             >
               <div className="flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -2275,6 +2353,8 @@ function AdminDashboard() {
                         onClick={() => {
                           setActiveTab("participants");
                           setActiveFilter("pending");
+                          localStorage.setItem('adminDashboardActiveTab', 'participants');
+                          localStorage.setItem('adminDashboardActiveFilter', 'pending');
                         }}
                         className="px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors mr-3"
                       >
@@ -2291,6 +2371,7 @@ function AdminDashboard() {
                         onClick={() => {
                           // Open tab with unmatched participants
                           setActiveTab("unmatched");
+                          localStorage.setItem('adminDashboardActiveTab', 'unmatched');
                         }}
                         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors mr-3"
                       >
@@ -2902,11 +2983,11 @@ function AdminDashboard() {
                                         // Update modification time
                                         updateRelationshipModificationTime();
                                         
-                                        alert("Relationship deleted successfully!");
+                                        toast.success("Relationship deleted successfully!");
                                       }
                                     } catch (error) {
                                       console.error("Error deleting relationship:", error);
-                                      alert("Failed to delete relationship. Please try again.");
+                                      toast.error("Failed to delete relationship. Please try again.");
                                     }
                                   }
                                 }}
@@ -3568,7 +3649,7 @@ function AdminDashboard() {
                                     className="text-red-500 hover:text-red-700"
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                                     </svg>
                                   </button>
                                 </div>
@@ -3784,7 +3865,6 @@ function AdminDashboard() {
               </div>
             </div>
           )}
-
           {/* Status Update Modal */}
           {showStatusModal && participantForStatus && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -4355,7 +4435,7 @@ function AdminDashboard() {
                         if (feedbackSearchTerm) {
                           fetchMentorFeedback(feedbackSearchTerm);
                         } else {
-                          alert('Please enter a mentor registration number');
+                          toast.error('Please enter a mentor registration number');
                         }
                       }}
                       className="bg-amber-600 hover:bg-amber-700 text-white"
@@ -4364,6 +4444,7 @@ function AdminDashboard() {
                     </Button>
                   </div>
                 </div>
+                
                 
                 {isLoadingMentorFeedback ? (
                   <div className="flex justify-center items-center p-8">
@@ -4489,7 +4570,7 @@ function AdminDashboard() {
                         if (eligibilitySearchTerm) {
                           fetchUserEligibility(eligibilitySearchTerm);
                         } else {
-                          alert('Please enter a user registration number');
+                          toast.error('Please enter a user registration number');
                         }
                       }}
                       className="bg-amber-600 hover:bg-amber-700 text-white"
