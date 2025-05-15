@@ -2332,7 +2332,13 @@ export default function CareerPage() {
                                 {project?.technologies && (
                                   <div className="item-subtitle">Technologies: {project?.technologies}</div>
                                 )}
-                                {project?.description && <div className="item-description">{project?.description}</div>}
+                                {project?.bullets && project?.bullets.length > 0 && (
+                                  <ul className="bullets">
+                                    {project?.bullets.map((bullet, i) => (
+                                      <li key={i} className="bullet">{bullet}</li>
+                                    ))}
+                                  </ul>
+                                )}
                                 {project?.link && (
                                   <div>Link: <a href={project?.link} target="_blank" rel="noopener noreferrer">{project?.link}</a></div>
                                 )}
