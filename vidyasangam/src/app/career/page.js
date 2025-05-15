@@ -1609,6 +1609,24 @@ export default function CareerPage() {
     }
   }
   
+  // Auto-save resume to localStorage before preview
+  const handlePreviewClick = async () => {
+    // Save changes to localStorage
+    localStorage.setItem('vidyasangam_resume', JSON.stringify(resume));
+    
+    // Also try to save to server if available
+    try {
+      await saveResumeToServer();
+      toast.success('Resume saved before preview');
+    } catch (error) {
+      console.error('Failed to save resume to server:', error);
+      toast.info('Resume saved locally. Changes might not be reflected on other devices.');
+    }
+    
+    // Show preview
+    setResumePreviewMode(true);
+  }
+  
   if (loading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -2431,7 +2449,7 @@ export default function CareerPage() {
                           </Button>
                           <Button 
                             variant="outline" 
-                            onClick={() => setResumePreviewMode(true)}
+                            onClick={handlePreviewClick}
                             className="gap-2"
                           >
                             <Eye className="h-4 w-4" />
