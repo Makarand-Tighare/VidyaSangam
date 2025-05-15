@@ -29,7 +29,7 @@ const roboto = Roboto({
 
 // Metadata for the Vidyasangam platform
 export const metadata = {
-  title: "VidyaSangam - Mentor-Mentee Platform",
+  title: "VidyaSangam",
   description:
     "Empowering mentors to guide, and mentees to grow in a collaborative ecosystem designed for academic excellence.",
   icons: {
