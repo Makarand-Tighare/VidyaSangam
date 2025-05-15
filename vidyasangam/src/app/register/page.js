@@ -49,7 +49,7 @@ export default function RegisterPage() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/user/departments-public/")
+        const response = await axios.get("https://vidyasangam.duckdns.org/api/user/departments-public/")
         if (response.status === 200) {
           setDepartments(response.data)
           console.log("Departments fetched:", response.data)
@@ -160,7 +160,7 @@ export default function RegisterPage() {
     setApiErrors([])
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/user/send-otp/",
+        "https://vidyasangam.duckdns.org/api/user/send-otp/",
         { email: formData.email },
         { withCredentials: true }
       )
@@ -203,7 +203,7 @@ export default function RegisterPage() {
     setApiErrors([])
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/user/verify-otp/",
+        "https://vidyasangam.duckdns.org/api/user/verify-otp/",
         { email: formData.email, otp: formData.otp },
         { withCredentials: true }
       )
@@ -254,7 +254,7 @@ export default function RegisterPage() {
     
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/user/send-mobile-otp/",
+        "https://vidyasangam.duckdns.org/api/user/send-mobile-otp/",
         { mobile_number: formattedMobileNumber },
         { withCredentials: true }
       )
@@ -303,7 +303,7 @@ export default function RegisterPage() {
     
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/user/verify-mobile-otp/",
+        "https://vidyasangam.duckdns.org/api/user/verify-mobile-otp/",
         { mobile_number: formattedMobileNumber, otp: formData.mobileOtp },
         { withCredentials: true }
       )
@@ -378,7 +378,7 @@ export default function RegisterPage() {
       console.log("Request payload:", requestData)
 
       const response = await axios.post(
-        "http://127.0.0.1:8000/api/user/register/",
+        "https://vidyasangam.duckdns.org/api/user/register/",
         requestData,
         { withCredentials: true }
       )

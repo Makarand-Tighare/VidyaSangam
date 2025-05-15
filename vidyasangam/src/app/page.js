@@ -301,7 +301,7 @@ export default function Home() {
     // Fetch statistics from API
     const fetchStats = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/user/public-stats/');
+        const response = await fetch('https://vidyasangam.duckdns.org/api/user/public-stats/');
         if (response.ok) {
           const data = await response.json();
           setStats(data);

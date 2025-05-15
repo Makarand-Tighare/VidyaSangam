@@ -210,7 +210,7 @@ export default function CareerPage() {
       
       try {
         // Fetch user data
-        const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/')
+        const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/profile/')
         if (!response.ok) {
           throw new Error('Failed to fetch user data')
         }
@@ -236,7 +236,7 @@ export default function CareerPage() {
   
   const fetchCareerPath = async () => {
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/path/')
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/path/')
       
       if (response.ok) {
         const data = await response.json()
@@ -345,7 +345,7 @@ export default function CareerPage() {
       
       console.log('Sending payload for generation:', payload);
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/path/generate/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/path/generate/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -434,7 +434,7 @@ export default function CareerPage() {
       
       console.log('Saving career path with payload:', payload);
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/path/create/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/path/create/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -485,7 +485,7 @@ export default function CareerPage() {
   const updateMilestoneStatus = async (milestoneId, newStatus) => {
     try {
       setUpdatingStatus(true);
-      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/career/milestones/${milestoneId}/`, {
+      const response = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/career/milestones/${milestoneId}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -586,7 +586,7 @@ export default function CareerPage() {
       // Add new entry to history
       const updatedHistory = [...currentHistory, historyEntry];
       
-      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/career/milestones/${selectedMilestone.id}/`, {
+      const response = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/career/milestones/${selectedMilestone.id}/`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -636,7 +636,7 @@ export default function CareerPage() {
   // Resume functions
   const fetchResume = async () => {
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/resume/')
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/resume/')
       
       if (response.ok) {
         const data = await response.json()
@@ -748,7 +748,7 @@ export default function CareerPage() {
     setIsSavingResume(true);
     
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/resume/save/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/resume/save/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1059,7 +1059,7 @@ export default function CareerPage() {
     setEnhancementTarget({ section, index, field });
     
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/resume/enhance-text/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/resume/enhance-text/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1392,7 +1392,7 @@ export default function CareerPage() {
     try {
       toast.info('Attempting server-side PDF generation...');
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/resume/generate-pdf/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/resume/generate-pdf/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1433,7 +1433,7 @@ export default function CareerPage() {
     
     setIsSavingResume(true);
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/career/resume/save/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/career/resume/save/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

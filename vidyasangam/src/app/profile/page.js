@@ -170,7 +170,7 @@ function Profile() {
     setLoadingProfile(true);
     try {
       console.log('Fetching user profile data...');
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/profile/');
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -314,7 +314,7 @@ function Profile() {
 
   const fetchMentorMenteeStatus = async (registrationNo) => {
     try {
-      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${registrationNo}/`);
+      const response = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/profile/${registrationNo}/`);
       
       if (!response.ok) throw new Error('Failed to fetch mentor/mentee data')
       
@@ -385,7 +385,7 @@ function Profile() {
     setTaskData(prev => ({ ...prev, isLoading: true }));
   
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/generate/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/generate/', {
         method: 'POST',
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
@@ -453,7 +453,7 @@ function Profile() {
         semester: formData.semester
       }
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/update-profile/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/update-profile/', {
         method: 'PATCH',
         body: JSON.stringify(updateData)
       })
@@ -509,7 +509,7 @@ function Profile() {
     setSecurityData(prev => ({ ...prev, isSubmitting: true, message: '' }))
     
     try {
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/user/changepassword/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/changepassword/', {
         method: 'POST',
         body: JSON.stringify({
           // current_password: securityData.currentPassword,
@@ -584,7 +584,7 @@ function Profile() {
   // Submit completed quiz to the server
   const submitQuiz = async (registrationNo, quizId, userAnswers) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/mentor_mentee/quiz/submit/', {
+      const response = await fetch('https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/submit/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -613,7 +613,7 @@ function Profile() {
   const fetchMenteeQuizHistory = async (menteeId) => {
     try {
       // Fetch both pending and completed quizzes
-      const pendingResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
+      const pendingResponse = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -625,7 +625,7 @@ function Profile() {
       
       const pendingQuizzes = await pendingResponse.json();
       
-      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
+      const completedResponse = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -691,7 +691,7 @@ function Profile() {
   // Get quiz history for a user
   const getQuizHistory = async (registrationNo) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${registrationNo}/`, {
+      const response = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/results/${registrationNo}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -712,7 +712,7 @@ function Profile() {
   // Fetch pending quizzes for a mentee
   const fetchPendingQuizzes = async (menteeId) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/pending/${menteeId}/`, {
+      const response = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/pending/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -725,7 +725,7 @@ function Profile() {
       const pendingQuizzes = await response.json();
       
       // Fetch completed quizzes
-      const completedResponse = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/results/${menteeId}/`, {
+      const completedResponse = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/results/${menteeId}/`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         }
@@ -837,7 +837,7 @@ function Profile() {
       // Determine user role based on formData.status
       const userRole = formData.status === 'Mentor' ? 'mentor' : 'mentee';
       
-      const response = await fetch(`http://127.0.0.1:8000/api/mentor_mentee/quiz/delete/${quizId}/`, {
+      const response = await fetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/delete/${quizId}/`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -936,7 +936,7 @@ function Profile() {
     if (!formData.registrationNumber) return;
     setIsLoadingBadges(true);
     try {
-      const url = `http://127.0.0.1:8000/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
+      const url = `https://vidyasangam.duckdns.org/api/mentor_mentee/participants/badges/${formData.registrationNumber}/`;
       const response = await axios.get(url);
       
       // Store the response data
@@ -966,7 +966,7 @@ function Profile() {
 
   const fetchUserPoints = async () => {
     try {
-      const url = 'http://127.0.0.1:8000/api/mentor_mentee/leaderboard/';
+      const url = 'https://vidyasangam.duckdns.org/api/mentor_mentee/leaderboard/';
       const response = await axios.get(url);
       // Find the user in the leaderboard
       const user = response.data.find(u => u.id === formData.registrationNumber);
@@ -978,7 +978,7 @@ function Profile() {
 
   const fetchApprovalAndStatus = async () => {
     try {
-      const url = `http://127.0.0.1:8000/api/mentor_mentee/profile/${formData.registrationNumber}/`;
+      const url = `https://vidyasangam.duckdns.org/api/mentor_mentee/profile/${formData.registrationNumber}/`;
       const response = await axios.get(url);
       setApprovalStatus(response.data.approval_status || '');
       setParticipantStatus(response.data.status || '');
@@ -990,7 +990,7 @@ function Profile() {
   const handleClaimBadge = async (badgeId) => {
     setIsClaimingBadge(true);
     try {
-      const url = 'http://127.0.0.1:8000/api/mentor_mentee/badges/claim/';
+      const url = 'https://vidyasangam.duckdns.org/api/mentor_mentee/badges/claim/';
       await axios.post(url, {
         badge_id: badgeId,
         participant_id: formData.registrationNumber
@@ -1069,7 +1069,7 @@ function Profile() {
   // Check if user is eligible to submit feedback
   const checkFeedbackEligibility = async () => {
     try {
-      const response = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/feedback/eligibility/${formData.registrationNumber}/`);
+      const response = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/feedback/eligibility/${formData.registrationNumber}/`);
       
       if (!response.ok) {
         throw new Error('Failed to check feedback eligibility');
@@ -1163,7 +1163,7 @@ function Profile() {
         anonymous: mentorFeedback.anonymous
       };
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/mentor/submit/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/feedback/mentor/submit/', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -1225,7 +1225,7 @@ function Profile() {
         anonymous: appFeedback.anonymous
       };
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/feedback/app/submit/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/feedback/app/submit/', {
         method: 'POST',
         body: JSON.stringify(payload)
       });
@@ -1369,7 +1369,7 @@ function Profile() {
         badge_id: linkedInShareData.badgeId
       };
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/preview/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/linkedin/preview/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1423,7 +1423,7 @@ function Profile() {
     
     try {
       // Fetch latest profile data to get the current access token
-      const profileResponse = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+      const profileResponse = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/profile/');
       if (!profileResponse.ok) {
         throw new Error('Failed to fetch profile data');
       }
@@ -1440,7 +1440,7 @@ function Profile() {
       
       console.log('LinkedIn post payload:', payload);
       
-      const response = await authenticatedFetch('http://127.0.0.1:8000/api/mentor_mentee/linkedin/post/', {
+      const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/linkedin/post/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

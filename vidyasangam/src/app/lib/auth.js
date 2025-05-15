@@ -130,7 +130,7 @@ export const isAdmin = () => {
  */
 export const login = async (email, password) => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/user/login/', {
+    const response = await fetch('https://vidyasangam.duckdns.org/api/user/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -173,7 +173,7 @@ export const login = async (email, password) => {
  */
 export const adminLogin = async (email, password) => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/admin/login/', {
+    const response = await fetch('https://vidyasangam.duckdns.org/api/admin/login/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -241,7 +241,7 @@ export const refreshAccessToken = async () => {
     // If we're here, we need to refresh the token
     console.log('Refreshing access token');
     
-    const response = await fetch('http://127.0.0.1:8000/api/user/token/refresh/', {
+    const response = await fetch('https://vidyasangam.duckdns.org/api/user/token/refresh/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

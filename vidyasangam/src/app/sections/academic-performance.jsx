@@ -16,7 +16,7 @@ export function AcademicPerformance({ data, updateData, updateFiles, errors = {}
     else if (data?.registration_no) {
       const fetchSemester = async () => {
         try {
-          const response = await axios.get(`http://127.0.0.1:8000/api/mentor_mentee/profile/${data.registration_no}`);
+          const response = await axios.get(`https://vidyasangam.duckdns.org/api/mentor_mentee/profile/${data.registration_no}`);
           if (response.data && response.data.semester) {
             setCurrentSemester(response.data.semester);
             // Update the parent component with the semester info

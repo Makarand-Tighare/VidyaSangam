@@ -9,7 +9,7 @@ export async function checkUserMentorMenteeStatus() {
     }
 
     // Fetch user profile to get registration number
-    const profileResponse = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+    const profileResponse = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/profile/');
 
     if (!profileResponse.ok) {
       return { isMentorOrMentee: false, status: 'Student' };
@@ -23,7 +23,7 @@ export async function checkUserMentorMenteeStatus() {
     }
 
     // Fetch mentor/mentee status
-    const statusResponse = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${regNo}/`);
+    const statusResponse = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/profile/${regNo}/`);
     
     if (!statusResponse.ok) {
       return { isMentorOrMentee: false, status: 'Student' };
@@ -65,7 +65,7 @@ export async function checkMentoringFormSubmitted() {
     }
 
     // Fetch user profile to get registration number
-    const profileResponse = await authenticatedFetch('http://127.0.0.1:8000/api/user/profile/');
+    const profileResponse = await authenticatedFetch('https://vidyasangam.duckdns.org/api/user/profile/');
 
     if (!profileResponse.ok) {
       return { hasSubmitted: false };
@@ -79,7 +79,7 @@ export async function checkMentoringFormSubmitted() {
     }
 
     // Use the same endpoint as checkUserMentorMenteeStatus to check if user has submitted a form
-    const applicationResponse = await authenticatedFetch(`http://127.0.0.1:8000/api/mentor_mentee/profile/${regNo}/`);
+    const applicationResponse = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/mentor_mentee/profile/${regNo}/`);
     
     if (!applicationResponse.ok) {
       console.warn('Failed to check application status');
