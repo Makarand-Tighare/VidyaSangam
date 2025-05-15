@@ -324,7 +324,7 @@ export default function Home() {
       {/* <LinkedInButton /> */}
       
       {/* Header Section - Enhanced with modern styling and animations */}
-      <div className="relative py-20 mt-8 overflow-hidden min-h-[90vh] flex items-center">
+      <div className="relative py-20 md:mt-8 pt-24 md:pt-20 overflow-hidden min-h-[90vh] flex items-center">
         {/* Animated Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-blue-50 to-indigo-100 background-animate"></div>
         <ParticleBackground />

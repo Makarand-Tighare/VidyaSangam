@@ -49,7 +49,7 @@ export default function NavBar() {
   }
 
   return (
-    <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative">
+    <nav className="flex justify-between items-center py-4 bg-transparent text-[#1e3a8a] px-4 md:px-12 relative z-50">
       <div className="flex items-center">
         <Link href="/" onClick={closeMenu}>
           <p className="text-2xl font-semibold font-comfortaa cursor-pointer">
@@ -182,7 +182,7 @@ export default function NavBar() {
       </div>
 
       {isOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-10 md:hidden">
+        <div className="absolute top-16 left-0 right-0 bg-white shadow-md z-50 md:hidden">
           <div className="flex flex-col items-center space-y-2 py-2">
             <Link href="/" onClick={closeMenu} className="relative group">
               <span className="hover:bg-[#ede9fe] transition duration-200 rounded px-3 py-1">

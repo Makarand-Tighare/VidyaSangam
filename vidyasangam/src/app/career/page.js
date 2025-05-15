@@ -37,10 +37,105 @@ import {
 } from "@/components/ui/alert-dialog"
 import './resume-styles.css'
 
+// Custom style for compact resume 
+const compactResumeStyles = `
+  .resume-preview-container {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+    max-width: 100%;
+  }
+  
+  .resume-preview-container .header {
+    margin-bottom: 10px !important;
+  }
+  
+  .resume-preview-container .name {
+    font-size: 18px !important;
+    margin-bottom: 2px !important;
+  }
+  
+  .resume-preview-container .contact {
+    font-size: 11px !important;
+    margin-bottom: 5px !important;
+  }
+  
+  .resume-preview-container .section {
+    margin-bottom: 10px !important;
+  }
+  
+  .resume-preview-container .section-title {
+    font-size: 14px !important;
+    margin-bottom: 5px !important;
+    padding-bottom: 2px !important;
+  }
+  
+  .resume-preview-container .item {
+    margin-bottom: 8px !important;
+  }
+  
+  .resume-preview-container .item-header {
+    margin-bottom: 2px !important;
+  }
+  
+  .resume-preview-container .bullets {
+    margin-top: 2px !important;
+    padding-left: 15px !important;
+  }
+  
+  .resume-preview-container .bullet {
+    margin-bottom: 1px !important;
+  }
+  
+  .resume-preview-container .skills-container {
+    margin-bottom: 5px !important;
+  }
+  
+  .resume-preview-container .skills-group {
+    margin-right: 10px !important;
+    margin-bottom: 5px !important;
+  }
+  
+  .resume-preview-container .skills-title {
+    margin-bottom: 2px !important;
+  }
+  
+  .resume-preview-container .skill {
+    padding: 1px 5px !important;
+    margin: 1px !important;
+    font-size: 10px !important;
+  }
+  
+  .resume-preview-container .item-description {
+    margin-bottom: 3px !important;
+  }
+`;
+
 export default function CareerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [userData, setUserData] = useState(null)
+  
+  // Helper function to truncate summary to fit in one page
+  const truncateSummary = (summary, maxLength = 200) => {
+    if (!summary) return '';
+    if (summary.length <= maxLength) return summary;
+    
+    // Truncate at the last complete sentence within the limit
+    const truncated = summary.substring(0, maxLength);
+    const lastPeriod = truncated.lastIndexOf('.');
+    
+    if (lastPeriod > maxLength * 0.7) {
+      return truncated.substring(0, lastPeriod + 1);
+    }
+    
+    return truncated + '...';
+  }
+
+  // Helper function to limit bullet points based on available space
+  const limitBulletPoints = (bullets, maxBullets = 3) => {
+    if (!bullets || bullets.length <= maxBullets) return bullets;
+    return bullets.slice(0, maxBullets);
+  }
   
   // Career Path Planning
   const [careerPath, setCareerPath] = useState({
@@ -1412,7 +1507,7 @@ export default function CareerPage() {
       ]);
       
       const html2canvas = html2canvasModule.default;
-      const { jsPDF } = jsPDFModule.default;
+      const jsPDF = jsPDFModule.default;
       
       // Get the resume preview container
       const element = document.querySelector('.resume-preview-container');
@@ -1423,7 +1518,10 @@ export default function CareerPage() {
       
       // Create a clone of the element with proper styling for PDF
       const clone = element.cloneNode(true);
-      clone.style.width = '816px'; // Letter size width (8.5 inches at 96 dpi)
+      // Apply fixed width for letter size page with margins
+      clone.style.width = '750px'; // Letter size width (8.5 inches at 96 dpi, minus margins)
+      clone.style.padding = '20px';
+      clone.style.boxSizing = 'border-box';
       clone.style.backgroundColor = 'white';
       clone.style.position = 'absolute';
       clone.style.top = '-9999px';
@@ -1441,41 +1539,20 @@ export default function CareerPage() {
       // Remove the clone from DOM
       document.body.removeChild(clone);
       
-      // Calculate PDF dimensions (Letter size: 8.5 x 11 inches)
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
+      // Use letter size dimensions (8.5 x 11 inches)
+      const pdf = new jsPDF({
+        format: 'letter',
+        unit: 'pt',
+        orientation: 'portrait'
+      });
       
-      // Create PDF document
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      let position = 0;
+      // Calculate PDF dimensions for letter size page
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
       
-      // Add image to PDF
-      pdf.addImage(
-        canvas.toDataURL('image/png'), 
-        'PNG', 
-        0, 
-        position, 
-        imgWidth, 
-        imgHeight
-      );
-      
-      // If the content is longer than one page, add additional pages
-      heightLeft -= pageHeight;
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(
-          canvas.toDataURL('image/png'), 
-          'PNG', 
-          0, 
-          position, 
-          imgWidth, 
-          imgHeight
-        );
-        heightLeft -= pageHeight;
-      }
+      // Scale canvas to fit single page
+      const imgData = canvas.toDataURL('image/png');
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       
       // Save the PDF
       const fileName = `${resume?.basics?.name?.replace(/\s+/g, '_') || 'Resume'}_Resume.pdf`;
@@ -1483,20 +1560,12 @@ export default function CareerPage() {
       
       toast.success('Resume PDF generated and downloaded successfully');
       
-      // Also save to server if available
-      try {
-        await saveResumeToServer();
-      } catch (error) {
-        console.error('Failed to save resume to server, but PDF was generated locally', error);
-        // Don't show error since local PDF generation succeeded
-      }
+      // Also save to localStorage as backup
+      localStorage.setItem('vidyasangam_resume', JSON.stringify(resume));
       
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast.error('Failed to generate PDF: ' + error.message);
-      
-      // Fallback to server-side generation if client-side fails
-      generateResumeFromServer();
     } finally {
       setIsGeneratingResume(false);
     }
@@ -1625,6 +1694,12 @@ export default function CareerPage() {
     
     // Show preview
     setResumePreviewMode(true);
+  }
+  
+  // Helper function to limit number of items in each section
+  const limitItems = (items, maxItems = 2) => {
+    if (!items || items.length <= maxItems) return items;
+    return items.slice(0, maxItems);
   }
   
   if (loading) {
@@ -2232,6 +2307,7 @@ export default function CareerPage() {
                       
                       {/* ATS-friendly resume preview */}
                       <div className="border rounded-md p-8 bg-white resume-preview-container">
+                        <style>{compactResumeStyles}</style>
                         {/* Contact Info */}
                         <div className="header">
                           <div className="name">{resume?.basics?.name || 'Your Name'}</div>
@@ -2248,7 +2324,7 @@ export default function CareerPage() {
                         {resume?.basics?.summary && (
                           <div className="section">
                             <div className="section-title">Professional Summary</div>
-                            <div className="item-description">{resume.basics.summary}</div>
+                            <div className="item-description">{truncateSummary(resume.basics.summary)}</div>
                           </div>
                         )}
                         
@@ -2287,7 +2363,7 @@ export default function CareerPage() {
                           <div className="section">
                             <div className="section-title">Professional Experience</div>
                             
-                            {resume.experience.map((exp, index) => (
+                            {limitItems(resume.experience).map((exp, index) => (
                               <div key={index} className="item">
                                 <div className="item-header">
                                   <div className="item-title">{exp?.position}</div>
@@ -2300,7 +2376,7 @@ export default function CareerPage() {
                                 
                                 {exp?.bullets?.length > 0 && (
                                   <ul className="bullets">
-                                    {exp?.bullets?.map((bullet, i) => (
+                                    {limitBulletPoints(exp?.bullets).map((bullet, i) => (
                                       <li key={i} className="bullet">{bullet}</li>
                                     ))}
                                   </ul>
@@ -2315,7 +2391,7 @@ export default function CareerPage() {
                           <div className="section">
                             <div className="section-title">Education</div>
                             
-                            {resume?.education?.map((edu, index) => (
+                            {limitItems(resume.education).map((edu, index) => (
                               <div key={index} className="item">
                                 <div className="item-header">
                                   <div className="item-title">{edu?.degree}{edu?.fieldOfStudy ? ` in ${edu?.fieldOfStudy}` : ''}</div>
@@ -2337,7 +2413,7 @@ export default function CareerPage() {
                           <div className="section">
                             <div className="section-title">Projects</div>
                             
-                            {resume?.projects?.map((project, index) => (
+                            {limitItems(resume.projects).map((project, index) => (
                               <div key={index} className="item">
                                 <div className="item-header">
                                   <div className="item-title">{project?.title}</div>
@@ -2352,7 +2428,7 @@ export default function CareerPage() {
                                 )}
                                 {project?.bullets && project?.bullets.length > 0 && (
                                   <ul className="bullets">
-                                    {project?.bullets.map((bullet, i) => (
+                                    {limitBulletPoints(project?.bullets, 2).map((bullet, i) => (
                                       <li key={i} className="bullet">{bullet}</li>
                                     ))}
                                   </ul>
@@ -2370,7 +2446,7 @@ export default function CareerPage() {
                           <div className="section">
                             <div className="section-title">Certifications</div>
                             
-                            {resume?.certifications?.map((cert, index) => (
+                            {limitItems(resume.certifications, 2).map((cert, index) => (
                               <div key={index} className="item">
                                 <div className="item-header">
                                   <div className="item-title">{cert?.name}</div>
@@ -2390,7 +2466,7 @@ export default function CareerPage() {
                           <div className="section">
                             <div className="section-title">Achievements</div>
                             
-                            {resume?.achievements?.map((achievement, index) => (
+                            {limitItems(resume.achievements, 2).map((achievement, index) => (
                               <div key={index} className="item">
                                 <div className="item-header">
                                   <div className="item-title">{achievement?.title}</div>
