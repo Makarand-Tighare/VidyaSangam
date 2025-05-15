@@ -69,6 +69,7 @@ const getDepartmentThemeColor = (departmentCode) => {
 function AdminDashboard() {
   const [mentorMentees, setMentorMentees] = useState({});
   const [participants, setParticipants] = useState([]);
+  const [relationships, setRelationships] = useState([]);
   const [unmatchedParticipants, setUnmatchedParticipants] = useState([]);
   const [errorMessage, setErrorMessage] = useState("");
   const [csvData, setCsvData] = useState("");
@@ -123,7 +124,7 @@ function AdminDashboard() {
   const [isDeleteDefinitionDialogOpen, setIsDeleteDefinitionDialogOpen] = useState(false);
   
   // New state variables for manual assignment
-  const [relationships, setRelationships] = useState([]);
+
   const [isLoadingRelationships, setIsLoadingRelationships] = useState(false);
   const [selectedMentor, setSelectedMentor] = useState(null);
   const [selectedMentee, setSelectedMentee] = useState(null);
@@ -2039,6 +2040,24 @@ function AdminDashboard() {
     }
   ];
 
+  // Helper function to check if a participant is a mentor or mentee in actual relationships
+  const getParticipantRole = (registrationNo) => {
+    // Check if participant exists in relationships as a mentor
+    const isMentor = relationships.some(rel => 
+      rel.mentor && rel.mentor.registration_no === registrationNo
+    );
+    
+    // Check if participant exists in relationships as a mentee
+    const isMentee = relationships.some(rel => 
+      rel.mentee && rel.mentee.registration_no === registrationNo
+    );
+    
+    if (isMentor && !isMentee) return 'mentor';
+    if (isMentee && !isMentor) return 'mentee';
+    if (isMentor && isMentee) return 'both'; // This participant is both a mentor and mentee
+    return null; // Not in any relationship yet
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with back button */}
@@ -2400,13 +2419,25 @@ function AdminDashboard() {
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{participant.semester}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{getBranchFullName(participant.branch)}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                              {participant.mentoring_preferences === 'mentor' ? (
-                                <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Mentor</span>
-                              ) : participant.mentoring_preferences === 'mentee' ? (
-                                <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">Mentee</span>
-                              ) : (
-                                "—"
-                              )}
+                              {(() => {
+                                const role = getParticipantRole(participant.registration_no);
+                                if (role === 'mentor') {
+                                  return <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Mentor</span>;
+                                } else if (role === 'mentee') {
+                                  return <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">Mentee</span>;
+                                } else if (role === 'both') {
+                                  return <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">Mentor & Mentee</span>;
+                                } else {
+                                  // If not in any relationship, show preference
+                                  return participant.mentoring_preferences === 'mentor' ? (
+                                    <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full opacity-60">Preferred: Mentor</span>
+                                  ) : participant.mentoring_preferences === 'mentee' ? (
+                                    <span className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded-full opacity-60">Preferred: Mentee</span>
+                                  ) : (
+                                    "—"
+                                  );
+                                }
+                              })()}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm">
                               <div className="flex gap-2">
@@ -2700,6 +2731,7 @@ function AdminDashboard() {
                                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration No</th>
                                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Semester</th>
+                                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
                                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                                 </tr>
                               </thead>
@@ -4825,7 +4857,14 @@ function AdminDashboard() {
                             <p className="font-medium">{participant.name}</p>
                             <p className="text-sm text-gray-500">
                               {participant.registration_no} • 
-                              {participant.mentoring_preferences === 'mentor' ? ' Mentor' : ' Mentee'}
+                              {(() => {
+                                const role = getParticipantRole(participant.registration_no);
+                                if (role === 'mentor') return ' Mentor';
+                                if (role === 'mentee') return ' Mentee';
+                                if (role === 'both') return ' Mentor & Mentee';
+                                return participant.mentoring_preferences === 'mentor' ? 
+                                  ' Preferred: Mentor' : ' Preferred: Mentee';
+                              })()}
                             </p>
                           </div>
                           <div className="text-sm text-gray-500">
