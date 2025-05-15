@@ -45,7 +45,7 @@ export default function LoginPage() {
   
    // Handle admin login - now supports department admin emails from our created users
    // This will detect any standard admin emails including department admins
-   if (email.endsWith("@ycceadmin.edu") || email === "ycce_ct_admin@gmail.com") {
+   if (email.endsWith("@ycceadmin.edu") || email === "ycce_admin@gmail.com") {
      try {
        setIsLoading(true);
        // Call admin login API using the user endpoint instead
