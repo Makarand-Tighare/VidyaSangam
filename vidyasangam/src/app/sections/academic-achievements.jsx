@@ -89,9 +89,7 @@ export function AcademicAchievements({ data, updateData, updateFiles, errors = {
               `Please upload certificates for all ${paperCount} papers in a single PDF file.` : 
               'The number of papers and certificates submitted should match.'}
           </div>
-          {researchProofCountMismatch && (
-            <div className="text-red-600 text-sm mb-2">Number of certificates uploaded does not match the number of papers.</div>
-          )}
+          
           <FileUpload 
             label="Proof of Research Publications"
             name="researchProof"

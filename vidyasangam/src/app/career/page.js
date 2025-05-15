@@ -172,16 +172,15 @@ export default function CareerPage() {
     startDate: '',
     endDate: '',
     current: false,
-    description: '',
     bullets: ['']
   })
   const [newProject, setNewProject] = useState({
     title: '',
-    description: '',
     technologies: '',
     link: '',
     startDate: '',
-    endDate: ''
+    endDate: '',
+    bullets: ['']
   })
   const [newCertification, setNewCertification] = useState({
     name: '',
@@ -201,6 +200,23 @@ export default function CareerPage() {
   const [resumePreviewMode, setResumePreviewMode] = useState(false)
   const [isSavingResume, setIsSavingResume] = useState(false)
 
+  // For storing notes in localStorage
+  const MILESTONE_NOTES_KEY = 'vidyasangam_milestone_notes'
+
+  // Load milestone notes from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedNotes = localStorage.getItem(MILESTONE_NOTES_KEY);
+      if (savedNotes) {
+        try {
+          console.log('Loaded milestone notes from local storage');
+        } catch (error) {
+          console.error('Error parsing milestone notes from localStorage:', error);
+        }
+      }
+    }
+  }, []);
+  
   useEffect(() => {
     const checkAuth = async () => {
       if (!isLoggedIn()) {
@@ -553,7 +569,29 @@ export default function CareerPage() {
   
   const openMilestoneDialog = (milestone) => {
     setSelectedMilestone(milestone);
-    setMilestoneNote(milestone.notes || '');
+    
+    // Load notes from localStorage if available
+    if (typeof window !== 'undefined') {
+      const savedNotes = localStorage.getItem(MILESTONE_NOTES_KEY);
+      if (savedNotes) {
+        try {
+          const notesObj = JSON.parse(savedNotes);
+          if (notesObj[milestone.id]) {
+            setMilestoneNote(notesObj[milestone.id]);
+          } else {
+            setMilestoneNote(milestone.notes || '');
+          }
+        } catch (error) {
+          console.error('Error parsing milestone notes from localStorage:', error);
+          setMilestoneNote(milestone.notes || '');
+        }
+      } else {
+        setMilestoneNote(milestone.notes || '');
+      }
+    } else {
+      setMilestoneNote(milestone.notes || '');
+    }
+    
     setMilestoneDialogOpen(true);
   }
   
@@ -572,59 +610,57 @@ export default function CareerPage() {
     setSavingMilestoneNote(true);
     
     try {
-      // Prepare history entry - normally this would be handled server-side
-      // but we're including it here for completeness
-      const historyEntry = {
-        timestamp: new Date().toISOString(),
-        action: 'Updated notes',
-        user: userData?.full_name || 'Student'
-      };
-      
-      // Get existing history or initialize empty array
-      const currentHistory = selectedMilestone.history || [];
-      
-      // Add new entry to history
-      const updatedHistory = [...currentHistory, historyEntry];
-      
-      const response = await authenticatedFetch(`https://vidyasangam.duckdns.org/api/career/milestones/${selectedMilestone.id}/`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          notes: milestoneNote,
-          history: updatedHistory // Send updated history to backend
-        }),
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('API Error:', response.status, errorData);
+      // Save note to localStorage
+      if (typeof window !== 'undefined') {
+        const savedNotes = localStorage.getItem(MILESTONE_NOTES_KEY);
+        let notesObj = {};
         
-        if (errorData.error) {
-          throw new Error(errorData.error);
-        } else if (errorData.detail) {
-          throw new Error(errorData.detail);
-        } else {
-          throw new Error(`Failed to save milestone note: ${response.statusText}`);
+        if (savedNotes) {
+          try {
+            notesObj = JSON.parse(savedNotes);
+          } catch (error) {
+            console.error('Error parsing existing notes, creating new object', error);
+          }
         }
+        
+        // Add the new note
+        notesObj[selectedMilestone.id] = milestoneNote;
+        
+        // Save to localStorage
+        localStorage.setItem(MILESTONE_NOTES_KEY, JSON.stringify(notesObj));
+        
+        // Create a history entry
+        const historyEntry = {
+          timestamp: new Date().toISOString(),
+          action: 'Updated notes',
+          user: userData?.full_name || 'Student'
+        };
+        
+        // Get existing history or initialize empty array
+        const currentHistory = selectedMilestone.history || [];
+        
+        // Add new entry to history
+        const updatedHistory = [...currentHistory, historyEntry];
+        
+        // Update the selectedMilestone with the note (just for UI display)
+        const updatedMilestone = {
+          ...selectedMilestone,
+          notes: milestoneNote,
+          history: updatedHistory
+        };
+        
+        // Update the UI to show the updated milestone
+        const updatedMilestones = careerPath.milestones.map(milestone => 
+          milestone.id === selectedMilestone.id ? updatedMilestone : milestone
+        );
+        
+        setCareerPath({ ...careerPath, milestones: updatedMilestones });
+        setSelectedMilestone(updatedMilestone);
+        
+        toast.success('Notes saved successfully');
+      } else {
+        throw new Error('Browser storage is not available');
       }
-      
-      const updatedMilestone = await response.json();
-      
-      // Log successful save for tracking
-      console.log(`Milestone ${selectedMilestone.id} notes updated at ${new Date().toISOString()}`);
-      
-      // Update local state
-      const updatedMilestones = careerPath.milestones.map(milestone => 
-        milestone.id === selectedMilestone.id ? updatedMilestone : milestone
-      );
-      
-      setCareerPath({ ...careerPath, milestones: updatedMilestones });
-      setSelectedMilestone(updatedMilestone); // Update the selected milestone with latest data
-      
-      toast.success('Notes saved successfully');
-      
     } catch (error) {
       console.error('Error saving milestone note:', error);
       toast.error(error.message || 'Failed to save note');
@@ -859,7 +895,6 @@ export default function CareerPage() {
       startDate: '',
       endDate: '',
       current: false,
-      description: '',
       bullets: ['']
     });
     
@@ -947,20 +982,27 @@ export default function CareerPage() {
       toast.error('Please enter a valid URL for the project link');
       return;
     }
+
+    // Validate that at least one bullet point is not empty
+    const validBullets = newProject.bullets ? newProject.bullets.filter(b => b.trim() !== '') : [];
+    if (validBullets.length === 0) {
+      toast.error('Please add at least one bullet point');
+      return;
+    }
     
     setResume(prev => ({
       ...prev,
-      projects: [...prev.projects, newProject]
+      projects: [...prev.projects, {...newProject, bullets: validBullets}]
     }));
     
     // Reset form
     setNewProject({
       title: '',
-      description: '',
       technologies: '',
       link: '',
       startDate: '',
-      endDate: ''
+      endDate: '',
+      bullets: ['']
     });
     
     toast.success('Project added successfully');
@@ -1132,7 +1174,51 @@ export default function CareerPage() {
               };
             });
           }
-        } else if (['education', 'projects', 'certifications', 'achievements'].includes(section) && index >= 0) {
+        } else if (section === 'projects' && index >= 0) {
+          if (field === 'bullets' && typeof data.enhanced_text === 'object') {
+            // If enhancing all bullets at once for projects
+            setResume(prev => {
+              const updatedProjects = [...prev.projects];
+              updatedProjects[index] = {
+                ...updatedProjects[index],
+                bullets: data.enhanced_text
+              };
+              return {
+                ...prev,
+                projects: updatedProjects
+              };
+            });
+          } else if (field.startsWith('bullet-') && typeof data.enhanced_text === 'string') {
+            // If enhancing a single project bullet
+            const bulletIndex = parseInt(field.split('-')[1]);
+            setResume(prev => {
+              const updatedProjects = [...prev.projects];
+              const updatedBullets = [...(updatedProjects[index].bullets || [])];
+              updatedBullets[bulletIndex] = data.enhanced_text;
+              updatedProjects[index] = {
+                ...updatedProjects[index],
+                bullets: updatedBullets
+              };
+              return {
+                ...prev,
+                projects: updatedProjects
+              };
+            });
+          } else {
+            // For other project fields
+            setResume(prev => {
+              const updatedProjects = [...prev.projects];
+              updatedProjects[index] = {
+                ...updatedProjects[index],
+                [field]: data.enhanced_text
+              };
+              return {
+                ...prev,
+                projects: updatedProjects
+              };
+            });
+          }
+        } else if (['education', 'certifications', 'achievements'].includes(section) && index >= 0) {
           setResume(prev => {
             const updatedItems = [...prev[section]];
             updatedItems[index] = {
@@ -1185,10 +1271,38 @@ export default function CareerPage() {
               }));
             }
           } else if (section === 'projects') {
-            setNewProject(prev => ({
-              ...prev,
-              [field]: data.enhanced_text
-            }));
+            if (field === 'bullets') {
+              // If enhancing bullets array for new project
+              if (typeof data.enhanced_text === 'object' && Array.isArray(data.enhanced_text)) {
+                setNewProject(prev => ({
+                  ...prev,
+                  bullets: data.enhanced_text
+                }));
+              } else if (typeof data.enhanced_text === 'string') {
+                // If the API returned a string instead of array, split by newlines
+                setNewProject(prev => ({
+                  ...prev,
+                  bullets: data.enhanced_text.split('\n').filter(b => b.trim() !== '')
+                }));
+              }
+            } else if (field.startsWith('bullet-')) {
+              // If enhancing a specific project bullet
+              const bulletIndex = parseInt(field.split('-')[1]);
+              setNewProject(prev => {
+                const updatedBullets = [...(prev.bullets || [])];
+                updatedBullets[bulletIndex] = data.enhanced_text;
+                return {
+                  ...prev,
+                  bullets: updatedBullets
+                };
+              });
+            } else {
+              // Other project fields
+              setNewProject(prev => ({
+                ...prev,
+                [field]: data.enhanced_text
+              }));
+            }
           } else if (section === 'achievements') {
             setNewAchievement(prev => ({
               ...prev,
@@ -1924,7 +2038,7 @@ export default function CareerPage() {
                         </DialogDescription>
                       </DialogHeader>
                       
-                      <div className="py-4">
+                      <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between">
                             <h4 className="text-sm font-semibold">Current Status</h4>
@@ -1977,7 +2091,7 @@ export default function CareerPage() {
                               value={milestoneNote}
                               onChange={(e) => setMilestoneNote(e.target.value)}
                               placeholder="Add notes about your progress on this milestone..."
-                              className="mt-1"
+                              className="mt-1 ml-1"
                               rows={4}
                             />
                           </div>
@@ -2165,10 +2279,6 @@ export default function CareerPage() {
                                   <div className="item-subtitle">{exp?.company}</div>
                                   <div className="item-location">{exp?.location}</div>
                                 </div>
-                                
-                                {exp?.description && (
-                                  <div className="item-description">{exp.description}</div>
-                                )}
                                 
                                 {exp?.bullets?.length > 0 && (
                                   <ul className="bullets">
@@ -2676,7 +2786,6 @@ export default function CareerPage() {
                                 
                                 {exp.bullets && exp.bullets.length > 0 && (
                                   <div className="mt-2">
-                                    <p className="text-sm font-medium text-gray-700">Key Responsibilities:</p>
                                     <ul className="list-disc pl-5 mt-1 space-y-1">
                                       {exp.bullets.map((bullet, i) => (
                                         <li key={i} className="text-gray-700">{bullet}</li>
@@ -2759,30 +2868,6 @@ export default function CareerPage() {
                                   disabled={newExperience.current}
                                 />
                               </div>
-                            </div>
-                            
-                            <div className="mt-4">
-                              <div className="flex justify-between items-center">
-                                <Label htmlFor="exp-description">Description (Optional)</Label>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm"
-                                  onClick={() => enhanceTextWithAI('experience', -1, 'description', newExperience.description)}
-                                  disabled={isEnhancingText && enhancementTarget.section === 'experience' && enhancementTarget.field === 'description'}
-                                >
-                                  {isEnhancingText && enhancementTarget.section === 'experience' && enhancementTarget.field === 'description' ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : 'Enhance with AI'}
-                                </Button>
-                              </div>
-                              <Textarea 
-                                id="exp-description"
-                                value={newExperience.description}
-                                onChange={(e) => setNewExperience({...newExperience, description: e.target.value})}
-                                placeholder="Brief description of your role and responsibilities"
-                                rows={3}
-                                className="mt-1"
-                              />
                             </div>
                             
                             <div className="mt-4">
@@ -3032,7 +3117,7 @@ export default function CareerPage() {
                             <h3 className="font-medium text-blue-800 mb-2">ATS-Friendly Projects Tips</h3>
                             <p className="text-gray-700 text-sm">
                               Projects are a great way to demonstrate skills when you lack formal work experience. 
-                              Be specific about technologies used and quantify results where possible.
+                              Add bullet points highlighting your contributions and use action verbs to describe what you did.
                             </p>
                           </div>
                           
@@ -3072,8 +3157,14 @@ export default function CareerPage() {
                                   </div>
                                 </div>
                                 
-                                {project.description && (
-                                  <p className="mt-2 text-gray-700">{project.description}</p>
+                                {project.bullets && project.bullets.length > 0 && (
+                                  <div className="mt-2">
+                                    <ul className="list-disc pl-5 mt-1 space-y-1">
+                                      {project.bullets.map((bullet, i) => (
+                                        <li key={i} className="text-gray-700">{bullet}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
                                 )}
                               </div>
                             ))}
@@ -3141,26 +3232,85 @@ export default function CareerPage() {
                             
                             <div className="mt-4">
                               <div className="flex justify-between items-center">
-                                <Label htmlFor="project-description">Project Description</Label>
+                                <Label>Project Bullet Points</Label>
                                 <Button 
                                   variant="ghost" 
                                   size="sm"
-                                  onClick={() => enhanceTextWithAI('projects', -1, 'description', newProject.description)}
-                                  disabled={isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'description'}
+                                  onClick={() => {
+                                    if (newProject.bullets && newProject.bullets.some(b => b.trim() !== '')) {
+                                      enhanceTextWithAI('projects', -1, 'bullets', newProject.bullets.join('\n'))
+                                    } else {
+                                      toast.error('Please add at least one bullet point to enhance');
+                                    }
+                                  }}
+                                  disabled={isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'bullets'}
                                 >
-                                  {isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'description' ? (
+                                  {isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'bullets' ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : 'Enhance with AI'}
+                                  ) : 'Enhance All with AI'}
                                 </Button>
                               </div>
-                              <Textarea 
-                                id="project-description"
-                                value={newProject.description}
-                                onChange={(e) => setNewProject({...newProject, description: e.target.value})}
-                                placeholder="Describe the project, your role, and the problem it solves"
-                                rows={3}
-                                className="mt-1"
-                              />
+                              
+                              {(newProject.bullets || []).map((bullet, index) => (
+                                <div key={index} className="flex items-start mt-2">
+                                  <div className="flex-1 mr-2">
+                                    <div className="flex">
+                                      <Input 
+                                        value={bullet}
+                                        onChange={(e) => {
+                                          const updatedBullets = [...(newProject.bullets || [])];
+                                          updatedBullets[index] = e.target.value;
+                                          setNewProject({...newProject, bullets: updatedBullets});
+                                        }}
+                                        placeholder={`Project detail or achievement ${index + 1}`}
+                                      />
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => {
+                                          if (bullet.trim()) {
+                                            enhanceTextWithAI('projects', -1, `bullet-${index}`, bullet)
+                                          } else {
+                                            toast.error('Please add text to enhance');
+                                          }
+                                        }}
+                                        disabled={isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === `bullet-${index}`}
+                                        className="ml-1"
+                                      >
+                                        {isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === `bullet-${index}` ? (
+                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                        ) : 'AI'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      const updatedBullets = [...(newProject.bullets || [])];
+                                      updatedBullets.splice(index, 1);
+                                      setNewProject({...newProject, bullets: updatedBullets});
+                                    }}
+                                    className="h-9 w-9 p-0"
+                                    title="Remove bullet point"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                              
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => {
+                                  const bullets = newProject.bullets || [];
+                                  setNewProject({...newProject, bullets: [...bullets, '']});
+                                }}
+                                className="mt-2"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Add Bullet Point
+                              </Button>
                             </div>
                             
                             <Button 

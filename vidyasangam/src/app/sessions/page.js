@@ -65,6 +65,87 @@ export default function SessionManagement() {
   
   const router = useRouter();
 
+  // Helper function for creating a virtual session with Google Meet
+  async function createVirtualSession(scheduledDateTime, participantRegNos, summary) {
+    try {
+      // Show loading state
+      setIsLoading(true);
+      
+      // Prepare meeting details
+      const meetingData = {
+        summary: summary || "Mentoring Session",
+        description: "Scheduled mentoring session via Vidyasangam",
+        start_time: scheduledDateTime.toISOString(),
+        end_time: new Date(scheduledDateTime.getTime() + 60*60000).toISOString(),
+        timezone: "Asia/Kolkata",
+        attendees: participantRegNos.map(regNo => ({ email: `${regNo}@example.com` }))
+      };
+      
+      // Try to create the Google Meet
+      const response = await fetch("https://vidyasangam.duckdns.org/api/utility/create-meet", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+        },
+        body: JSON.stringify(meetingData),
+        credentials: "include" 
+      });
+      
+      // Parse the response
+      const data = await response.json();
+      
+      // If we need authorization
+      if (data.authorization_url) {
+        // Option 1: Redirect in a popup (better user experience)
+        const authWindow = window.open(
+          data.authorization_url,
+          "Google Authorization", 
+          "width=800,height=600"
+        );
+        
+        if (!authWindow) {
+          // If popup is blocked, provide a direct link option
+          if (confirm("Popup blocked. Would you like to open the authorization page in a new tab?")) {
+            window.open("https://vidyasangam.duckdns.org/api/utility/direct-authorize/", "_blank");
+          }
+          setIsLoading(false);
+          return null;
+        }
+        
+        // Wait for authorization to complete
+        const authCompleted = new Promise((resolve) => {
+          const checkInterval = setInterval(() => {
+            if (authWindow.closed) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 500);
+        });
+        
+        await authCompleted;
+        alert("Please try creating the session again now that you've authorized with Google.");
+        setIsLoading(false);
+        return null;
+      }
+      
+      // If we have a meeting link
+      if (data.meet_link) {
+        setIsLoading(false);
+        return data.meet_link;
+      }
+      
+      // Handle error
+      console.error("Failed to create meeting:", data);
+      setIsLoading(false);
+      return null;
+    } catch (error) {
+      console.error("Error creating Google Meet:", error);
+      setIsLoading(false);
+      return null;
+    }
+  }
+
   // Check if the user is logged in and get their status
   useEffect(() => {
     const authToken = localStorage.getItem("authToken");
@@ -329,42 +410,20 @@ export default function SessionManagement() {
       let sessionLocation = location;
       
       if (sessionType === "virtual") {
-        const isAuthorized = localStorage.getItem("isAuthorized");
+        meetingLink = await createVirtualSession(scheduledDateTime, participantRegNos, summary);
         
-        if (!isAuthorized) {
-          window.open("https://vidyasangam.duckdns.org/api/utility/authorize", "_blank");
-          localStorage.setItem("isAuthorized", "true");
-          setIsLoading(false);
+        if (!meetingLink) {
+          // Either authorization is needed or there was an error
           return;
         }
         
-        const meetResponse = await fetch("https://vidyasangam.duckdns.org/api/utility/create-meet", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-          },
-          credentials: "include"
-        });
-        
-        if (meetResponse.redirected) {
-          window.open(meetResponse.url, "_blank");
-          setIsLoading(false);
-          return;
-        }
-        
-        if (!meetResponse.ok) {
-          throw new Error("Failed to create meeting");
-        }
-        
-        const meetData = await meetResponse.json();
-        meetingLink = meetData.meet_link;
+        // Continue with creating your session using the meeting link...
       } else {
         // For physical session
         if (!sessionLocation) {
           sessionLocation = "To be determined";
         }
-      }
+      } 
       
       // Create the session in the backend
       const sessionData = {
