@@ -5,7 +5,7 @@ import React from 'react';
 const LinkedInButton = () => {
   const handleLinkedInLogin = () => {
     const clientId = '77zdkh8uihgm40'; 
-    const redirectUri = 'http://127.0.0.1:3000/linkedin-callback';
+    const redirectUri = 'https://vidyasangam.duckdns.org/linkedin-callback';
     const state = Math.random().toString(36).substring(7); 
     const scope = encodeURIComponent('r_basicprofile w_member_social');
   
