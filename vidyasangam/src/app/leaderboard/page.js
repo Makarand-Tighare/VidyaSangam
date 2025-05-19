@@ -11,7 +11,7 @@ import NavBar from '../components/navBar'
 import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from 'sonner';
-import { ContentLoader } from '@/components/ui/content-loader'
+import { ContentLoader, SkeletonLoader } from '@/components/ui/content-loader'
 
 export default function Leaderboard() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -353,7 +353,25 @@ export default function Leaderboard() {
             </div>
 
             {isLoading ? (
-              <ContentLoader message="Loading leaderboard data..." />
+              <div className="p-6">
+                <div className="mb-8 text-center">
+                  <h2 className="text-xl font-semibold text-blue-600 mb-3">Preparing Leaderboard</h2>
+                  <p className="text-gray-600">Calculating achievements and rankings...</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-white p-6 rounded-lg shadow-md animate-pulse">
+                      <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+                      <div className="h-10 bg-gray-200 rounded-full w-10 mb-4"></div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <ContentLoader message="Retrieving leaderboard data..." />
+              </div>
             ) : error ? (
               <div className="text-center py-8 text-red-600">
                 <p>{error}</p>

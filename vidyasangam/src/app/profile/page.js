@@ -15,6 +15,7 @@ import axios from 'axios'
 import { toast } from 'sonner'
 import { ContentLoader } from '@/components/ui/content-loader'
 import { InlineLoader } from '@/components/ui/content-loader'
+import { PageLoaderWithNav } from "@/components/ui/page-loader"
 
 import NavBar from '../components/navBar'
 import LinkedInButton from '../components/linkedinButton';
@@ -147,6 +148,20 @@ function Profile() {
     userBadgeId: null
   });
   
+  // Add this state near other state declarations
+  const [forcedLoading, setForcedLoading] = useState(true);
+
+  // Add this effect to create a loading delay
+  useEffect(() => {
+    // Always show loader for 4-5 seconds regardless of actual loading speed
+    const randomDelay = Math.floor(Math.random() * 1000) + 4000; // 4-5 seconds
+    const timer = setTimeout(() => {
+      setForcedLoading(false);
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   // Check auth first before making any API calls
   useEffect(() => {
     const checkAuth = async () => {
@@ -1502,18 +1517,8 @@ function Profile() {
   };
 
   // Render profile page with loading state
-  if (isInitializing || loadingProfile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-r from-[#f0f8ff] via-[#e6f3ff] to-[#f0f8ff]">
-        <NavBar />
-        <div className="flex justify-center items-center h-[80vh]">
-          <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
-            <p className="mt-4 text-lg text-blue-800">Loading your profile...</p>
-          </div>
-        </div>
-      </div>
-    );
+  if (isInitializing || loadingProfile || forcedLoading) {
+    return <PageLoaderWithNav message="Loading your profile..." />;
   }
 
   return (
@@ -1579,10 +1584,7 @@ function Profile() {
                   size="sm"
                 >
                   {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
+                    <InlineLoader message="Uploading" size="sm" />
                   ) : (
                     'Upload new image'
                   )}
@@ -2254,7 +2256,11 @@ function Profile() {
                           disabled={taskData.isLoading || !taskData.taskPrompt}
                           className="bg-blue-600 hover:bg-blue-700"
                         >
-                          {taskData.isLoading ? "Generating Quiz..." : "Assign Quiz"}
+                          {taskData.isLoading ? (
+                            <InlineLoader message="Generating quiz" size="sm" />
+                          ) : (
+                            "Assign Quiz"
+                          )}
                         </Button>
                       </DialogFooter>
                     </form>

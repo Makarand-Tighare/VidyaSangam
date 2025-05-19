@@ -21,6 +21,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AlreadyPartAnimation from '../components/AlreadyPartAnimation';
 import { checkUserMentorMenteeStatus, checkMentoringFormSubmitted } from '../lib/userStatus';
 import { PageLoaderWithNav } from '@/components/ui/page-loader'
+import { InlineLoader } from "@/components/ui/content-loader";
 
 const sections = [
   'Personal Information',
@@ -235,6 +236,7 @@ export default function MentoringForm() {
   const [showErrors, setShowErrors] = useState(false);
   const router = useRouter();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [forcedLoading, setForcedLoading] = useState(true);
   
   // Update state for user status check
   const [userStatus, setUserStatus] = useState({
@@ -423,6 +425,17 @@ export default function MentoringForm() {
       setProgress((currentSection / (sections.length - 1)) * 100);
     }
   }, [formData, currentSection, isLoaded]);
+
+  // Add this effect to create a loading delay
+  useEffect(() => {
+    // Always show loader for 4-5 seconds regardless of actual loading speed
+    const randomDelay = Math.floor(Math.random() * 1000) + 4000; // 4-5 seconds
+    const timer = setTimeout(() => {
+      setForcedLoading(false);
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Validate the current section
   const validateSection = (sectionIndex) => {
@@ -746,8 +759,8 @@ export default function MentoringForm() {
   };
 
   // Update the loading state check
-  if (!isLoaded || userStatus.checking || applicationStatus.checking) {
-    return <PageLoaderWithNav message="Loading..." />
+  if (!isLoaded || userStatus.checking || applicationStatus.checking || forcedLoading) {
+    return <PageLoaderWithNav message="Loading mentoring application form..." />
   }
   
   // If user is already a mentor or mentee, show the animation
@@ -883,7 +896,11 @@ export default function MentoringForm() {
                 disabled={isSubmitting}
                 className="bg-green-600 hover:bg-green-700"
               >
-                {isSubmitting ? "Submitting..." : "Submit Application"}
+                {isSubmitting ? (
+                  <InlineLoader message="Submitting" size="sm" />
+                ) : (
+                  "Submit Application"
+                )}
               </Button>
             )}
           </CardFooter>

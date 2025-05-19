@@ -36,6 +36,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import './resume-styles.css'
+import { PageLoaderWithNav } from "@/components/ui/page-loader";
+import { InlineLoader } from "@/components/ui/content-loader";
 
 // Custom style for compact resume 
 const compactResumeStyles = `
@@ -114,6 +116,20 @@ export default function CareerPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [userData, setUserData] = useState(null)
+  
+  // Add this state near other state declarations
+  const [forcedLoading, setForcedLoading] = useState(true);
+  
+  // Add this effect to create a loading delay
+  useEffect(() => {
+    // Always show loader for 4-5 seconds regardless of actual loading speed
+    const randomDelay = Math.floor(Math.random() * 1000) + 4000; // 4-5 seconds
+    const timer = setTimeout(() => {
+      setForcedLoading(false);
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Helper function to truncate summary to fit in one page
   const truncateSummary = (summary, maxLength = 200) => {
@@ -1702,16 +1718,9 @@ export default function CareerPage() {
     return items.slice(0, maxItems);
   }
   
-  if (loading) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <NavBar />
-        <div className="flex items-center justify-center flex-1">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-          <span className="ml-2">Loading...</span>
-        </div>
-      </div>
-    )
+  // Update the loading condition to include forcedLoading
+  if (loading || forcedLoading) {
+    return <PageLoaderWithNav message="Loading career development tools..." />;
   }
 
   return (
@@ -1850,10 +1859,7 @@ export default function CareerPage() {
                           className="bg-blue-600 hover:bg-blue-700"
                         >
                           {isGenerating ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Generating...
-                            </>
+                            <InlineLoader message="Generating" size="sm" />
                           ) : (
                             <>Generate AI Career Roadmap</>
                           )}
@@ -2489,10 +2495,7 @@ export default function CareerPage() {
                           className="gap-2"
                         >
                           {isGeneratingResume ? (
-                            <>
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              Generating PDF...
-                            </>
+                            <InlineLoader message="Generating PDF" size="sm" />
                           ) : (
                             <>
                               <Download className="h-4 w-4" />
@@ -2537,10 +2540,7 @@ export default function CareerPage() {
                             className="gap-2"
                           >
                             {isSavingResume ? (
-                              <>
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                Saving...
-                              </>
+                              <InlineLoader message="Saving" size="sm" />
                             ) : (
                               <>
                                 <Save className="h-4 w-4" />
@@ -2677,7 +2677,7 @@ export default function CareerPage() {
                                 disabled={isEnhancingText && enhancementTarget.section === 'basics' && enhancementTarget.field === 'summary'}
                               >
                                 {isEnhancingText && enhancementTarget.section === 'basics' && enhancementTarget.field === 'summary' ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <InlineLoader message="Enhancing" size="sm" />
                                 ) : 'Enhance with AI'}
                               </Button>
                             </div>
@@ -2715,7 +2715,7 @@ export default function CareerPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                   <div>
                                     <h3 className="font-medium">{edu.institution}</h3>
-                                    <p>{edu.degree}{edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}</p>
+                                    <p>{edu.degree}{edu.fieldOfStudy ? ` in ${edu?.fieldOfStudy}` : ''}</p>
                                   </div>
                                   <div className="text-right">
                                     <p className="text-gray-600">
@@ -2831,7 +2831,7 @@ export default function CareerPage() {
                                   disabled={isEnhancingText && enhancementTarget.section === 'education' && enhancementTarget.field === 'description'}
                                 >
                                   {isEnhancingText && enhancementTarget.section === 'education' && enhancementTarget.field === 'description' ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <InlineLoader message="Enhancing" size="sm" />
                                   ) : 'Enhance with AI'}
                                 </Button>
                               </div>
@@ -2986,7 +2986,7 @@ export default function CareerPage() {
                                   disabled={isEnhancingText && enhancementTarget.section === 'experience' && enhancementTarget.field === 'bullets'}
                                 >
                                   {isEnhancingText && enhancementTarget.section === 'experience' && enhancementTarget.field === 'bullets' ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <InlineLoader message="Enhancing" size="sm" />
                                   ) : 'Enhance All with AI'}
                                 </Button>
                               </div>
@@ -3017,7 +3017,7 @@ export default function CareerPage() {
                                         className="ml-1"
                                       >
                                         {isEnhancingText && enhancementTarget.section === 'experience' && enhancementTarget.field === `bullet-${index}` ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          <InlineLoader message="Enhancing" size="sm" />
                                         ) : 'AI'}
                                       </Button>
                                     </div>
@@ -3346,7 +3346,7 @@ export default function CareerPage() {
                                   disabled={isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'bullets'}
                                 >
                                   {isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === 'bullets' ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    <InlineLoader message="Enhancing" size="sm" />
                                   ) : 'Enhance All with AI'}
                                 </Button>
                               </div>
@@ -3378,7 +3378,7 @@ export default function CareerPage() {
                                         className="ml-1"
                                       >
                                         {isEnhancingText && enhancementTarget.section === 'projects' && enhancementTarget.field === `bullet-${index}` ? (
-                                          <Loader2 className="h-4 w-4 animate-spin" />
+                                          <InlineLoader message="Enhancing" size="sm" />
                                         ) : 'AI'}
                                       </Button>
                                     </div>
@@ -3594,7 +3594,7 @@ export default function CareerPage() {
                                       disabled={isEnhancingText && enhancementTarget.section === 'achievements' && enhancementTarget.field === 'description'}
                                     >
                                       {isEnhancingText && enhancementTarget.section === 'achievements' && enhancementTarget.field === 'description' ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <InlineLoader message="Enhancing" size="sm" />
                                       ) : 'Enhance with AI'}
                                     </Button>
                                   </div>

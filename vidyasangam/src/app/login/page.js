@@ -202,9 +202,13 @@ export default function LoginPage() {
                   <div className="text-red-500 text-sm">{errorMessage}</div>
                 )}
               </div>
-              <Button type="submit" className="w-full mt-4" disabled={isLoading}>
+              <Button 
+                type="submit" 
+                className="w-full mt-4 min-h-[2.5rem]" 
+                disabled={isLoading}
+              >
                 {isLoading ? (
-                  <InlineLoader message="Logging in..." size="sm" />
+                  <InlineLoader message="Signing you in" size="sm" className="justify-center" />
                 ) : (
                   "Login"
                 )}

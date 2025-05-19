@@ -744,7 +744,14 @@ export default function Chatassistant() {
               >
                 <div className={`prose ${isDarkMode ? 'prose-invert' : ''} prose-pre:bg-gray-800 prose-pre:text-gray-100`}>
                   {idx === messages.length - 1 && typingEffect && msg.role === "assistant" ? (
-                    <p>{lastResponse}<span className="animate-pulse">|</span></p>
+                    <p>
+                      {lastResponse}
+                      <span className="inline-flex">
+                        <span className="animate-bounce delay-100">.</span>
+                        <span className="animate-bounce delay-200">.</span>
+                        <span className="animate-bounce delay-300">.</span>
+                      </span>
+                    </p>
                   ) : (
                     renderMessageText(msg)
                   )}
@@ -791,18 +798,34 @@ export default function Chatassistant() {
           {/* Loading suggestions indicator (now positioned with the messages) */}
           {loadingSuggestions && (
             <div className="ml-1 mb-2">
-              <InlineLoader message="Loading suggested questions..." size="sm" />
+              <InlineLoader 
+                message="Finding relevant suggestions" 
+                size="sm" 
+                className="text-blue-500/80" 
+              />
             </div>
           )}
           
         {loading && (
           <div className="flex justify-start">
-              <div className={`flex items-center gap-3 max-w-[85%] md:max-w-[75%] px-5 py-3 rounded-2xl ${
-                isDarkMode 
-                  ? 'bg-gray-800 text-blue-400 border border-gray-700' 
-                  : 'bg-white text-blue-600 border border-gray-200'
-              }`}>
-                <InlineLoader message="Processing your request..." />
+            <div className={`flex items-center gap-3 max-w-[85%] md:max-w-[75%] px-5 py-4 rounded-2xl ${
+              isDarkMode 
+                ? 'bg-gray-800 text-blue-400 border border-gray-700' 
+                : 'bg-white text-blue-600 border border-gray-200'
+            }`}>
+              <div className="flex flex-col gap-2">
+                <InlineLoader message="Thinking" size="md" />
+                
+                <div className="flex space-x-1 mt-1">
+                  {[0, 1, 2].map((i) => (
+                    <div 
+                      key={i} 
+                      className={`h-1.5 w-1.5 rounded-full ${isDarkMode ? 'bg-blue-400' : 'bg-blue-500'} animate-bounce`} 
+                      style={{ animationDelay: `${i * 0.2}s` }}
+                    ></div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

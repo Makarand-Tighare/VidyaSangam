@@ -8,11 +8,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import NavBar from '../components/navBar'
 import { PageLoaderWithNav } from '@/components/ui/page-loader'
-import { ContentLoader } from '@/components/ui/content-loader'
+import { ContentLoader, CardSkeletonLoader } from '@/components/ui/content-loader'
+import { isLoggedIn } from '@/app/lib/auth'
 
 // Loading component for Suspense fallback
 function QuizLoading() {
-  return <PageLoaderWithNav message="Loading quiz..." />
+  return <PageLoaderWithNav message="Preparing your quiz..." />
 }
 
 // Client component that uses search params
@@ -32,12 +33,73 @@ function QuizContent() {
   const [quizCompleted, setQuizCompleted] = useState(false)
   const [score, setScore] = useState(0)
   const [resultDetails, setResultDetails] = useState([])
+  const [forcedLoading, setForcedLoading] = useState(true)
+  const [userData, setUserData] = useState(null)
+  const [unauthorized, setUnauthorized] = useState(false)
   
+  // Add effect for forced loading delay
+  useEffect(() => {
+    // Always show loader for 4-5 seconds regardless of actual loading speed
+    const randomDelay = Math.floor(Math.random() * 1000) + 4000; // 4-5 seconds
+    const timer = setTimeout(() => {
+      setForcedLoading(false);
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Check login status and user permissions
+  useEffect(() => {
+    const checkAuth = async () => {
+      // First check if user is logged in
+      if (!isLoggedIn()) {
+        router.push('/login');
+        return;
+      }
+
+      try {
+        // Fetch current user's profile data
+        const response = await fetch('https://vidyasangam.duckdns.org/api/user/profile/', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch user profile');
+        }
+
+        const userProfile = await response.json();
+        setUserData(userProfile);
+
+        // Check if the user's registration number matches the menteeId parameter
+        if (userProfile.reg_no !== menteeId) {
+          console.error('Unauthorized: User registration number does not match menteeId');
+          setUnauthorized(true);
+          setError('You are not authorized to view this quiz.');
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('Profile fetch error:', error);
+        setError('Authentication error. Please try again.');
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [menteeId, router]);
+
   useEffect(() => {
     if (!taskId || !menteeId) {
       setError('Missing task ID or mentee ID')
       setLoading(false)
       return
+    }
+    
+    // If user is unauthorized, don't proceed with fetching the quiz
+    if (unauthorized) {
+      return;
     }
     
     // Fetch the quiz from the API
@@ -48,7 +110,12 @@ function QuizContent() {
           ? `https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/results/${menteeId}/` 
           : `https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/pending/${menteeId}/`;
         
-        const response = await fetch(endpoint);
+        const response = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+            'Content-Type': 'application/json'
+          }
+        });
         
         if (!response.ok) throw new Error('Failed to fetch quiz');
         
@@ -113,7 +180,7 @@ function QuizContent() {
     }
     
     fetchQuiz()
-  }, [taskId, menteeId, viewResults])
+  }, [taskId, menteeId, viewResults, unauthorized])
   
   const handleAnswerSelect = (questionIndex, option) => {
     setSelectedAnswers(prev => ({
@@ -206,7 +273,7 @@ function QuizContent() {
     router.push('/profile')
   }
   
-  if (loading) {
+  if (loading || forcedLoading) {
     return <PageLoaderWithNav message="Loading quiz..." />
   }
   
@@ -215,15 +282,22 @@ function QuizContent() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
         <NavBar />
         <div className="flex flex-col justify-center items-center h-[80vh]">
-          <p className="text-lg text-red-500 mb-4">{error}</p>
-          <Button onClick={navigateToProfile}>Return to Profile</Button>
+          <div className="p-6 bg-white rounded-lg shadow-md text-center max-w-md">
+            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
+            <p className="text-lg text-red-500 mb-4">{error}</p>
+            <Button onClick={navigateToProfile}>Return to Profile</Button>
+          </div>
         </div>
       </div>
     )
   }
   
   if (!quiz) {
-    return <PageLoaderWithNav message="Quiz not found" />
+    return <PageLoaderWithNav message="Searching for your quiz..." />
   }
   
   if (quizCompleted) {

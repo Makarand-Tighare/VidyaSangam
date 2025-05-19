@@ -33,6 +33,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { PageLoaderWithNav } from "@/components/ui/page-loader";
+import { InlineLoader } from "@/components/ui/content-loader";
 
 export default function SessionManagement() {
   const [sessions, setSessions] = useState([]);
@@ -58,12 +60,26 @@ export default function SessionManagement() {
   const [summary, setSummary] = useState("");
   const [activeTab, setActiveTab] = useState("upcoming");
   
+  // Add this state near other state declarations
+  const [forcedLoading, setForcedLoading] = useState(true);
+  
   // Use useMemo to memoize categorized sessions
   const categorizedSessions = useMemo(() => {
     return categorizeSessions(sessions);
   }, [sessions]);
   
   const router = useRouter();
+
+  // Add this effect to create a loading delay
+  useEffect(() => {
+    // Always show loader for 4-5 seconds regardless of actual loading speed
+    const randomDelay = Math.floor(Math.random() * 1000) + 4000; // 4-5 seconds
+    const timer = setTimeout(() => {
+      setForcedLoading(false);
+    }, randomDelay);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Helper function for creating a virtual session with Google Meet
   async function createVirtualSession(scheduledDateTime, participantRegNos, summary) {
@@ -541,17 +557,9 @@ export default function SessionManagement() {
 
   const displayedSessions = showAllSessions ? sessions : sessions.slice(0, 3);
   
-  // Show loading state while checking user status
-  if (userStatus.checking) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-        <NavBar />
-        <div className="flex flex-col items-center justify-center h-[70vh]">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-          <p className="mt-4 text-gray-600">Loading sessions...</p>
-        </div>
-      </div>
-    );
+  // Update the loading condition to include forcedLoading
+  if (userStatus.checking || forcedLoading) {
+    return <PageLoaderWithNav message="Loading your sessions..." />;
   }
 
   // Use the memoized value here
@@ -885,10 +893,7 @@ export default function SessionManagement() {
                       disabled={isLoading || selectedMentees.length === 0}
                     >
                       {isLoading ? (
-                        <span className="flex items-center justify-center">
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Creating session...
-                        </span>
+                        <InlineLoader message="Creating session" size="sm" />
                       ) : (
                         <>
                           <Plus className="mr-2 h-4 w-4" />
@@ -959,10 +964,7 @@ export default function SessionManagement() {
                 disabled={isDeletingSession}
               >
                 {isDeletingSession ? (
-                  <span className="flex items-center">
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Deleting...
-                  </span>
+                  <InlineLoader message="Deleting" size="sm" />
                 ) : (
                   "Delete Session"
                 )}
