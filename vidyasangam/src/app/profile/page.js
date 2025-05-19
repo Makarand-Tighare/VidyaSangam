@@ -418,46 +418,6 @@ function Profile() {
   
       if (!response.ok) {
         const errorData = await response.json();
-        // Check if it's an email error but quiz was still generated
-        if (errorData.error && errorData.error.includes('Authentication Required') && errorData.error.includes('gsmtp')) {
-          // Try to parse the response for quiz data
-          const quizData = errorData.quiz;
-          const quizId = errorData.quiz_id;
-          
-          if (quizData && quizId) {
-            // Quiz was generated successfully, just email failed
-            const newQuiz = {
-              id: quizId,
-              title: taskData.taskPrompt,
-              description: taskData.taskDescription,
-              questions: quizData,
-              total_marks: quizData.length,
-              created_at: new Date().toISOString(),
-              status: 'pending'
-            };
-            
-            setMenteeTasks(prev => ({
-              ...prev,
-              [taskData.selectedMentee.registration_no]: [
-                ...(prev[taskData.selectedMentee.registration_no] || []),
-                newQuiz
-              ]
-            }));
-            
-            // Show success message with email warning
-            toast.success('Quiz generated successfully!', {
-              description: 'The quiz has been assigned to your mentee. (Email notification could not be sent)'
-            });
-            
-            // Reset task form and close dialog
-            resetTaskData();
-            setIsTaskDialogOpen(false);
-            
-            // Refresh the mentee's quiz list
-            await fetchMenteeQuizHistory(taskData.selectedMentee.registration_no);
-            return;
-          }
-        }
         throw new Error(errorData.message || 'Failed to generate quiz');
       }
       
