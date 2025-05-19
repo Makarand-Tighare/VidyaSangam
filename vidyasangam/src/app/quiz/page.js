@@ -13,7 +13,7 @@ import { isLoggedIn } from '@/app/lib/auth'
 
 // Loading component for Suspense fallback
 function QuizLoading() {
-  return <PageLoaderWithNav message="Preparing your quiz..." />
+  return <PageLoaderWithNav message="Loading quiz..." />
 }
 
 // Client component that uses search params

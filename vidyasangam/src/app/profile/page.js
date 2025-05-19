@@ -404,6 +404,9 @@ function Profile() {
     try {
       const response = await authenticatedFetch('https://vidyasangam.duckdns.org/api/mentor_mentee/quiz/generate/', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           prompt: taskData.taskPrompt,
           description: taskData.taskDescription,
@@ -414,7 +417,8 @@ function Profile() {
       });
   
       if (!response.ok) {
-        throw new Error('Failed to generate quiz');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate quiz');
       }
       
       const data = await response.json();
@@ -422,6 +426,10 @@ function Profile() {
       // Extract the quiz data from the API response
       const quizData = data.quiz;
       const quizId = data.quiz_id;
+      
+      if (!quizData || !quizId) {
+        throw new Error('Invalid quiz data received from server');
+      }
       
       // Update the mentee tasks with the new quiz
       const newQuiz = {
@@ -431,7 +439,7 @@ function Profile() {
         questions: quizData,
         total_marks: quizData.length,
         created_at: new Date().toISOString(),
-        status: data.status
+        status: 'pending'
       };
       
       setMenteeTasks(prev => ({
@@ -442,16 +450,26 @@ function Profile() {
         ]
       }));
       
-      // Show success message
-      alert(data.message || 'Task assigned successfully!');
+      // Show success message using toast
+      toast.success('Quiz generated successfully!', {
+        description: 'The quiz has been assigned to your mentee.'
+      });
       
       // Reset task form
       resetTaskData();
       
+      // Close the dialog
       setIsTaskDialogOpen(false);
+      
+      // Refresh the mentee's quiz list
+      await fetchMenteeQuizHistory(taskData.selectedMentee.registration_no);
+      
     } catch (error) {
       console.error('Error generating quiz:', error);
-      alert('Error generating quiz. Please try again.');
+      toast.error('Failed to generate quiz', {
+        description: error.message || 'Please try again with different parameters.'
+      });
+    } finally {
       setTaskData(prev => ({ ...prev, isLoading: false }));
     }
   };
