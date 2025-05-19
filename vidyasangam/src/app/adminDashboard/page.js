@@ -212,40 +212,25 @@ function AdminDashboard() {
   // Fetch all proofs for a participant
   const fetchParticipantProofs = async (registrationNo) => {
     setIsLoadingProofs(true);
-    const proofs = {};
-    const headers = getAuthHeaders();
     try {
-      await Promise.all(
-        proofTypes.map(async (type) => {
-          try {
-            // Try to fetch as PDF first
-            const url = `https://vidyasangam.duckdns.org/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=pdf`;
-            const response = await axios.get(url, { headers, responseType: 'blob' });
-            if (response.status === 200 && response.data) {
-              proofs[type] = {
-                url: URL.createObjectURL(response.data),
-                filetype: 'pdf',
-              };
-            }
-          } catch (err) {
-            // If not found as PDF, try as image (jpg)
-            try {
-              const imgUrl = `https://vidyasangam.duckdns.org/api/mentor_mentee/participant/${registrationNo}/proof/${type}/?filetype=jpg`;
-              const imgResponse = await axios.get(imgUrl, { headers, responseType: 'blob' });
-              if (imgResponse.status === 200 && imgResponse.data) {
-                proofs[type] = {
-                  url: URL.createObjectURL(imgResponse.data),
-                  filetype: 'jpg',
-                };
-              }
-            } catch (imgErr) {
-              // No proof found for this type
-            }
+      const headers = getAuthHeaders();
+      const response = await axios.get(`https://vidyasangam.duckdns.org/api/mentor_mentee/participants/proofs/${registrationNo}/`, { headers });
+      
+      // Process the proofs data
+      const proofs = {};
+      if (response.data && response.data.proofs) {
+        response.data.proofs.forEach(proof => {
+          if (proof.file_url) {
+            proofs[proof.type] = {
+              url: proof.file_url,
+              filetype: proof.file_type || 'pdf'
+            };
           }
-        })
-      );
+        });
+      }
       setParticipantProofs(proofs);
     } catch (error) {
+      console.error("Error fetching participant proofs:", error);
       setParticipantProofs({});
     } finally {
       setIsLoadingProofs(false);
@@ -778,12 +763,37 @@ function AdminDashboard() {
     return { mentors, mentees };
   }, [unmatchedParticipants]);
 
-  const viewParticipantDetails = (participant) => {
+  // Fetch participant profile data using the optimized API
+  const fetchParticipantProfile = async (registrationNo) => {
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(`https://vidyasangam.duckdns.org/api/mentor_mentee/participants/profile/${registrationNo}/`, { headers });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching participant profile:", error);
+      return null;
+    }
+  };
+
+  // Update the viewParticipantDetails function to use the new profile API
+  const viewParticipantDetails = async (participant) => {
     setSelectedParticipant(participant);
     setShowParticipantModal(true);
     if (participant.registration_no) {
-      fetchParticipantBadges(participant.registration_no);
-      fetchParticipantProofs(participant.registration_no);
+      // Fetch profile data, badges, and proofs in parallel
+      const [profileData] = await Promise.all([
+        fetchParticipantProfile(participant.registration_no),
+        fetchParticipantBadges(participant.registration_no),
+        fetchParticipantProofs(participant.registration_no)
+      ]);
+      
+      // Update participant data with profile information if available
+      if (profileData) {
+        setSelectedParticipant(prev => ({
+          ...prev,
+          ...profileData
+        }));
+      }
     }
   };
 
