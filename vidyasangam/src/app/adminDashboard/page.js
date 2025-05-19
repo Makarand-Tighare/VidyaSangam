@@ -200,13 +200,14 @@ function AdminDashboard() {
   // Add state for participant proofs
   const [participantProofs, setParticipantProofs] = useState({});
   const [isLoadingProofs, setIsLoadingProofs] = useState(false);
+  // Update proof types to match the API response keys
   const proofTypes = [
-    'research',
-    'hackathon',
-    'coding',
-    'academic',
-    'internship',
-    'extracurricular',
+    'research_publications',
+    'hackathon_participation',
+    'coding_competitions',
+    'academic_performance',
+    'internships',
+    'extracurricular_activities',
   ];
 
   // Fetch all proofs for a participant
@@ -216,18 +217,66 @@ function AdminDashboard() {
       const headers = getAuthHeaders();
       const response = await axios.get(`https://vidyasangam.duckdns.org/api/mentor_mentee/participants/proofs/${registrationNo}/`, { headers });
       
-      // Process the proofs data
+      // Debug the API response
+      console.log('Proof API response structure:', Object.keys(response.data));
+      
+      // Process the proofs data - backend returns flat dictionary, not array
       const proofs = {};
-      if (response.data && response.data.proofs) {
-        response.data.proofs.forEach(proof => {
-          if (proof.file_url) {
-            proofs[proof.type] = {
-              url: proof.file_url,
-              filetype: proof.file_type || 'pdf'
+      
+      // Directly process the response data which is already a dictionary
+      Object.entries(response.data).forEach(([proofType, base64Data]) => {
+        if (base64Data && typeof base64Data === 'string' && base64Data.trim() !== '') {
+          console.log(`Processing proof: ${proofType}, has valid data: ${base64Data.length > 100}`);
+          // Determine file type (default to PDF if unknown)
+          const fileType = 'pdf'; // Assume PDF for all files for now
+          const mimeType = 'application/pdf';
+          
+          try {
+            // Make sure the base64 string is clean
+            let cleanedBase64 = base64Data.trim();
+            // Remove data URL prefix if present
+            if (cleanedBase64.includes(';base64,')) {
+              cleanedBase64 = cleanedBase64.split(';base64,')[1];
+            }
+            
+            // Remove any non-base64 characters that might cause decoding issues
+            cleanedBase64 = cleanedBase64.replace(/[^A-Za-z0-9+/=]/g, '');
+            
+            console.log(`Base64 length for ${proofType}: ${cleanedBase64.length}`);
+            
+            // Create a Blob instead of data URL for better PDF handling
+            let url;
+            try {
+              const byteCharacters = atob(cleanedBase64);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              const blob = new Blob([byteArray], { type: mimeType });
+              url = URL.createObjectURL(blob);
+              console.log(`Successfully created blob URL for ${proofType}`);
+            } catch (decodeError) {
+              console.error(`Base64 decode error for ${proofType}:`, decodeError);
+              // Try fallback to data URL as a last resort
+              url = `data:${mimeType};base64,${cleanedBase64}`;
+              console.log(`Falling back to data URL for ${proofType}`);
+            }
+            
+            proofs[proofType] = {
+              url,
+              filetype: fileType
             };
+            console.log(`Successfully processed proof: ${proofType}`);
+          } catch (err) {
+            console.error(`Error processing proof ${proofType}:`, err);
           }
-        });
-      }
+        } else {
+          console.log(`Empty or invalid data for proof: ${proofType}`);
+        }
+      });
+      
+      console.log('Final processed proofs:', Object.keys(proofs));
       setParticipantProofs(proofs);
     } catch (error) {
       console.error("Error fetching participant proofs:", error);
@@ -3263,29 +3312,47 @@ function AdminDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {proofTypes.map((type) => (
                           <div key={type} className="flex items-center gap-3 border-b last:border-b-0 py-2">
-                            <span className="font-medium capitalize w-40">{type.replace(/_/g, ' ')}</span>
+                            <span className="font-medium capitalize w-40">{type.replace(/_proof/g, '').replace(/_/g, ' ')}</span>
                             {participantProofs[type] ? (
-                              <>
-                                {participantProofs[type].filetype === 'pdf' ? (
-                                  <a
-                                    href={participantProofs[type].url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                  >
+                              <div className="flex gap-2">
+                                <button
+                                  className="text-blue-600 hover:bg-blue-100 bg-blue-50 px-3 py-1.5 rounded flex items-center"
+                                  onClick={() => {
+                                    // Open Blob URL directly in a new tab
+                                    const blobUrl = participantProofs[type].url;
+                                    console.log(`Opening Blob URL for ${type}:`, blobUrl);
+                                    
+                                    // Open the Blob URL in a new tab
+                                    window.open(blobUrl, '_blank');
+                                  }}
+                                                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                      <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                      <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                                    </svg>
                                     View PDF
-                                  </a>
-                                ) : (
-                                  <a
-                                    href={participantProofs[type].url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    View Image
-                                  </a>
-                                )}
-                              </>
+                                </button>
+                                <button
+                                  className="text-green-600 hover:bg-green-100 bg-green-50 px-3 py-1.5 rounded flex items-center"
+                                  onClick={() => {
+                                    // Download using the Blob URL
+                                    const blobUrl = participantProofs[type].url;
+                                    
+                                    // Create a download link
+                                    const link = document.createElement('a');
+                                    link.href = blobUrl;
+                                    link.download = `${selectedParticipant.name || 'participant'}_${type.replace(/_/g, '-')}.pdf`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                                  </svg>
+                                  Download PDF
+                                </button>
+                              </div>
                             ) : (
                               <span className="text-gray-400">No proof uploaded</span>
                             )}
