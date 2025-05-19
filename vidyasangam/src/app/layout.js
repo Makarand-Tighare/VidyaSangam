@@ -3,6 +3,8 @@ import "./globals.css";
 import Script from "next/script";
 import { AuthProvider } from "./lib/useAuth";
 import { AutoLogoutProvider } from "./lib/autoLogout";
+import { TokenValidatorProvider } from "./lib/tokenValidator";
+import { AuthNavigationProvider } from "./lib/useAuthNavigation";
 import { Toaster } from "sonner";
 
 // Load the Google Fonts with specific weights and subsets
@@ -113,11 +115,15 @@ export default function RootLayout({ children }) {
             gtag('config', 'G-EFG5FKTN9J');
           `}
         </Script>
-        <AuthProvider>
-          <AutoLogoutProvider>
-            {children}
-          </AutoLogoutProvider>
-        </AuthProvider>
+        <AuthNavigationProvider>
+          <AuthProvider>
+            <TokenValidatorProvider>
+              <AutoLogoutProvider>
+                {children}
+              </AutoLogoutProvider>
+            </TokenValidatorProvider>
+          </AuthProvider>
+        </AuthNavigationProvider>
       </body>
     </html>
   );

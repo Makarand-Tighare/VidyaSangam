@@ -2,7 +2,8 @@
 
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/navigation';
-import { login as loginApi, logout as logoutApi, isLoggedIn, refreshAccessToken } from './auth';
+import { login as loginApi, logout as logoutApi, isLoggedIn, refreshAccessToken, verifyTokenValidity } from './auth';
+import { toast } from 'sonner';
 
 // Create auth context
 const AuthContext = createContext(null);
@@ -20,6 +21,18 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkAuth = async () => {
       if (isLoggedIn()) {
+        // First verify token validity with the server
+        const isValid = await verifyTokenValidity();
+        
+        if (!isValid) {
+          // Token is invalid, clear user state and show message
+          logoutApi();
+          setUser(null);
+          toast.error('Your session has expired. Please log in again.');
+          setLoading(false);
+          return;
+        }
+        
         // Try to refresh the token if it exists
         try {
           const token = await refreshAccessToken();
@@ -141,6 +154,17 @@ export const withAuth = (Component) => {
           // Check if auth token exists
           if (!isLoggedIn()) {
             // If not logged in, redirect to login page
+            router.push('/login');
+            return;
+          }
+          
+          // First verify token validity with the server
+          const isValid = await verifyTokenValidity();
+          
+          if (!isValid) {
+            // Token is invalid, clear tokens and redirect to login
+            logoutApi();
+            toast.error('Your session has expired. Please log in again.');
             router.push('/login');
             return;
           }

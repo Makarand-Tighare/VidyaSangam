@@ -309,6 +309,17 @@ export const authenticatedFetch = async (url, options = {}) => {
     if (response.status === 401) {
       console.log('Token expired, attempting to refresh...');
       
+      // Verify if token is valid with the server
+      const isValid = await verifyTokenValidity();
+      
+      if (!isValid) {
+        // Token is completely invalid, clear everything and redirect
+        clearTokens();
+        // Fire a custom event that other parts of the app can listen for
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
+        throw new Error('Session expired. Please log in again.');
+      }
+      
       // Try to refresh the token
       const newToken = await refreshAccessToken();
       
@@ -319,6 +330,8 @@ export const authenticatedFetch = async (url, options = {}) => {
       } else {
         // Clear tokens on auth failure
         clearTokens();
+        // Fire a custom event that other parts of the app can listen for
+        window.dispatchEvent(new CustomEvent('auth:sessionExpired'));
         throw new Error('Authentication failed. Please log in again.');
       }
     }
@@ -339,10 +352,45 @@ export const authenticatedFetch = async (url, options = {}) => {
     
     // If this is a token error (e.g., "Authentication required"),
     // we might want to clear tokens and redirect
-    if (error.message.includes('Authentication')) {
+    if (error.message.includes('Authentication') || error.message.includes('Session expired')) {
       clearTokens();
     }
     
     throw error;
+  }
+};
+
+/**
+ * Verify if the authentication token is still valid with the server
+ * @returns {Promise<boolean>} True if token is valid, false otherwise
+ */
+export const verifyTokenValidity = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    
+    if (!token) {
+      console.log('No token to verify');
+      return false;
+    }
+    
+    const response = await fetch('https://vidyasangam.duckdns.org/api/user/token/verify/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.is_valid === true) {
+      return true;
+    } else {
+      console.log('Token verification failed:', data.error);
+      return false;
+    }
+  } catch (error) {
+    console.error('Token verification error:', error);
+    return false;
   }
 }; 
