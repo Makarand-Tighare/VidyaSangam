@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Loader2, Star, AlertCircle } from "lucide-react"
 import axios from 'axios'
 import { toast } from 'sonner'
+import { ContentLoader } from '@/components/ui/content-loader'
+import { InlineLoader } from '@/components/ui/content-loader'
 
 import NavBar from '../components/navBar'
 import LinkedInButton from '../components/linkedinButton';
@@ -1849,10 +1851,7 @@ function Profile() {
             </CardHeader>
             <CardContent className="pt-6">
               {isLoadingBadges ? (
-                <div className="flex justify-center items-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                  <span className="ml-3 text-blue-600 font-medium">Loading badges...</span>
-                </div>
+                <ContentLoader message="Loading badges..." />
               ) : userBadges.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {userBadges.map((userBadge) => {
@@ -1922,10 +1921,7 @@ function Profile() {
                                 disabled={isClaimingBadge}
                               >
                                 {isClaimingBadge ? (
-                                  <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Claiming...
-                                  </>
+                                  <InlineLoader message="Claiming..." size="sm" />
                                 ) : (
                                   'Claim Badge'
                                 )}

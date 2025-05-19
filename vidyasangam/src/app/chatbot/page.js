@@ -5,6 +5,7 @@ import { Send, Moon, Sun, ArrowLeft, Loader2, Info, X, Sparkles, History, Trash2
 import ReactMarkdown from 'react-markdown';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { InlineLoader } from '@/components/ui/content-loader';
 
 // System prompt with comprehensive knowledge about VidyaSangam
 const VIDYASANGAM_SYSTEM_PROMPT = {
@@ -789,9 +790,8 @@ export default function Chatassistant() {
           
           {/* Loading suggestions indicator (now positioned with the messages) */}
           {loadingSuggestions && (
-            <div className="ml-1 flex items-center gap-2 text-sm opacity-70 mb-2">
-              <Loader2 className="w-3 h-3 animate-spin" />
-              <span>Loading suggested questions...</span>
+            <div className="ml-1 mb-2">
+              <InlineLoader message="Loading suggested questions..." size="sm" />
             </div>
           )}
           
@@ -802,8 +802,7 @@ export default function Chatassistant() {
                   ? 'bg-gray-800 text-blue-400 border border-gray-700' 
                   : 'bg-white text-blue-600 border border-gray-200'
               }`}>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Processing your request...</span>
+                <InlineLoader message="Processing your request..." />
             </div>
           </div>
         )}

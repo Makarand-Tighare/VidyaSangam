@@ -7,17 +7,12 @@ import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import NavBar from '../components/navBar'
+import { PageLoaderWithNav } from '@/components/ui/page-loader'
+import { ContentLoader } from '@/components/ui/content-loader'
 
 // Loading component for Suspense fallback
 function QuizLoading() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
-      <NavBar />
-      <div className="flex justify-center items-center h-[80vh]">
-        <p className="text-lg">Loading quiz...</p>
-      </div>
-    </div>
-  );
+  return <PageLoaderWithNav message="Loading quiz..." />
 }
 
 // Client component that uses search params
@@ -212,14 +207,7 @@ function QuizContent() {
   }
   
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
-        <NavBar />
-        <div className="flex justify-center items-center h-[80vh]">
-          <p className="text-lg">Loading quiz...</p>
-        </div>
-      </div>
-    )
+    return <PageLoaderWithNav message="Loading quiz..." />
   }
   
   if (error) {
@@ -235,14 +223,7 @@ function QuizContent() {
   }
   
   if (!quiz) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 p-4">
-        <NavBar />
-        <div className="flex justify-center items-center h-[80vh]">
-          <p className="text-lg">Quiz not found</p>
-        </div>
-      </div>
-    )
+    return <PageLoaderWithNav message="Quiz not found" />
   }
   
   if (quizCompleted) {

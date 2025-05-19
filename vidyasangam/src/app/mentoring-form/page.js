@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import AlreadyPartAnimation from '../components/AlreadyPartAnimation';
 import { checkUserMentorMenteeStatus, checkMentoringFormSubmitted } from '../lib/userStatus';
+import { PageLoaderWithNav } from '@/components/ui/page-loader'
 
 const sections = [
   'Personal Information',
@@ -744,17 +745,9 @@ export default function MentoringForm() {
     required: true
   };
 
-  // If the component is still loading, show a loading spinner
+  // Update the loading state check
   if (!isLoaded || userStatus.checking || applicationStatus.checking) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
-        <NavBar />
-        <div className="flex flex-col items-center justify-center h-[70vh]">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoaderWithNav message="Loading..." />
   }
   
   // If user is already a mentor or mentee, show the animation

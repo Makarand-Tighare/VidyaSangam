@@ -11,6 +11,7 @@ import NavBar from '../components/navBar'
 import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { toast } from 'sonner';
+import { ContentLoader } from '@/components/ui/content-loader'
 
 export default function Leaderboard() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -352,10 +353,7 @@ export default function Leaderboard() {
             </div>
 
             {isLoading ? (
-              <div className="flex justify-center items-center py-16">
-                <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-                <span className="ml-3 text-blue-600 font-medium">Loading leaderboard data...</span>
-              </div>
+              <ContentLoader message="Loading leaderboard data..." />
             ) : error ? (
               <div className="text-center py-8 text-red-600">
                 <p>{error}</p>

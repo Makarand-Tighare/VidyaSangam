@@ -13,6 +13,7 @@ import NavBar from "../components/navBar";
 import { login, isLoggedIn } from "../lib/auth";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { InlineLoader } from '@/components/ui/content-loader'
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -203,10 +204,7 @@ export default function LoginPage() {
               </div>
               <Button type="submit" className="w-full mt-4" disabled={isLoading}>
                 {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Logging in...
-                  </>
+                  <InlineLoader message="Logging in..." size="sm" />
                 ) : (
                   "Login"
                 )}
